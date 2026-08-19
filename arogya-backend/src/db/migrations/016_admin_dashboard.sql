@@ -1,0 +1,17 @@
+-- ---------------------------------------------------------------------------
+-- Founder/admin dashboard support (2026-08-18)
+-- ---------------------------------------------------------------------------
+-- Adds 'admin' as a new account_type. Deliberately NOT reachable through
+-- the public /api/auth/signup endpoint (see routes/auth.js's signupSchema —
+-- 'admin' is not in its allowed enum) — an admin account can only be
+-- created via the standalone bootstrap script (db/createAdminAccount.js),
+-- run directly against the database, never over the public API. This is
+-- the same reasoning as the emergency-erasure script being a standalone
+-- tool rather than an endpoint: there's no safe way to expose "create an
+-- account with platform-wide visibility" as a public-facing route.
+-- Note: ALTER TYPE ... ADD VALUE works inside a transaction on PostgreSQL
+-- 12+ (this migration runner wraps every file in one — see db/migrate.js).
+-- On Postgres 11 or older this would fail inside a transaction; not
+-- expected to matter for a fresh cloud Postgres instance, but flagged
+-- since this couldn't be tested live in this sandbox (no DB access here).
+ALTER TYPE account_type ADD VALUE 'admin';
