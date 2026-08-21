@@ -24,6 +24,7 @@ const coadminRoutes = require("./routes/coadmin");
 const recordsRoutes = require("./routes/records");
 const recordContentRoutes = require("./routes/recordContent");
 const labOrdersRoutes = require("./routes/labOrders");
+const followUpsRoutes = require("./routes/followUps");
 const careTeamRoutes = require("./routes/careTeam");
 const referralsRoutes = require("./routes/referrals");
 const billingRoutes = require("./routes/billing");
@@ -33,6 +34,9 @@ const notificationsRoutes = require("./routes/notifications");
 const emergencyProfileRoutes = require("./routes/emergencyProfile");
 const hospitalAffiliationsRoutes = require("./routes/hospitalAffiliations");
 const hospitalBillingRoutes = require("./routes/hospitalBilling");
+const bedAvailabilityRoutes = require("./routes/bedAvailability");
+const inventoryRoutes = require("./routes/inventory");
+const feedPostsRoutes = require("./routes/feedPosts");
 const adminRoutes = require("./routes/admin");
 
 const app = express();
@@ -89,6 +93,7 @@ app.use("/api/coadmin", coadminRoutes);
 app.use("/api/records", recordsRoutes);
 app.use("/api/record-content", recordContentRoutes);
 app.use("/api/lab-orders", labOrdersRoutes);
+app.use("/api/follow-ups", followUpsRoutes);
 app.use("/api/care-team", careTeamRoutes);
 app.use("/api/referrals", referralsRoutes);
 app.use("/api/billing", billingRoutes);
@@ -98,6 +103,9 @@ app.use("/api/notifications", notificationsRoutes);
 app.use("/api/emergency-profile", emergencyProfileRoutes);
 app.use("/api/hospital-affiliations", hospitalAffiliationsRoutes);
 app.use("/api/hospital-billing", hospitalBillingRoutes);
+app.use("/api/bed-availability", bedAvailabilityRoutes);
+app.use("/api/inventory", inventoryRoutes);
+app.use("/api/feed-posts", feedPostsRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use((req, res) => {

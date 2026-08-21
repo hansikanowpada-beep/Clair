@@ -46,6 +46,7 @@ CREATE TABLE accounts (
     plan_tier           plan_tier NOT NULL DEFAULT 'free',
     hospital_plan_tier  hospital_plan_tier,      -- only meaningful when account_type = 'hospital'; NULL otherwise
     bed_count           INTEGER,                 -- only meaningful when account_type = 'hospital'; NULL otherwise
+    feed_post_expiry_months INTEGER NOT NULL DEFAULT 6, -- doctor-only setting; how long their feed_posts stay visible
     two_factor_enabled  BOOLEAN NOT NULL DEFAULT false,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -240,6 +241,49 @@ CREATE TABLE referrals (
 CREATE INDEX idx_referrals_to_doctor ON referrals (to_doctor_id, status);
 
 -- ---------------------------------------------------------------------------
+-- Patient follow-up plans + doctor<->patient message thread. Distinct from
+-- care_team_instructions above (doctor-to-care-team, no patient-facing
+-- content) — this is doctor-to-PATIENT, meant to be read directly by the
+-- patient in their own portal, so deliberately plaintext like
+-- care_team_instructions' diagnosis_summary, not encrypted like
+-- patient_record_content. Kept short and plan-level by design.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE patient_followups (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    doctor_id           UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    patient_account_id  UUID REFERENCES accounts(id) ON DELETE SET NULL,
+    patient_display_name TEXT NOT NULL,
+    patient_phone       TEXT,
+    interval             TEXT NOT NULL,
+    takeaways            TEXT NOT NULL,
+    complications        TEXT,
+    diet_physio          TEXT,
+    precautions          TEXT,
+    next_visit           TEXT,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_patient_followups_doctor ON patient_followups (doctor_id);
+CREATE INDEX idx_patient_followups_patient ON patient_followups (patient_account_id);
+
+CREATE TYPE followup_message_sender AS ENUM ('doctor', 'patient');
+
+CREATE TABLE patient_followup_messages (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    followup_id         UUID NOT NULL REFERENCES patient_followups(id) ON DELETE CASCADE,
+    sender_role         followup_message_sender NOT NULL,
+    sender_account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    text                TEXT NOT NULL,
+    is_advice_link      BOOLEAN NOT NULL DEFAULT false,
+    link_expires_at     TIMESTAMPTZ,
+    sent_at             TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_followup_messages_followup ON patient_followup_messages (followup_id, sent_at);
+
+-- ---------------------------------------------------------------------------
 -- Billing — subscription status only, no payment card data (that lives with
 -- the payment processor, e.g. Razorpay/Stripe — never stored here).
 -- ---------------------------------------------------------------------------
@@ -360,3 +404,78 @@ CREATE TABLE hospital_affiliations (
 
 CREATE INDEX idx_hospital_affiliations_doctor ON hospital_affiliations (doctor_account_id) WHERE revoked_at IS NULL;
 CREATE INDEX idx_hospital_affiliations_hospital ON hospital_affiliations (hospital_account_id) WHERE revoked_at IS NULL;
+
+-- ---------------------------------------------------------------------------
+-- Hospital bed availability — one row per hospital account, self-managed.
+-- Pure operational status, no clinical content.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE hospital_bed_status (
+    hospital_account_id UUID PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    total_beds          INTEGER NOT NULL DEFAULT 0,
+    available_beds      INTEGER NOT NULL DEFAULT 0,
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ---------------------------------------------------------------------------
+-- Hospital inventory — stock quantities, reorder thresholds, expiry dates.
+-- Pure operational/logistics tracking: no clinical content, no dosing, no
+-- prescribing decisions.
+-- ---------------------------------------------------------------------------
+
+CREATE TYPE inventory_category AS ENUM ('medication', 'consumable', 'equipment', 'ppe', 'other');
+
+CREATE TABLE inventory_items (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    hospital_account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    name                TEXT NOT NULL,
+    category            inventory_category NOT NULL DEFAULT 'other',
+    quantity            INTEGER NOT NULL DEFAULT 0,
+    unit                TEXT NOT NULL DEFAULT 'units',
+    reorder_at          INTEGER NOT NULL DEFAULT 0,
+    expiry_date         DATE,
+    supplier            TEXT,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_inventory_items_hospital ON inventory_items (hospital_account_id);
+
+-- ---------------------------------------------------------------------------
+-- Doctor specialty-feed posts — short doctor-authored updates patients can
+-- view and react to. Plaintext by design, same reasoning as
+-- patient_followups above.
+--
+-- KNOWN SIMPLIFICATION: the frontend prototype's own comment says
+-- "patients see posts only from doctors they already follow," but no
+-- doctor-follow relationship exists anywhere in this backend yet —
+-- GET /api/feed-posts currently returns ALL non-expired posts platform-
+-- wide to any authenticated patient. A real "following" gate is a
+-- separate feature, not built here.
+-- ---------------------------------------------------------------------------
+
+CREATE TYPE feed_post_kind AS ENUM ('update', 'achievement', 'video');
+CREATE TYPE feed_reaction_value AS ENUM ('like', 'dislike');
+
+CREATE TABLE feed_posts (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    doctor_id           UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    kind                feed_post_kind NOT NULL DEFAULT 'update',
+    text                TEXT NOT NULL,
+    thumbnail_url       TEXT,                    -- video-kind posts only; opaque URL, not uploaded media
+    pinned              BOOLEAN NOT NULL DEFAULT false,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_feed_posts_doctor ON feed_posts (doctor_id, created_at DESC);
+
+-- One reaction per (post, account) — like/dislike counts are computed by
+-- aggregating this table at read time, so they can never drift from a
+-- changed or withdrawn reaction.
+CREATE TABLE feed_post_reactions (
+    post_id             UUID NOT NULL REFERENCES feed_posts(id) ON DELETE CASCADE,
+    account_id          UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    reaction            feed_reaction_value NOT NULL,
+    reacted_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (post_id, account_id)
+);

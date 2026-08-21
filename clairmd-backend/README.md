@@ -13,6 +13,70 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Patient follow-ups, hospital bed/inventory operations, and the
+  specialty feed** (2026-08-21, migrations `019`–`022` + `routes/
+  followUps.js`, `routes/bedAvailability.js`, `routes/inventory.js`,
+  `routes/feedPosts.js`) — four more ClairMDEHR frontend features that had
+  zero backend behind them (state only ever lived in React, gone on
+  refresh), closing out the last of the 11-item gap list surveyed
+  2026-08-21.
+  - **Patient follow-ups** (`019_patient_followups.sql`,
+    `/api/follow-ups`): a doctor's short post-visit plan (check-in
+    interval, takeaways, complications, diet/physio, precautions, next
+    visit) plus the doctor↔patient message thread built around it.
+    Deliberately **plaintext**, unlike `patient_record_content` — same
+    reasoning as `care_team_instructions`' plaintext `diagnosis_summary`:
+    the whole point is the patient reads this directly in their own
+    portal. `POST /`/`GET /` are doctor-only (their own plans); `GET
+    /mine` is the patient's own linked plans; `GET`/`PATCH /:id` and the
+    `/:id/messages` sub-routes check the caller is either the plan's
+    doctor or its linked patient, never trusted from the URL alone.
+    `isAdviceLink`/`linkExpiresAt` on a message mirror the frontend's
+    existing 24-hour feedback-link pattern — the client still builds the
+    link text itself, this just stores the flag/expiry alongside it.
+  - **Hospital bed availability** (`020_hospital_bed_status.sql`,
+    `/api/bed-availability`) and **inventory** (`021_inventory_items.sql`,
+    `/api/inventory`): both self-managed, hospital-account-only, pure
+    operational status/logistics — no clinical content, no dosing, no
+    prescribing decisions, so (matching the frontend's own comment on
+    this feature) neither sits anywhere near a device-classification
+    concern the way the clinical modules elsewhere in this app
+    deliberately do. Inventory has a dedicated `POST /:id/adjust`
+    (`{ delta }`) separate from the general `PATCH /:id`, so a quick
+    stock +/- can never accidentally piggyback other field edits in the
+    same request.
+  - **Specialty feed posts** (`022_feed_posts.sql`, `/api/feed-posts`):
+    doctor-authored updates patients view and react to. Also plaintext,
+    same reasoning as follow-ups above. Like/dislike counts are computed
+    by aggregating a `(post_id, account_id)`-keyed reactions table at read
+    time rather than maintained as counters, so a changed or withdrawn
+    reaction can never drift out of sync with what's displayed;
+    `POST /:id/react` toggles (sending the same reaction again removes
+    it). A per-doctor `feed_post_expiry_months` setting (new column on
+    `accounts`, default 6) controls how long that doctor's posts stay in
+    the `GET /` listing.
+    - **Known simplification, flagged rather than silently assumed
+      built:** the frontend's own comment says "patients see posts only
+      from doctors they already follow," but no doctor-follow
+      relationship exists anywhere in this backend yet —
+      `GET /api/feed-posts` currently returns ALL non-expired posts
+      platform-wide to any authenticated account. A real following/
+      subscription system is a separate feature, not built here.
+  - **Not live-tested** — no database in this sandbox for any of these
+    four. Checked instead: every migration is valid standalone SQL (each
+    file's own `CREATE TYPE`/`CREATE TABLE` statements, no `ALTER TYPE`
+    risk), every route file passes `node --check`, every `require()`
+    path resolves, and every query was manually walked against the
+    tables/columns it reads or writes, including the two route-ordering
+    bugs this actually caught before being flagged as "done": `PATCH
+    /settings` in `feedPosts.js` and `GET /mine` in `followUps.js` had to
+    be registered *before* their respective `/:id` routes, since Express
+    matches routes in registration order per method and `:id` would
+    otherwise have silently swallowed `"settings"`/`"mine"` as a record
+    ID on the first request that hit it.
+  - **Frontend wiring not done in this change** — backend-only, same as
+    lab orders below before it was wired up separately.
+
 - **Lab orders** (2026-08-21, `018_lab_orders.sql` + `routes/labOrders.js`) —
   the ClairMDEHR frontend prototype has an "order a test" UI (blood/urine/
   radiological/microbiological/immunological, per `DIAGNOSIS_META`'s fixed
