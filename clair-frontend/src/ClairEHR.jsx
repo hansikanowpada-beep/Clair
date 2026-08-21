@@ -13134,6 +13134,246 @@ function printSummary(text, title) {
   w.print();
 }
 
+// ---------------------------------------------------------------------------
+// Backend sync (prototype) — talks to arogya-backend's real
+// /api/auth and /api/record-content endpoints (see that repo's README).
+// This is a genuinely working client for those two endpoints, scoped
+// narrowly on purpose:
+//
+// - Auth: this prototype has no session/context layer threading an
+//   account through the whole app, so the token lives in localStorage and
+//   is read fresh wherever it's needed — a real app would hoist this into
+//   a proper auth context instead.
+// - Encryption key: record_key_wraps (the backend's real multi-holder,
+//   consent-gated key distribution — see routes/coadmin.js in
+//   arogya-backend) is NOT implemented here. Each record instead gets its
+//   own AES-GCM key generated in the browser and kept in localStorage —
+//   good enough to prove the round trip (encrypt → PUT → GET → decrypt)
+//   actually works end-to-end against the real backend, but NOT the real
+//   key-wrap/consent scheme a production build needs for co-admin/patient
+//   access. Flagged here the same way DOCTOR_ADS's alert() stubs are
+//   flagged elsewhere in this file — a clearly-marked placeholder, not a
+//   finished feature.
+// - No Google Drive upload happens from this prototype (no OAuth flow
+//   wired) — records are created with a placeholder driveFileId, and the
+//   backend's opaque-blob sync (patient_record_content) is the only place
+//   the note content actually lands.
+// ---------------------------------------------------------------------------
+
+function getApiBase() {
+  return (typeof localStorage !== "undefined" && localStorage.getItem("clair_api_base")) || "http://localhost:4000/api";
+}
+
+function getAuthToken() {
+  return typeof localStorage !== "undefined" ? localStorage.getItem("clair_auth_token") : null;
+}
+function setAuthToken(token) {
+  if (typeof localStorage === "undefined") return;
+  if (token) localStorage.setItem("clair_auth_token", token);
+  else localStorage.removeItem("clair_auth_token");
+}
+
+async function apiRequest(path, { method = "GET", body, auth = true } = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (auth) {
+    const token = getAuthToken();
+    if (!token) throw new Error("Not connected to the backend yet — log in or sign up below first.");
+    headers.Authorization = `Bearer ${token}`;
+  }
+  let res;
+  try {
+    res = await fetch(`${getApiBase()}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (err) {
+    throw new Error(`Couldn't reach the backend at ${getApiBase()} — is arogya-backend running? (${err.message})`);
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Backend request failed (${res.status}).`);
+  return data;
+}
+
+async function backendSignup({ accountType, email, password, displayName, licenseNumber }) {
+  const data = await apiRequest("/auth/signup", { method: "POST", auth: false, body: { accountType, email, password, displayName, licenseNumber } });
+  setAuthToken(data.token);
+  return data.account;
+}
+
+async function backendLogin({ email, password }) {
+  const data = await apiRequest("/auth/login", { method: "POST", auth: false, body: { email, password } });
+  setAuthToken(data.token);
+  const me = await apiRequest("/auth/me");
+  return me.account;
+}
+
+function backendLogout() {
+  setAuthToken(null);
+}
+
+// --- Per-record AES-GCM key (prototype-only local key store — see the
+// module comment above for why this stands in for the real key-wrap
+// scheme). ---
+async function getOrCreateRecordKey(recordId) {
+  if (!(typeof crypto !== "undefined" && crypto.subtle)) {
+    throw new Error("Encryption isn't available in this browser context (Web Crypto requires https or localhost).");
+  }
+  const storageKey = `clair_record_key_${recordId}`;
+  const existing = localStorage.getItem(storageKey);
+  if (existing) {
+    const raw = Uint8Array.from(atob(existing), (c) => c.charCodeAt(0));
+    return crypto.subtle.importKey("raw", raw, "AES-GCM", true, ["encrypt", "decrypt"]);
+  }
+  const key = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+  const raw = new Uint8Array(await crypto.subtle.exportKey("raw", key));
+  localStorage.setItem(storageKey, btoa(String.fromCharCode(...raw)));
+  return key;
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  bytes.forEach((b) => { binary += String.fromCharCode(b); });
+  return btoa(binary);
+}
+function base64ToBytes(b64) {
+  return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+}
+
+// Encrypted blob format: base64(12-byte IV || AES-GCM ciphertext+tag) — a
+// single opaque string, matching what patient_record_content.encrypted_blob
+// expects (schema.sql: "opaque ciphertext; backend never decrypts this").
+async function encryptRecordText(recordId, plaintext) {
+  const key = await getOrCreateRecordKey(recordId);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(plaintext)));
+  const combined = new Uint8Array(iv.length + ciphertext.length);
+  combined.set(iv, 0);
+  combined.set(ciphertext, iv.length);
+  return bytesToBase64(combined);
+}
+
+async function decryptRecordText(recordId, encryptedBlob) {
+  const key = await getOrCreateRecordKey(recordId);
+  const combined = base64ToBytes(encryptedBlob);
+  const iv = combined.slice(0, 12);
+  const ciphertext = combined.slice(12);
+  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+  return new TextDecoder().decode(plaintext);
+}
+
+// Creates the backend pointer row (patient_record_index) this note's
+// content will hang off of. driveFileId is a placeholder — this prototype
+// doesn't upload anything to Google Drive.
+async function ensureBackendRecord(noteType) {
+  const data = await apiRequest("/records", { method: "POST", body: { driveFileId: `clair-prototype-${Date.now()}`, noteType } });
+  return data.record.id;
+}
+
+// Full round trip: create the pointer, encrypt the note, PUT it, then GET
+// + decrypt it straight back to confirm the backend actually stored what
+// was sent — not just "the PUT returned 200", but a genuine decrypt-and-
+// compare against the real /api/record-content endpoints.
+async function syncNoteToBackend(noteType, noteText) {
+  const recordId = await ensureBackendRecord(noteType);
+  const encryptedBlob = await encryptRecordText(recordId, noteText);
+  await apiRequest(`/record-content/${recordId}`, { method: "PUT", body: { encryptedBlob } });
+
+  const fetched = await apiRequest(`/record-content/${recordId}`);
+  const roundTripText = await decryptRecordText(recordId, fetched.content.encrypted_blob);
+  if (roundTripText !== noteText) {
+    throw new Error("Backend round-trip verification failed — decrypted content didn't match what was sent.");
+  }
+  return { recordId };
+}
+
+// Compact, reusable connect/status widget — email+password only (matches
+// the real backend's actual signup/login fields; the license-number field
+// only appears for doctor account types, since /api/auth/signup requires
+// it for those). Deliberately separate from the flashy multi-step signup
+// wizard elsewhere in this file (that one simulates the full product UX;
+// this one just needs to get a real token from the real backend).
+function BackendSyncPanel({ accountType = "individual_doctor" }) {
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState("login"); // login | signup
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [connectedEmail, setConnectedEmail] = useState(null);
+  const [status, setStatus] = useState(null); // { type: "error"|"success", text }
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setStatus(null);
+    try {
+      const account = mode === "signup"
+        ? await backendSignup({ accountType, email, password, displayName, licenseNumber })
+        : await backendLogin({ email, password });
+      setConnectedEmail(account.email);
+      setStatus({ type: "success", text: `Connected to backend as ${account.email}.` });
+    } catch (err) {
+      setStatus({ type: "error", text: err.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (connectedEmail) {
+    return (
+      <div className="flex items-center gap-2 text-[11px] text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <span className="w-1.5 h-1.5 rounded-full bg-[#0F5C56]" />
+        Backend: connected as {connectedEmail}
+        <button type="button" onClick={() => { backendLogout(); setConnectedEmail(null); }} className="underline text-[#8A958E] hover:text-[#B34A3C]">
+          Disconnect
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-[#D8DED9] rounded-sm bg-[#F7F9F7] p-2.5">
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-1.5 text-[11px] text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        Backend: not connected — notes save locally only
+      </button>
+      {open && (
+        <form onSubmit={submit} className="mt-2 space-y-1.5">
+          <div className="flex gap-1.5 mb-1">
+            {["login", "signup"].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${mode === m ? "text-white border-[#0F5C56]" : "border-[#D8DED9] text-[#5B6B63]"}`}
+                style={mode === m ? { backgroundColor: "#0F5C56" } : {}}
+              >
+                {m === "login" ? "Log in" : "Sign up"}
+              </button>
+            ))}
+          </div>
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-xs" />
+          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-xs" />
+          {mode === "signup" && (
+            <>
+              <input required value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Display name" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-xs" />
+              <input required value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} placeholder="Medical license number" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-xs" />
+            </>
+          )}
+          <button type="submit" disabled={busy} className="text-[11px] px-2.5 py-1 rounded-sm text-white font-medium" style={{ backgroundColor: "#0F5C56" }}>
+            {busy ? "Connecting…" : mode === "login" ? "Log in" : "Create account"}
+          </button>
+          {status && (
+            <p className={`text-[10px] ${status.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`}>{status.text}</p>
+          )}
+        </form>
+      )}
+    </div>
+  );
+}
+
 function TreatmentSummaryButtons({ patient }) {
   const summary = buildTreatmentSummary(patient);
   const text = summaryToText(summary);
@@ -14810,6 +15050,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
   const [mlcRecords, setMlcRecords] = useState([]);
   const [patientDetails, setPatientDetails] = useState({ name: "", age: "", gender: "", localId: "", phone: "" });
   const [saveMessage, setSaveMessage] = useState(null);
+  const [syncMessage, setSyncMessage] = useState(null); // backend sync status — separate from saveMessage since the local save always succeeds first
 
   const addTool = (key) => { if (!addedTools.includes(key)) setAddedTools((prev) => [...prev, key]); };
   const removeTool = (key) => setAddedTools((prev) => prev.filter((k) => k !== key));
@@ -14922,13 +15163,25 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
       setSaveMessage({ type: "error", text: "Enter the patient's name above before saving." });
       return false;
     }
+    const slipText = buildSlip();
     onSaveSlip({
       id: Date.now() + Math.random(),
       patientDetails: { ...patientDetails },
       savedAt: new Date().toLocaleString(),
-      text: buildSlip(),
+      text: slipText,
     });
     setSaveMessage({ type: "success", text: `Saved to ${patientDetails.name}'s record.` });
+
+    // Local save above always succeeds regardless of backend reachability —
+    // sync runs after, and failure here never undoes or blocks the local
+    // save (no connectivity / not logged in / backend down are all
+    // expected, common states for this prototype, not errors to surface as
+    // a save failure).
+    setSyncMessage({ type: "pending", text: "Syncing to backend…" });
+    syncNoteToBackend("opd", slipText)
+      .then(({ recordId }) => setSyncMessage({ type: "success", text: `Synced to backend (record ${recordId.slice(0, 8)}…, verified round-trip).` }))
+      .catch((err) => setSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+
     return true;
   };
 
@@ -15205,6 +15458,14 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
             {saveMessage.text}
           </span>
         )}
+      </div>
+      {syncMessage && (
+        <p className={`text-[11px] mt-1 ${syncMessage.type === "error" ? "text-[#B34A3C]" : syncMessage.type === "pending" ? "text-[#8A958E]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          {syncMessage.text}
+        </p>
+      )}
+      <div className="mt-2">
+        <BackendSyncPanel />
       </div>
       <p className="text-[11px] text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Save keeps this slip in the app for this session only — not yet wired to persistent storage in this prototype.
@@ -20557,6 +20818,11 @@ export default function ClairEHR() {
   const [newEntryMode, setNewEntryMode] = useState(null); // null | "opd" | "icuward"
   const [backConfirm, setBackConfirm] = useState(null); // null | "opd" | "icuward"
   const opdBuilderRef = useRef(null);
+  // Backend-sync status shared across save flows that don't stay mounted
+  // long enough to show their own inline message (e.g. ICU/Ward's "Save
+  // and go back" immediately navigates away) — rendered as a fixed toast
+  // near the end of this component's JSX, visible regardless of sub-view.
+  const [globalSyncMessage, setGlobalSyncMessage] = useState(null);
   const [savedOpdSlips, setSavedOpdSlips] = useState([]); // [{ id, patientId, patientName, savedAt, text }]
   const [draftDetails, setDraftDetails] = useState({ name: "", localId: "", age: "", gender: "", phone: "", address: "" });
   const [draftVitals, setDraftVitals] = useState({ hr: "", bp: "", t: "", spo2: "", spo2On: "", pain: "" });
@@ -20704,17 +20970,25 @@ export default function ClairEHR() {
                       setBackConfirm(null);
                       return;
                     }
+                    const icuWardSlipText = buildIcuWardSlipText({
+                      details: draftDetails, vitals: draftVitals, hpi: draftHpi, examSpace: draftExamSpace,
+                      ddxSpace: draftDdxSpace, ddxSpaceNotes: draftDdxSpaceNotes, workupSpace: draftWorkupSpace,
+                      workupNotes: draftWorkupNotes, diagnosisPlanEntries: draftDiagnosisPlanEntries,
+                      disasterValues: draftDisasterValues, poisoningValues: draftPoisoningValues, ssValues: draftSsValues, envValues: draftEnvValues,
+                    });
                     setSavedIcuWardRecords((prev) => [...prev, {
                       id: Date.now() + Math.random(),
                       patientDetails: { ...draftDetails },
                       savedAt: new Date().toLocaleString(),
-                      text: buildIcuWardSlipText({
-                        details: draftDetails, vitals: draftVitals, hpi: draftHpi, examSpace: draftExamSpace,
-                        ddxSpace: draftDdxSpace, ddxSpaceNotes: draftDdxSpaceNotes, workupSpace: draftWorkupSpace,
-                        workupNotes: draftWorkupNotes, diagnosisPlanEntries: draftDiagnosisPlanEntries,
-                        disasterValues: draftDisasterValues, poisoningValues: draftPoisoningValues, ssValues: draftSsValues, envValues: draftEnvValues,
-                      }),
+                      text: icuWardSlipText,
                     }]);
+                    // Fires after the modal below closes and this view
+                    // navigates away — see globalSyncMessage's toast near
+                    // the end of this component for where the result shows.
+                    setGlobalSyncMessage({ type: "pending", text: "Syncing ICU/Ward note to backend…" });
+                    syncNoteToBackend("icu_ward", icuWardSlipText)
+                      .then(({ recordId }) => setGlobalSyncMessage({ type: "success", text: `ICU/Ward note synced to backend (record ${recordId.slice(0, 8)}…, verified round-trip).` }))
+                      .catch((err) => setGlobalSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
                     setBackConfirm(null);
                     setNewEntryMode(null);
                   }}
@@ -21169,6 +21443,22 @@ export default function ClairEHR() {
           )}
         </main>
       </div>
+      {globalSyncMessage && (
+        <div
+          className="fixed bottom-4 right-4 max-w-xs px-3 py-2 rounded-sm shadow-xl text-xs bg-white border"
+          style={{
+            borderColor: globalSyncMessage.type === "error" ? "#B34A3C" : globalSyncMessage.type === "pending" ? "#D8DED9" : "#0F5C56",
+            color: globalSyncMessage.type === "error" ? "#B34A3C" : globalSyncMessage.type === "pending" ? "#5B6B63" : "#0F5C56",
+            fontFamily: "'IBM Plex Sans', sans-serif",
+            zIndex: 80,
+          }}
+        >
+          {globalSyncMessage.text}
+          {globalSyncMessage.type !== "pending" && (
+            <button type="button" onClick={() => setGlobalSyncMessage(null)} className="ml-2 underline text-[#8A958E]">Dismiss</button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
