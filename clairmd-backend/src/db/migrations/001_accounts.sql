@@ -1,5 +1,5 @@
 -- =============================================================================
--- Arogya Clinic — Platform Database Schema
+-- ClairMD Clinic — Platform Database Schema
 -- =============================================================================
 -- CRITICAL DESIGN RULE: this database stores PLATFORM METADATA ONLY.
 -- It must NEVER contain patient clinical content (diagnoses, prescriptions,

@@ -57,7 +57,7 @@ function formatMessage(notificationType) {
     case "referral_responded":
       return { title: "Referral update", body: "A doctor responded to your referral." };
     default:
-      return { title: "Arogya Clinic", body: "You have a new notification." };
+      return { title: "ClairMD Clinic", body: "You have a new notification." };
   }
 }
 

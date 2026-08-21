@@ -1,4 +1,4 @@
-# Arogya Clinic — Platform Backend
+# ClairMD Clinic — Platform Backend
 
 Handles accounts/auth, Google Drive connection management, backup
 telemetry, key-wrap routing, care-team instructions, referrals, and
@@ -14,7 +14,7 @@ text anywhere in this codebase, stop and re-read that comment.
 ## What's actually built and working (pending real-environment testing — see below)
 
 - **Patient record content sync** (2026-08-21, `017_patient_record_content.sql`
-  + `routes/recordContent.js`) — the frontend's ClairEHR prototype builds a
+  + `routes/recordContent.js`) — the frontend's ClairMDEHR prototype builds a
   full OPD/ICU-Ward note client-side (history, vitals, all 11 examination
   systems including their new Present/Absent findings, differential
   diagnosis, workup, plan, etc.), and until now this backend had no way to
@@ -392,13 +392,13 @@ without a test run, because that's genuinely what this is.
 ## How to actually test it, once you have network access
 
 ```bash
-cd arogya-backend
+cd clairmd-backend
 npm install                          # will work once network access exists
 cp .env.example .env                 # then fill in real values — see comments in that file
 # needs a real Postgres reachable at DATABASE_URL — a local Docker
 # container is the fastest way to get one for testing:
-#   docker run --name arogya-pg -e POSTGRES_PASSWORD=changeme \
-#     -e POSTGRES_USER=arogya_user -e POSTGRES_DB=arogya_platform \
+#   docker run --name clairmd-pg -e POSTGRES_PASSWORD=changeme \
+#     -e POSTGRES_USER=clairmd_user -e POSTGRES_DB=clairmd_platform \
 #     -p 5432:5432 -d postgres:16
 npm run migrate                      # applies all 11 migrations in order
 npm run dev                          # starts the server with auto-restart on changes

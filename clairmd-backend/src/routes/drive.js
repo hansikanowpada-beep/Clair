@@ -80,7 +80,7 @@ router.get("/oauth/callback", async (req, res) => {
 });
 
 // Non-descriptive folder name by design — see technical spec §2.1.
-const APP_FOLDER_NAME = ".arogya-clinic-data";
+const APP_FOLDER_NAME = ".clairmd-clinic-data";
 
 async function createOrFindAppFolder(driveClient) {
   const existing = await driveClient.files.list({

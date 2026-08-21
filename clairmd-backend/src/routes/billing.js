@@ -126,9 +126,9 @@ router.post("/webhook", async (req, res) => {
     return res.status(400).json({ error: "Malformed webhook payload." });
   }
 
-  const razorpayPlanId = payment.notes?.arogya_plan_id; // set when creating the payment/order — depends on real integration wiring
+  const razorpayPlanId = payment.notes?.clairmd_plan_id; // set when creating the payment/order — depends on real integration wiring
   const planTier = RAZORPAY_PLAN_TIER_MAP[razorpayPlanId];
-  const accountId = payment.notes?.arogya_account_id; // set the same way
+  const accountId = payment.notes?.clairmd_account_id; // set the same way
 
   if (!planTier || !accountId) {
     // Genuinely can't attribute this payment to a known plan/account —

@@ -13135,7 +13135,7 @@ function printSummary(text, title) {
 }
 
 // ---------------------------------------------------------------------------
-// Backend sync (prototype) — talks to arogya-backend's real
+// Backend sync (prototype) — talks to clairmd-backend's real
 // /api/auth and /api/record-content endpoints (see that repo's README).
 // This is a genuinely working client for those two endpoints, scoped
 // narrowly on purpose:
@@ -13146,7 +13146,7 @@ function printSummary(text, title) {
 //   a proper auth context instead.
 // - Encryption key: record_key_wraps (the backend's real multi-holder,
 //   consent-gated key distribution — see routes/coadmin.js in
-//   arogya-backend) is NOT implemented here. Each record instead gets its
+//   clairmd-backend) is NOT implemented here. Each record instead gets its
 //   own AES-GCM key generated in the browser and kept in localStorage —
 //   good enough to prove the round trip (encrypt → PUT → GET → decrypt)
 //   actually works end-to-end against the real backend, but NOT the real
@@ -13188,7 +13188,7 @@ async function apiRequest(path, { method = "GET", body, auth = true } = {}) {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (err) {
-    throw new Error(`Couldn't reach the backend at ${getApiBase()} — is arogya-backend running? (${err.message})`);
+    throw new Error(`Couldn't reach the backend at ${getApiBase()} — is clairmd-backend running? (${err.message})`);
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Backend request failed (${res.status}).`);
@@ -18697,7 +18697,7 @@ function PatientPortalView({ patients, onBack, followups, setFollowups, feedPost
                       const expired = m.isAdviceLink && m.linkExpiresAt && Date.now() > m.linkExpiresAt;
                       return (
                         <div key={i} className={`text-xs px-2.5 py-1.5 rounded-sm max-w-[85%] ${m.from === "doctor" ? "bg-[#F2F7F5] text-[#16241F]" : "bg-[#0F5C56] text-white ml-auto"}`}>
-                          {expired ? m.text.replace(/arogyaclinic\.app\S+/, "[feedback link expired — 24 hours have passed]") : m.text}
+                          {expired ? m.text.replace(/clairmd\.net\S+/, "[feedback link expired — 24 hours have passed]") : m.text}
                         </div>
                       );
                     })}
@@ -20748,7 +20748,7 @@ function FollowUpsPanel({ onBack, followups, setFollowups }) {
             const expired = m.isAdviceLink && m.linkExpiresAt && Date.now() > m.linkExpiresAt;
             return (
               <div key={i} className={`text-xs px-2.5 py-1.5 rounded-sm max-w-[80%] ${m.from === "doctor" ? "bg-[#0F5C56] text-white ml-auto" : "bg-[#F2F7F5] text-[#16241F]"}`}>
-                {expired ? m.text.replace(/arogyaclinic\.app\S+/, "[feedback link expired]") : m.text}
+                {expired ? m.text.replace(/clairmd\.net\S+/, "[feedback link expired]") : m.text}
               </div>
             );
           })}

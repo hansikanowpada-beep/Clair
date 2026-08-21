@@ -1,7 +1,7 @@
 {
-  "name": "arogya-clinic-backend",
+  "name": "clairmd-backend",
   "version": "0.1.0",
-  "description": "Arogya Clinic platform backend — doctor accounts, billing, referral routing, and backup telemetry ONLY. Patient data is never stored here (see README).",
+  "description": "ClairMD Clinic platform backend — doctor accounts, billing, referral routing, and backup telemetry ONLY. Patient data is never stored here (see README).",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

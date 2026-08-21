@@ -41,7 +41,7 @@ the picked findings into the generated note.
 ## Backend sync (prototype)
 
 The OPD note builder and the ICU/Ward "Save and go back" flow now call the
-real `arogya-backend` API (`POST /api/records`, `PUT`/`GET
+real `clairmd-backend` API (`POST /api/records`, `PUT`/`GET
 /api/record-content/:id`) after saving locally — see that repo's README for
 the endpoints. A collapsible "Backend: not connected" panel in the OPD
 builder logs in or signs up against the real `/api/auth` endpoints and
@@ -53,7 +53,7 @@ This wiring is real (genuine `fetch` calls, genuine AES-GCM encrypt/decrypt
 via the Web Crypto API, a genuine PUT-then-GET-then-decrypt round-trip
 check against the backend) but scoped narrowly:
 
-- **No key-wrap/consent scheme.** `arogya-backend`'s real, multi-holder,
+- **No key-wrap/consent scheme.** `clairmd-backend`'s real, multi-holder,
   consent-gated key distribution (`record_key_wraps`, `routes/coadmin.js`)
   isn't implemented client-side. Each record instead gets its own AES-GCM
   key generated in the browser and cached in `localStorage` — enough to

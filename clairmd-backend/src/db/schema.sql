@@ -1,5 +1,5 @@
 -- =============================================================================
--- Arogya Clinic — Platform Database Schema
+-- ClairMD Clinic — Platform Database Schema
 -- =============================================================================
 -- REFERENCE SNAPSHOT ONLY — this file is not what actually gets applied to
 -- the database anymore. The real, versioned source of truth is the

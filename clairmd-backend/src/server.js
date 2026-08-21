@@ -1,4 +1,4 @@
-// Arogya Clinic — platform backend entry point.
+// ClairMD Clinic — platform backend entry point.
 //
 // This process handles: accounts/auth, Google Drive connection management,
 // backup telemetry, key-wrap routing, care-team instructions, referrals,
@@ -113,7 +113,7 @@ app.use((err, req, res, next) => {
 
 app.listen(config.port, () => {
   // eslint-disable-next-line no-console
-  console.log(`Arogya Clinic backend listening on port ${config.port} (${config.nodeEnv})`);
+  console.log(`ClairMD Clinic backend listening on port ${config.port} (${config.nodeEnv})`);
 });
 
 module.exports = app;
