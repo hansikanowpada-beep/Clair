@@ -119,15 +119,29 @@ signup now only appears for doctor account types.
   real backend patient account, so a patient-authenticated message POST
   would only ever get a 403. Flagged in code at `PatientFollowupReply`
   rather than wired to a call that's structurally guaranteed to fail.
-- **Specialty feed**: publishing a plain update (not the "about a
-  specific patient" / case-highlight path, which has no backend
-  equivalent) POSTs in the background and stamps the post with its real
-  `backendId`. Pin/delete in `MyPostsPanel` and a patient's like/dislike
-  in `DoctorFeedPanel` only reach the backend for posts that already
-  carry one — the seeded demo feed content never does, so reacting to it
-  stays exactly as local-only as it always was. The post-lifespan
-  dropdown loads/saves the doctor's real `feed_post_expiry_months`
-  setting when connected.
+- **Specialty feed**: publishing a plain update POSTs in the background
+  and stamps the post with its real `backendId`. Pin/delete in
+  `MyPostsPanel` and a patient's like/dislike in `DoctorFeedPanel` only
+  reach the backend for posts that already carry one — the seeded demo
+  feed content never does, so reacting to it stays exactly as local-only
+  as it always was. The post-lifespan dropdown loads/saves the doctor's
+  real `feed_post_expiry_months` setting when connected.
+- **Feed post approval requests (case highlights)**: `WritePostModal`'s
+  "about a specific patient" path POSTs the request to the backend
+  (`requestPostPermissionOnBackend`) the same way a plain update does.
+  `PatientInboxTab`'s "Post approvals" tab now also pulls in any pending
+  requests that only exist on the backend (from an earlier session) via
+  `GET /api/feed-post-requests/pending-for-me`, merged in by `backendId`
+  so nothing shows twice; approving/declining a request that carries a
+  `backendId` calls the matching backend endpoint, which for approve
+  creates the real `feed_posts` row server-side (accepting the exact
+  `formatCaseHighlight`-composed text the patient saw, so what's stored
+  is never a second, possibly-drifted composition).
+- `BackendSyncPanel` now also recognizes an already-valid token from an
+  earlier instance on page load (calls `/api/auth/me`) — before this fix
+  every new panel instance across these different surfaces would show
+  "not connected" even with a good token already in `localStorage`,
+  which would have undercut the whole point of storing it there.
 
 ## Renaming
 

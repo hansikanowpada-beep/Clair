@@ -13410,6 +13410,31 @@ async function saveFeedExpirySettingToBackend(months) {
   await apiRequest("/feed-posts/settings", { method: "PATCH", body: { feedPostExpiryMonths: months } });
 }
 
+// --- Feed post approval requests ("post about a specific patient's
+// case") — nullable patient linkage, same reasoning as follow-ups: this
+// prototype has no step anywhere that links a mock PATIENTS entry to a
+// real backend account, so a request is addressed to a display name, not
+// an account id, and only gets CLAIMED when a genuinely authenticated
+// patient whose name matches actually approves or declines it. ---------
+async function requestPostPermissionOnBackend(patientDisplayName, findings, course, workup) {
+  const data = await apiRequest("/feed-post-requests", {
+    method: "POST",
+    body: { patientDisplayName, findings: findings || undefined, course: course || undefined, workup: workup || undefined },
+  });
+  return data.request.id;
+}
+async function loadPendingPostRequestsForMe() {
+  const data = await apiRequest("/feed-post-requests/pending-for-me");
+  return data.requests;
+}
+async function approvePostRequestOnBackend(backendId, text) {
+  const data = await apiRequest(`/feed-post-requests/${backendId}/approve`, { method: "POST", body: { text } });
+  return data.post.id;
+}
+async function declinePostRequestOnBackend(backendId) {
+  await apiRequest(`/feed-post-requests/${backendId}/decline`, { method: "POST" });
+}
+
 // Compact, reusable connect/status widget — email+password only (matches
 // the real backend's actual signup/login fields; the license-number field
 // only appears for doctor account types, since /api/auth/signup requires
@@ -13427,6 +13452,18 @@ function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel
   const [connectedEmail, setConnectedEmail] = useState(null);
   const [status, setStatus] = useState(null); // { type: "error"|"success", text }
   const [busy, setBusy] = useState(false);
+
+  // A token from an earlier BackendSyncPanel instance (a different
+  // surface, or an earlier page load) already lives in localStorage — the
+  // fresh local `connectedEmail` state above starts null regardless, so
+  // without this every new instance would show "not connected" even
+  // though the whole point of storing the token in localStorage is that
+  // it's already good to go. An invalid/expired token is cleared rather
+  // than left around to keep silently failing every request that uses it.
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    apiRequest("/auth/me").then((data) => setConnectedEmail(data.account.email)).catch(() => setAuthToken(null));
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -18348,8 +18385,33 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
 function PatientInboxTab({ patient, followups, setFollowups, pendingPostRequests, setPendingPostRequests, setFeedPosts }) {
   const [section, setSection] = useState("chat"); // chat | approvals
   const [message, setMessage] = useState("");
+  const [approvalSyncMessage, setApprovalSyncMessage] = useState(null);
   const myFollowup = followups?.find((f) => f.patient === patient.name);
   const myRequests = (pendingPostRequests || []).filter((r) => r.patientName === patient.name && r.status === "pending");
+
+  // Pulls in any requests that only exist on the backend (e.g. from an
+  // earlier session) — matched to this patient the same way the backend
+  // itself matches them: by display name, via GET .../pending-for-me
+  // (scoped server-side to whichever account the token belongs to).
+  // Skips any backend request already present locally (by backendId).
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    loadPendingPostRequestsForMe()
+      .then((backendRequests) => {
+        setPendingPostRequests((prev) => {
+          const known = new Set(prev.filter((r) => r.backendId).map((r) => r.backendId));
+          const fresh = backendRequests
+            .filter((r) => !known.has(r.id))
+            .map((r) => ({
+              id: `backend-${r.id}`, backendId: r.id, doctor: r.doctor_name, specialty: r.doctor_specialty,
+              patientName: r.patient_display_name, findings: r.findings, course: r.course, workup: r.workup,
+              requestedAt: new Date(r.requested_at).getTime(), status: "pending",
+            }));
+          return fresh.length > 0 ? [...prev, ...fresh] : prev;
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   const sendMessage = () => {
     if (!message.trim() || !myFollowup) return;
@@ -18364,10 +18426,17 @@ function PatientInboxTab({ patient, followups, setFollowups, pendingPostRequests
       ...prev,
     ]);
     setPendingPostRequests((prev) => prev.map((r) => r.id === req.id ? { ...r, status: "approved" } : r));
+
+    if (req.backendId && getAuthToken()) {
+      approvePostRequestOnBackend(req.backendId, highlightText).catch((err) => setApprovalSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+    }
   };
 
   const decline = (req) => {
     setPendingPostRequests((prev) => prev.map((r) => r.id === req.id ? { ...r, status: "declined" } : r));
+    if (req.backendId && getAuthToken()) {
+      declinePostRequestOnBackend(req.backendId).catch((err) => setApprovalSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+    }
   };
 
   return (
@@ -18404,6 +18473,10 @@ function PatientInboxTab({ patient, followups, setFollowups, pendingPostRequests
 
       {section === "approvals" && (
         <div className="space-y-3">
+          <BackendSyncPanel accountType="patient" notConnectedLabel="Backend: not connected — approvals stay on this device only" />
+          {approvalSyncMessage && (
+            <p className="text-[11px] text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{approvalSyncMessage.text}</p>
+          )}
           <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-md p-3 text-xs text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Your doctor needs your approval before posting anything about your case publicly. Nothing posts without a yes from you here.
           </div>
@@ -20743,11 +20816,17 @@ function WritePostModal({ onClose, setFeedPosts, setPendingPostRequests, doctorD
 
   const requestPermission = () => {
     if (!findings.trim() && !course.trim() && !workup.trim()) return;
+    const localId = Date.now();
     setPendingPostRequests((prev) => [
       ...prev,
-      { id: Date.now(), doctor: doctorDisplayName, specialty: doctorSpecialty || "General Medicine", patientName, findings, course, workup, requestedAt: Date.now(), status: "pending" },
+      { id: localId, doctor: doctorDisplayName, specialty: doctorSpecialty || "General Medicine", patientName, findings, course, workup, requestedAt: Date.now(), status: "pending" },
     ]);
     setJustRequested(true);
+
+    if (!getAuthToken()) return;
+    requestPostPermissionOnBackend(patientName, findings, course, workup)
+      .then((backendId) => setPendingPostRequests((prev) => prev.map((r) => (r.id === localId ? { ...r, backendId } : r))))
+      .catch(() => {}); // best-effort — no inline status UI in this compact modal, matching publishGeneral's own failure handling above
   };
 
   return (
