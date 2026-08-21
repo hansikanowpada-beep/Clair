@@ -182,6 +182,37 @@ Two more surfaces switched from fully mocked to genuinely backed:
   `clairmd-backend`'s `EMERGENCY_ACCESS_REASONS` enum verbatim, so no
   conversion was needed.
 
+## Real doctor/care-team pickers, referrals, and care-team instructions
+
+`CareTeamTab`'s "Cross-consultation referrals" and a new "Send an
+instruction" section both used to target a hardcoded mock list
+(`REFERRAL_DOCTOR_DIRECTORY`, now removed) or collect no recipient at all.
+Both now use a shared `AccountPicker` component — a debounced search box
+over the real `GET /api/account-directory` — so "refer to" / "instruct"
+always resolves to one real, registered account, never a typed name.
+
+- **Referrals**: sending one calls `POST /api/referrals` for real (lazily
+  creating a backend record for the patient first, same
+  `getOrCreatePatientRecordId` helper lab orders already use — renamed
+  from `getOrCreateLabRecordId` now that three features share it). The
+  "Referrals sent" list and a new "Referrals awaiting your response"
+  inbox both read live from the backend (`GET /sent`, `GET /inbox`), so
+  status is whatever the other doctor actually did — accept/decline calls
+  `POST /:id/respond` for real. This replaces the old "Simulate: mark
+  seen" button, which faked the exact thing this now does for real.
+- **Care-team instructions**: a genuinely new section — sends
+  `POST /api/care-team` to a real `care_team_member` account (instruction
+  text + optional bed number), and lists what's been sent
+  (`GET /sent`) with real acknowledged/pending status. The existing care
+  team "roster" (4 fixed roles, free-text names) stays local-only and
+  says so — `clairmd-backend` has no roster concept, only these one-off
+  instructions.
+- Receiving and acknowledging an instruction as the care-team member
+  themselves isn't wired — this app has no care-team-member persona/view
+  at all (doctor and patient are the only two), so there's nowhere to
+  put that UI. The backend endpoint (`POST /:id/acknowledge`) exists and
+  is ready for whenever that view does.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain

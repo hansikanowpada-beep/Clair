@@ -13287,15 +13287,16 @@ async function syncNoteToBackend(noteType, noteText) {
   return { recordId };
 }
 
-// Lab orders need *some* patient_record_index row to hang off, but unlike
-// an OPD/ICU-Ward save there's no natural "save" moment that creates one —
-// a test can be ordered before any note for this encounter has been saved
-// at all. Rather than mint a new backend record per test (noisy, and
-// wrong: multiple orders for one patient in one session should share a
-// record), this lazily creates ONE record per patient the first time a
-// test is ordered for them, then reuses it — cached in localStorage the
-// same way per-record encryption keys already are.
-async function getOrCreateLabRecordId(patientId) {
+// Several actions (lab orders, referrals, care-team instructions) need
+// *some* patient_record_index row to hang off, but unlike an OPD/ICU-Ward
+// save there's no natural "save" moment that creates one — e.g. a test
+// can be ordered before any note for this encounter has been saved at
+// all. Rather than mint a new backend record per action (noisy, and
+// wrong: multiple actions for one patient in one session should share a
+// record), this lazily creates ONE record per patient the first time any
+// of them needs one, then reuses it for all of them — cached in
+// localStorage the same way per-record encryption keys already are.
+async function getOrCreatePatientRecordId(patientId) {
   const storageKey = `clair_lab_record_${patientId}`;
   const existing = localStorage.getItem(storageKey);
   if (existing) return existing;
@@ -13309,7 +13310,7 @@ async function getOrCreateLabRecordId(patientId) {
 // schema.sql comment on lab_orders for why: a lab order only does its job
 // if a party without chart access can read what's actually being ordered.
 async function syncLabOrderToBackend(patientId, category, testName) {
-  const patientRecordId = await getOrCreateLabRecordId(patientId);
+  const patientRecordId = await getOrCreatePatientRecordId(patientId);
   const data = await apiRequest("/lab-orders", { method: "POST", body: { patientRecordId, category, testName } });
   return { orderId: data.order.id };
 }
@@ -13461,6 +13462,58 @@ async function loadEmergencyProfileFromBackend() {
 // already written to match it).
 async function logEmergencyAccessToBackend(reason) {
   await apiRequest("/emergency-profile/access-log", { method: "POST", body: { reason, accessedAt: new Date().toISOString() } });
+}
+
+// --- Account directory — powers "pick a real doctor/care-team member"
+// search pickers (referrals, care-team instructions). Minimal-disclosure
+// by design (see clairmd-backend's routes/accountDirectory.js): only
+// id/display_name/specialty/account_type, never email/phone. ------------
+async function searchAccountDirectory(q, types) {
+  if (!q || q.trim().length < 2) return [];
+  const params = new URLSearchParams({ q: q.trim(), types: types.join(",") });
+  const data = await apiRequest(`/account-directory?${params.toString()}`);
+  return data.accounts;
+}
+
+// --- Referrals -------------------------------------------------------------
+async function sendReferralToBackend(patientId, toDoctorId, reasonSummary) {
+  const patientRecordId = await getOrCreatePatientRecordId(patientId);
+  const data = await apiRequest("/referrals", { method: "POST", body: { toDoctorId, patientRecordId, reasonSummary: reasonSummary || undefined } });
+  return data.referral;
+}
+async function loadSentReferrals() {
+  const data = await apiRequest("/referrals/sent");
+  return data.referrals;
+}
+async function loadReferralInbox() {
+  const data = await apiRequest("/referrals/inbox");
+  return data.referrals;
+}
+async function respondToReferralOnBackend(id, decision) {
+  const data = await apiRequest(`/referrals/${id}/respond`, { method: "POST", body: { decision } });
+  return data.referral;
+}
+
+// --- Care team instructions --------------------------------------------
+async function sendCareTeamInstructionToBackend(patientId, patientDisplayName, toCareTeamId, instructionText, bedNumber) {
+  const patientRecordId = await getOrCreatePatientRecordId(patientId);
+  const data = await apiRequest("/care-team", {
+    method: "POST",
+    body: { toCareTeamId, patientRecordId, patientDisplayName, instructionText, bedNumber: bedNumber || undefined },
+  });
+  return data.instruction;
+}
+async function loadSentCareTeamInstructions() {
+  const data = await apiRequest("/care-team/sent");
+  return data.instructions;
+}
+async function loadPendingCareTeamInstructions() {
+  const data = await apiRequest("/care-team/pending");
+  return data.instructions;
+}
+async function acknowledgeCareTeamInstructionOnBackend(id) {
+  const data = await apiRequest(`/care-team/${id}/acknowledge`, { method: "POST" });
+  return data.instruction;
 }
 
 // Compact, reusable connect/status widget — email+password only (matches
@@ -14009,17 +14062,6 @@ function isPostExpired(post, expiryMonths) {
 // --- Care team hierarchy (mock) ----------------------------------------------
 
 const CARE_TEAM_ROLES = ["Senior surgeon / consultant", "Junior surgeon", "Resident", "Treating nurse"];
-
-// Mock directory of app-registered doctors available for cross-consultation
-// referral, used only for this prototype's illustrative flow.
-const REFERRAL_DOCTOR_DIRECTORY = [
-  { name: "Dr. Anjali Rao", specialty: "Cardiology" },
-  { name: "Dr. Sameer Kulkarni", specialty: "Nephrology" },
-  { name: "Dr. Fatima Sheikh", specialty: "Endocrinology" },
-  { name: "Dr. Vikram Nair", specialty: "Pulmonology" },
-  { name: "Dr. Priya Menon", specialty: "Neurology" },
-  { name: "Dr. Arvind Bose", specialty: "General Surgery" },
-];
 
 // --- Informed consent (mock) -------------------------------------------------
 
@@ -17589,27 +17631,141 @@ function DecisionSupportTab({ patient, scoringSelections, setScoringSelections }
   );
 }
 
+// Debounced search-and-pick over the real /api/account-directory endpoint
+// — shared by the referral and care-team-instruction pickers below (only
+// the `types` filter differs). Selecting an account hands the caller the
+// real { id, display_name, specialty, account_type } row; nothing here
+// invents an id.
+function AccountPicker({ types, placeholder, selected, onSelect, onClear }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    if (!getAuthToken() || query.trim().length < 2) { setResults([]); return; }
+    let cancelled = false;
+    setSearching(true);
+    const t = setTimeout(() => {
+      searchAccountDirectory(query, types)
+        .then((accounts) => { if (!cancelled) setResults(accounts); })
+        .catch(() => { if (!cancelled) setResults([]); })
+        .finally(() => { if (!cancelled) setSearching(false); });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [query]);
+
+  if (selected) {
+    return (
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border border-[#D8DED9] rounded-sm bg-[#F2F7F5] text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <span>{selected.display_name}{selected.specialty ? ` — ${selected.specialty}` : ""}</span>
+        <button type="button" onClick={onClear} className="text-xs text-[#B34A3C] shrink-0">Change</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+      />
+      {!getAuthToken() ? (
+        <p className="text-[11px] text-[#B34A3C] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend below to search real accounts.</p>
+      ) : query.trim().length >= 2 && (
+        <div className="absolute z-10 mt-1 w-full bg-white border border-[#D8DED9] rounded-sm shadow-lg max-h-48 overflow-y-auto">
+          {searching ? (
+            <div className="px-3 py-2 text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Searching…</div>
+          ) : results.length === 0 ? (
+            <div className="px-3 py-2 text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matching accounts found.</div>
+          ) : (
+            results.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => { onSelect(a); setQuery(""); setResults([]); }}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-[#F7F9F7]"
+                style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+              >
+                {a.display_name}{a.specialty ? ` — ${a.specialty}` : ""}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CareTeamTab({ patient }) {
   const [team, setTeam] = useState(CARE_TEAM_ROLES.map((role) => ({ role, name: "" })));
   const update = (i, name) => setTeam((prev) => prev.map((m, idx) => idx === i ? { ...m, name } : m));
 
-  const [referrals, setReferrals] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [referTo, setReferTo] = useState(REFERRAL_DOCTOR_DIRECTORY[0].name);
-  const [reason, setReason] = useState("");
+  // --- Send an instruction to a real care-team-member account -----------
+  const [instructionRecipient, setInstructionRecipient] = useState(null);
+  const [instructionText, setInstructionText] = useState("");
+  const [bedNumber, setBedNumber] = useState("");
+  const [sentInstructions, setSentInstructions] = useState([]);
+  const [instructionStatus, setInstructionStatus] = useState(null);
+  const [instructionsLoading, setInstructionsLoading] = useState(false);
 
-  const sendReferral = () => {
-    if (!reason.trim()) return;
-    const doc = REFERRAL_DOCTOR_DIRECTORY.find((d) => d.name === referTo);
-    setReferrals((prev) => [
-      { id: Date.now(), doctor: doc.name, specialty: doc.specialty, reason: reason.trim(), sentAt: new Date().toLocaleString(), seen: false },
-      ...prev,
-    ]);
-    setReason("");
-    setShowForm(false);
+  const refreshSentInstructions = () => {
+    if (!getAuthToken()) return;
+    setInstructionsLoading(true);
+    loadSentCareTeamInstructions().then(setSentInstructions).catch(() => {}).finally(() => setInstructionsLoading(false));
+  };
+  useEffect(refreshSentInstructions, []);
+
+  const sendInstruction = () => {
+    if (!instructionRecipient || !instructionText.trim() || !getAuthToken()) return;
+    setInstructionStatus({ type: "pending", text: "Sending…" });
+    sendCareTeamInstructionToBackend(patient.id, patient.name, instructionRecipient.id, instructionText.trim(), bedNumber.trim())
+      .then(() => {
+        setInstructionStatus({ type: "success", text: "Instruction sent." });
+        setInstructionText("");
+        setBedNumber("");
+        setInstructionRecipient(null);
+        refreshSentInstructions();
+      })
+      .catch((err) => setInstructionStatus({ type: "error", text: err.message }));
   };
 
-  const markSeen = (id) => setReferrals((prev) => prev.map((r) => r.id === id ? { ...r, seen: true, seenAt: new Date().toLocaleString() } : r));
+  // --- Cross-consultation referrals --------------------------------------
+  const [referralRecipient, setReferralRecipient] = useState(null);
+  const [reason, setReason] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [sentReferrals, setSentReferrals] = useState([]);
+  const [referralInbox, setReferralInbox] = useState([]);
+  const [referralStatus, setReferralStatus] = useState(null);
+
+  const refreshReferrals = () => {
+    if (!getAuthToken()) return;
+    loadSentReferrals().then(setSentReferrals).catch(() => {});
+    loadReferralInbox().then(setReferralInbox).catch(() => {});
+  };
+  useEffect(refreshReferrals, []);
+
+  const sendReferral = () => {
+    if (!referralRecipient || !reason.trim() || !getAuthToken()) return;
+    setReferralStatus({ type: "pending", text: "Sending…" });
+    sendReferralToBackend(patient.id, referralRecipient.id, reason.trim())
+      .then(() => {
+        setReferralStatus({ type: "success", text: "Referral sent." });
+        setReason("");
+        setReferralRecipient(null);
+        setShowForm(false);
+        refreshReferrals();
+      })
+      .catch((err) => setReferralStatus({ type: "error", text: err.message }));
+  };
+
+  const respond = (id, decision) => {
+    respondToReferralOnBackend(id, decision)
+      .then(refreshReferrals)
+      .catch((err) => setReferralStatus({ type: "error", text: err.message }));
+  };
 
   return (
     <div className="space-y-5">
@@ -17633,6 +17789,61 @@ function CareTeamTab({ patient }) {
             </div>
           ))}
         </div>
+        <p className="text-[11px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          This roster is a local reference list only — clairmd-backend has no "team roster" table, only one-off instructions (below), each sent to one real account.
+        </p>
+      </div>
+
+      <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+        <SectionLabel><span className="inline-flex items-center gap-2"><Send size={15} /> Send an instruction</span></SectionLabel>
+        <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          Goes to one real, registered care-team-member account — task-scoped only, never chart or key access.
+        </p>
+        <div className="space-y-2 mb-3">
+          <AccountPicker
+            types={["care_team_member"]}
+            placeholder="Search care-team member by name..."
+            selected={instructionRecipient}
+            onSelect={setInstructionRecipient}
+            onClear={() => setInstructionRecipient(null)}
+          />
+          <input value={bedNumber} onChange={(e) => setBedNumber(e.target.value)} placeholder="Bed number (optional)" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
+          <textarea value={instructionText} onChange={(e) => setInstructionText(e.target.value)} rows={2} placeholder="Instruction — e.g. 4-hourly vitals, notify if SpO2 < 92%" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
+        </div>
+        <button onClick={sendInstruction} disabled={!instructionRecipient || !instructionText.trim()} className="text-xs px-3 py-1.5 rounded-sm text-white disabled:opacity-40 inline-flex items-center gap-1.5" style={{ backgroundColor: "#0F5C56", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <Send size={12} /> Send instruction
+        </button>
+        {instructionStatus && (
+          <p className={`text-xs mt-2 ${instructionStatus.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{instructionStatus.text}</p>
+        )}
+
+        <div className="mt-4 pt-4 border-t border-[#EEF1EE]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] uppercase tracking-wide text-[#8A958E]">Instructions sent (this account)</span>
+            <button onClick={refreshSentInstructions} className="text-[11px] text-[#0F5C56] underline decoration-dotted">{instructionsLoading ? "Refreshing…" : "Refresh"}</button>
+          </div>
+          {!getAuthToken() ? (
+            <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend above to see instructions you've sent.</p>
+          ) : sentInstructions.length === 0 ? (
+            <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No instructions sent yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {sentInstructions.map((i) => (
+                <div key={i.id} className="flex items-start justify-between gap-3 p-3 border border-[#D8DED9] rounded-md">
+                  <div>
+                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{i.to_care_team_name} <span className="text-[#8A958E] font-normal">— {i.patient_display_name}</span></div>
+                    <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{i.instruction_text}</div>
+                  </div>
+                  {i.acknowledged_at ? (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-[#F2F7F5] text-[#0F5C56] rounded-sm shrink-0 inline-flex items-center gap-1"><CheckCircle2 size={11} />Acknowledged</span>
+                  ) : (
+                    <span className="text-[10px] px-1.5 py-0.5 bg-[#FBF6EC] text-[#7A5A19] rounded-sm shrink-0">Pending</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="bg-white border border-[#D8DED9] rounded-md p-5">
@@ -17643,55 +17854,87 @@ function CareTeamTab({ patient }) {
           </button>
         </div>
         <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          Referring pushes a notification to the other doctor's app account. It keeps repeating until they've seen the patient — once marked seen, the whole care team listed above is notified of the update automatically.
+          Goes to one real, registered doctor account. Status below reflects what they've actually done — acknowledged or declined — not a local simulation.
         </p>
 
         {showForm && (
           <div className="mb-4 p-4 bg-[#F7F9F7] border border-[#D8DED9] rounded-md space-y-3">
             <div>
               <label className="text-xs text-[#8A958E]">Refer to</label>
-              <select value={referTo} onChange={(e) => setReferTo(e.target.value)} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                {REFERRAL_DOCTOR_DIRECTORY.map((d) => <option key={d.name} value={d.name}>{d.name} — {d.specialty}</option>)}
-              </select>
+              <div className="mt-1">
+                <AccountPicker
+                  types={["individual_doctor", "hospital_doctor"]}
+                  placeholder="Search doctor by name or specialty..."
+                  selected={referralRecipient}
+                  onSelect={setReferralRecipient}
+                  onClear={() => setReferralRecipient(null)}
+                />
+              </div>
             </div>
             <div>
               <label className="text-xs text-[#8A958E]">Reason for referral</label>
               <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="e.g. New-onset arrhythmia, requesting cardiology opinion" className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
             </div>
-            <button onClick={sendReferral} disabled={!reason.trim()} className="text-xs px-3 py-1.5 rounded-sm text-white disabled:opacity-40 inline-flex items-center gap-1.5" style={{ backgroundColor: "#0F5C56", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <button onClick={sendReferral} disabled={!referralRecipient || !reason.trim()} className="text-xs px-3 py-1.5 rounded-sm text-white disabled:opacity-40 inline-flex items-center gap-1.5" style={{ backgroundColor: "#0F5C56", fontFamily: "'IBM Plex Sans', sans-serif" }}>
               <Send size={12} /> Send referral
             </button>
           </div>
         )}
+        {referralStatus && (
+          <p className={`text-xs mb-3 ${referralStatus.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{referralStatus.text}</p>
+        )}
 
-        {referrals.length === 0 ? (
-          <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No referrals sent yet for this patient.</p>
+        {getAuthToken() && (
+          <div className="flex justify-end mb-2">
+            <button onClick={refreshReferrals} className="text-[11px] text-[#0F5C56] underline decoration-dotted">Refresh</button>
+          </div>
+        )}
+        {!getAuthToken() ? (
+          <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend below to send or see referrals.</p>
+        ) : sentReferrals.length === 0 ? (
+          <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No referrals sent yet.</p>
         ) : (
           <div className="space-y-2">
-            {referrals.map((r) => (
+            {sentReferrals.map((r) => (
               <div key={r.id} className="flex items-start justify-between gap-3 p-3 border border-[#D8DED9] rounded-md">
                 <div className="flex items-start gap-2">
-                  {r.seen ? <CheckCircle2 size={15} className="text-[#0F5C56] mt-0.5 shrink-0" /> : <Bell size={15} className="text-[#E8A33D] mt-0.5 shrink-0 animate-pulse" />}
+                  {r.status === "acknowledged" ? <CheckCircle2 size={15} className="text-[#0F5C56] mt-0.5 shrink-0" /> : r.status === "declined" ? <XCircle size={15} className="text-[#B34A3C] mt-0.5 shrink-0" /> : <Bell size={15} className="text-[#E8A33D] mt-0.5 shrink-0 animate-pulse" />}
                   <div>
-                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.doctor} <span className="text-[#8A958E] font-normal">— {r.specialty}</span></div>
-                    <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.reason}</div>
+                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.to_doctor_name} <span className="text-[#8A958E] font-normal">— {r.to_doctor_specialty}</span></div>
+                    <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.reason_summary}</div>
                     <div className="text-[11px] text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                      Sent {r.sentAt}{r.seen && ` · Seen ${r.seenAt} · care team notified`}
+                      Sent {new Date(r.created_at).toLocaleString()}{r.responded_at && ` · ${r.status === "acknowledged" ? "Acknowledged" : "Declined"} ${new Date(r.responded_at).toLocaleString()}`}
                     </div>
                   </div>
                 </div>
-                {!r.seen && (
-                  <button onClick={() => markSeen(r.id)} className="text-[11px] px-2 py-1 rounded-sm border border-[#D8DED9] text-[#5B6B63] whitespace-nowrap inline-flex items-center gap-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                    <ArrowRightCircle size={12} /> Simulate: mark seen
-                  </button>
-                )}
               </div>
             ))}
           </div>
         )}
-        <p className="text-[11px] text-[#8A958E] mt-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          This prototype simulates the referral flow on one screen. Real push notifications to another doctor's own device, and the repeating-until-seen behaviour, need the backend's notification service — documented as a build item, not yet wired up here.
-        </p>
+
+        {getAuthToken() && referralInbox.filter((r) => r.status === "sent").length > 0 && (
+          <div className="mt-4 pt-4 border-t border-[#EEF1EE]">
+            <span className="text-[11px] uppercase tracking-wide text-[#8A958E]">Referrals awaiting your response</span>
+            <div className="space-y-2 mt-2">
+              {referralInbox.filter((r) => r.status === "sent").map((r) => (
+                <div key={r.id} className="flex items-start justify-between gap-3 p-3 border border-[#F0DDB0] bg-[#FBF6EC] rounded-md">
+                  <div>
+                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.from_doctor_name} <span className="text-[#8A958E] font-normal">— {r.from_doctor_specialty}</span></div>
+                    <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.reason_summary}</div>
+                  </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    <button onClick={() => respond(r.id, "acknowledged")} className="text-[11px] px-2 py-1 rounded-sm text-white" style={{ backgroundColor: "#0F5C56" }}>Accept</button>
+                    <button onClick={() => respond(r.id, "declined")} className="text-[11px] px-2 py-1 rounded-sm border border-[#EFC9C1] text-[#B34A3C]">Decline</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="mt-4 pt-4 border-t border-[#EEF1EE]">
+          <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — instructions/referrals save locally only" />
+        </div>
       </div>
     </div>
   );

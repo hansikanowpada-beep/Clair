@@ -74,10 +74,14 @@ router.get("/inbox", requireAuth, requireAccountType(...DOCTOR_TYPES), async (re
 
   const result = await pool.query(
     status
-      ? `SELECT id, from_doctor_id, patient_record_id, reason_summary, status, created_at, responded_at
-         FROM referrals WHERE to_doctor_id = $1 AND status = $2 ORDER BY created_at DESC`
-      : `SELECT id, from_doctor_id, patient_record_id, reason_summary, status, created_at, responded_at
-         FROM referrals WHERE to_doctor_id = $1 ORDER BY created_at DESC`,
+      ? `SELECT r.id, r.from_doctor_id, a.display_name AS from_doctor_name, a.specialty AS from_doctor_specialty,
+                r.patient_record_id, r.reason_summary, r.status, r.created_at, r.responded_at
+         FROM referrals r JOIN accounts a ON a.id = r.from_doctor_id
+         WHERE r.to_doctor_id = $1 AND r.status = $2 ORDER BY r.created_at DESC`
+      : `SELECT r.id, r.from_doctor_id, a.display_name AS from_doctor_name, a.specialty AS from_doctor_specialty,
+                r.patient_record_id, r.reason_summary, r.status, r.created_at, r.responded_at
+         FROM referrals r JOIN accounts a ON a.id = r.from_doctor_id
+         WHERE r.to_doctor_id = $1 ORDER BY r.created_at DESC`,
     status ? [req.account.id, status] : [req.account.id]
   );
   res.json({ referrals: result.rows });
@@ -87,8 +91,10 @@ router.get("/inbox", requireAuth, requireAccountType(...DOCTOR_TYPES), async (re
 // picked up.
 router.get("/sent", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, res) => {
   const result = await pool.query(
-    `SELECT id, to_doctor_id, patient_record_id, reason_summary, status, created_at, responded_at
-     FROM referrals WHERE from_doctor_id = $1 ORDER BY created_at DESC`,
+    `SELECT r.id, r.to_doctor_id, a.display_name AS to_doctor_name, a.specialty AS to_doctor_specialty,
+            r.patient_record_id, r.reason_summary, r.status, r.created_at, r.responded_at
+     FROM referrals r JOIN accounts a ON a.id = r.to_doctor_id
+     WHERE r.from_doctor_id = $1 ORDER BY r.created_at DESC`,
     [req.account.id]
   );
   res.json({ referrals: result.rows });

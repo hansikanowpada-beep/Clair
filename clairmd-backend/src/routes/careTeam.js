@@ -63,10 +63,11 @@ router.post("/", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, r
 // A care team member's own pending (unacknowledged) instructions.
 router.get("/pending", requireAuth, requireAccountType("care_team_member"), async (req, res) => {
   const result = await pool.query(
-    `SELECT id, from_doctor_id, patient_display_name, diagnosis_summary, bed_number, instruction_text, created_at
-     FROM care_team_instructions
-     WHERE to_care_team_id = $1 AND acknowledged_at IS NULL
-     ORDER BY created_at ASC`,
+    `SELECT i.id, i.from_doctor_id, a.display_name AS from_doctor_name, a.specialty AS from_doctor_specialty,
+            i.patient_display_name, i.diagnosis_summary, i.bed_number, i.instruction_text, i.created_at
+     FROM care_team_instructions i JOIN accounts a ON a.id = i.from_doctor_id
+     WHERE i.to_care_team_id = $1 AND i.acknowledged_at IS NULL
+     ORDER BY i.created_at ASC`,
     [req.account.id]
   );
   res.json({ instructions: result.rows });
@@ -101,10 +102,11 @@ router.post("/:id/acknowledge", requireAuth, requireAccountType("care_team_membe
 // something was actually acknowledged, not just sent.
 router.get("/sent", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, res) => {
   const result = await pool.query(
-    `SELECT id, to_care_team_id, patient_display_name, instruction_text, acknowledged_at, created_at
-     FROM care_team_instructions
-     WHERE from_doctor_id = $1
-     ORDER BY created_at DESC`,
+    `SELECT i.id, i.to_care_team_id, a.display_name AS to_care_team_name,
+            i.patient_display_name, i.instruction_text, i.acknowledged_at, i.created_at
+     FROM care_team_instructions i JOIN accounts a ON a.id = i.to_care_team_id
+     WHERE i.from_doctor_id = $1
+     ORDER BY i.created_at DESC`,
     [req.account.id]
   );
   res.json({ instructions: result.rows });

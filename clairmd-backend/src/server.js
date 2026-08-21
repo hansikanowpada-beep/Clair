@@ -19,6 +19,7 @@ const pinoHttp = require("pino-http");
 const config = require("./config");
 
 const authRoutes = require("./routes/auth");
+const accountDirectoryRoutes = require("./routes/accountDirectory");
 const driveRoutes = require("./routes/drive");
 const coadminRoutes = require("./routes/coadmin");
 const recordsRoutes = require("./routes/records");
@@ -89,6 +90,7 @@ app.get("/health", (req, res) => {
 // (.../api/drive/oauth/callback) — that convention predates this file, so
 // routes are mounted here to match it rather than the reverse.
 app.use("/api/auth", authRoutes);
+app.use("/api/account-directory", accountDirectoryRoutes);
 app.use("/api/drive", driveRoutes);
 app.use("/api/coadmin", coadminRoutes);
 app.use("/api/records", recordsRoutes);

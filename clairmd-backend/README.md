@@ -13,6 +13,28 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Account directory search** (2026-08-21, `routes/accountDirectory.js`,
+  new, no migration needed — it only reads `accounts`) — a real gap this
+  closed: referrals and care-team instructions both require a real
+  recipient account id, but nothing let a doctor find one. `GET /api/
+  account-directory?q=...&types=individual_doctor,hospital_doctor` (or
+  `care_team_member`) searches `display_name`/`specialty` and returns only
+  `id`/`display_name`/`specialty`/`account_type` — never email/phone,
+  minimal-disclosure by design. Requires 2+ query characters (returns `[]`
+  below that, avoiding a full-table scan on every keystroke) and excludes
+  the caller's own account and any deactivated one. **Not scoped** to the
+  caller's own hospital/affiliations — every doctor can currently find
+  every other doctor platform-wide; narrowing that is a real feature, not
+  built here, flagged rather than silently assumed.
+- **Referrals and care-team instructions — recipient names in listings**
+  (2026-08-21, `routes/referrals.js`, `routes/careTeam.js`) — `GET /inbox`,
+  `GET /sent`, and `GET /pending` previously returned only the recipient's
+  raw account id, which the frontend has no way to turn into a display
+  name on its own. Added a `JOIN accounts` to each so the response now
+  carries `from_doctor_name`/`to_doctor_name`/`to_care_team_name` (+
+  specialty where relevant) alongside the id. Purely additive — no
+  existing field removed or renamed, so this can't break anything already
+  reading these responses.
 - **Feed post approval requests** (2026-08-21, `023_feed_post_requests.sql`
   + `routes/feedPostRequests.js`) — the last piece of the specialty feed:
   in `WritePostModal`, a doctor can ask to post about a *specific
