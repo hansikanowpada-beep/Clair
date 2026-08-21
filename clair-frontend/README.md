@@ -85,6 +85,50 @@ backend record per test. The "· Ordered" badge turns red with "(sync
 failed)" if the backend call didn't succeed — the local order itself is
 never rolled back either way.
 
+**Bed availability, inventory, patient follow-ups, and the specialty
+feed** are wired the same local-first, best-effort way — local state
+always updates immediately and never depends on the backend; a background
+call syncs it when a token is present, and a failure only ever shows a
+small inline "Backend sync skipped: …" message, never blocks or rolls
+back the UI action that triggered it. `BackendSyncPanel` (the same
+compact login/signup widget used for OPD notes) now also appears in
+`BedAvailabilityPanel`, `InventoryManagerPanel`, `WritePostModal`,
+`MyPostsPanel`, `FollowUpsPanel`, and `DoctorFeedPanel` — each with
+whichever `accountType` that surface actually needs (`hospital` for
+bed/inventory, `individual_doctor` for posts/follow-ups, `patient` for
+feed reactions); the license-number field it used to always show on
+signup now only appears for doctor account types.
+
+- **Bed availability**: the two number inputs load the hospital's real
+  saved status on open (if connected) and PUT to the backend on blur —
+  no explicit Save button, matching how the panel already worked.
+- **Inventory**: the 4 demo rows are replaced by the hospital's real
+  saved items on open (if connected). Adding an item POSTs in the
+  background and stamps the new row with its real `backendId` once that
+  resolves; adjusting stock and removing an item only reach the backend
+  for rows that already have one — an item added before ever connecting
+  (or while the backend was unreachable) stays local-only for its own
+  lifetime, same as before this wiring existed.
+- **Patient follow-ups — doctor side only.** Sending a message or the
+  "Send advice" button lazily creates the backend follow-up plan the
+  first time (from the local plan's own fields), cached per plan, then
+  reused for later messages. **Patient-side replies are NOT wired** —
+  this is a real structural gap, not an oversight: `clairmd-backend`'s
+  `POST /api/follow-ups` is doctor-account-only by design, and this
+  prototype has no step anywhere that links a mock `PATIENTS` entry to a
+  real backend patient account, so a patient-authenticated message POST
+  would only ever get a 403. Flagged in code at `PatientFollowupReply`
+  rather than wired to a call that's structurally guaranteed to fail.
+- **Specialty feed**: publishing a plain update (not the "about a
+  specific patient" / case-highlight path, which has no backend
+  equivalent) POSTs in the background and stamps the post with its real
+  `backendId`. Pin/delete in `MyPostsPanel` and a patient's like/dislike
+  in `DoctorFeedPanel` only reach the backend for posts that already
+  carry one — the seeded demo feed content never does, so reacting to it
+  stays exactly as local-only as it always was. The post-lifespan
+  dropdown loads/saves the doctor's real `feed_post_expiry_months`
+  setting when connected.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain

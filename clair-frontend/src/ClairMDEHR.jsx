@@ -13314,13 +13314,110 @@ async function syncLabOrderToBackend(patientId, category, testName) {
   return { orderId: data.order.id };
 }
 
+// --- Bed availability (hospital account only) --------------------------
+async function syncBedStatusToBackend(totalBeds, availableBeds) {
+  const data = await apiRequest("/bed-availability", { method: "PUT", body: { totalBeds, availableBeds } });
+  return data.bedStatus;
+}
+async function loadBedStatusFromBackend() {
+  const data = await apiRequest("/bed-availability");
+  return data.bedStatus;
+}
+
+// --- Inventory (hospital account only) ----------------------------------
+// The frontend's INVENTORY_CATEGORIES are Title Case ("Medication", "PPE");
+// the backend's enum is lowercase — converted at this boundary only, so
+// neither side has to know about the other's casing convention. A plain
+// capitalize-first-letter doesn't round-trip "ppe" -> "PPE" correctly,
+// hence the explicit map rather than a generic transform.
+const INVENTORY_CATEGORY_DISPLAY = { medication: "Medication", consumable: "Consumable", equipment: "Equipment", ppe: "PPE", other: "Other" };
+
+async function loadInventoryFromBackend() {
+  const data = await apiRequest("/inventory");
+  return data.items.map((i) => ({
+    backendId: i.id, name: i.name, category: INVENTORY_CATEGORY_DISPLAY[i.category] || i.category,
+    quantity: i.quantity, unit: i.unit, reorderAt: i.reorder_at, expiryDate: i.expiry_date || "", supplier: i.supplier || "",
+  }));
+}
+async function createInventoryItemOnBackend(item) {
+  const data = await apiRequest("/inventory", {
+    method: "POST",
+    body: { name: item.name, category: item.category.toLowerCase(), quantity: item.quantity, unit: item.unit, reorderAt: item.reorderAt, expiryDate: item.expiryDate || undefined, supplier: item.supplier || undefined },
+  });
+  return data.item.id;
+}
+async function adjustInventoryItemOnBackend(backendId, delta) {
+  await apiRequest(`/inventory/${backendId}/adjust`, { method: "POST", body: { delta } });
+}
+async function deleteInventoryItemOnBackend(backendId) {
+  await apiRequest(`/inventory/${backendId}`, { method: "DELETE" });
+}
+
+// --- Patient follow-ups --------------------------------------------------
+// Follow-up plans in this prototype are pre-seeded, not created through
+// any UI — so, same lazy-create-on-first-real-action shape as lab orders'
+// getOrCreateLabRecordId, the backend row is created the first time a
+// message is actually sent for a given local plan, then cached and reused
+// for every later message on that same plan.
+async function getOrCreateFollowupRecordId(localFollowup) {
+  const storageKey = `clair_followup_record_${localFollowup.id}`;
+  const existing = localStorage.getItem(storageKey);
+  if (existing) return existing;
+  const data = await apiRequest("/follow-ups", {
+    method: "POST",
+    body: {
+      patientDisplayName: localFollowup.patient || "Unknown patient",
+      patientPhone: localFollowup.phone || undefined,
+      interval: localFollowup.interval,
+      takeaways: localFollowup.takeaways,
+      complications: localFollowup.complications || undefined,
+      dietPhysio: localFollowup.dietPhysio || undefined,
+      precautions: localFollowup.precautions || undefined,
+      nextVisit: localFollowup.nextVisit || undefined,
+    },
+  });
+  localStorage.setItem(storageKey, data.followup.id);
+  return data.followup.id;
+}
+async function syncFollowupMessageToBackend(localFollowup, text, isAdviceLink, linkExpiresAtMs) {
+  const followupId = await getOrCreateFollowupRecordId(localFollowup);
+  await apiRequest(`/follow-ups/${followupId}/messages`, {
+    method: "POST",
+    body: { text, isAdviceLink: !!isAdviceLink, linkExpiresAt: linkExpiresAtMs ? new Date(linkExpiresAtMs).toISOString() : undefined },
+  });
+}
+
+// --- Specialty feed posts -------------------------------------------------
+async function createFeedPostOnBackend(kind, text) {
+  const data = await apiRequest("/feed-posts", { method: "POST", body: { kind, text } });
+  return data.post.id;
+}
+async function togglePinFeedPostOnBackend(backendId, pinned) {
+  await apiRequest(`/feed-posts/${backendId}`, { method: "PATCH", body: { pinned } });
+}
+async function deleteFeedPostOnBackend(backendId) {
+  await apiRequest(`/feed-posts/${backendId}`, { method: "DELETE" });
+}
+async function reactToFeedPostOnBackend(backendId, reaction) {
+  const data = await apiRequest(`/feed-posts/${backendId}/react`, { method: "POST", body: { reaction } });
+  return data.reaction;
+}
+async function loadFeedExpirySettingFromBackend() {
+  const data = await apiRequest("/feed-posts/settings");
+  return data.feedPostExpiryMonths;
+}
+async function saveFeedExpirySettingToBackend(months) {
+  await apiRequest("/feed-posts/settings", { method: "PATCH", body: { feedPostExpiryMonths: months } });
+}
+
 // Compact, reusable connect/status widget — email+password only (matches
 // the real backend's actual signup/login fields; the license-number field
 // only appears for doctor account types, since /api/auth/signup requires
 // it for those). Deliberately separate from the flashy multi-step signup
 // wizard elsewhere in this file (that one simulates the full product UX;
 // this one just needs to get a real token from the real backend).
-function BackendSyncPanel({ accountType = "individual_doctor" }) {
+function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel = "Backend: not connected — notes save locally only" }) {
+  const isDoctorType = accountType === "individual_doctor" || accountType === "hospital_doctor";
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("login"); // login | signup
   const [email, setEmail] = useState("");
@@ -13364,7 +13461,7 @@ function BackendSyncPanel({ accountType = "individual_doctor" }) {
     <div className="border border-[#D8DED9] rounded-sm bg-[#F7F9F7] p-2.5">
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-1.5 text-[11px] text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        Backend: not connected — notes save locally only
+        {notConnectedLabel}
       </button>
       {open && (
         <form onSubmit={submit} className="mt-2 space-y-1.5">
@@ -13386,7 +13483,9 @@ function BackendSyncPanel({ accountType = "individual_doctor" }) {
           {mode === "signup" && (
             <>
               <input required value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Display name" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-xs" />
-              <input required value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} placeholder="Medical license number" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-xs" />
+              {isDoctorType && (
+                <input required value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} placeholder="Medical license number" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-xs" />
+              )}
             </>
           )}
           <button type="submit" disabled={busy} className="text-[11px] px-2.5 py-1 rounded-sm text-white font-medium" style={{ backgroundColor: "#0F5C56" }}>
@@ -18054,11 +18153,22 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
   );
 }
 
-function PatientFollowupReply({ followupId, setFollowups }) {
+// Patient-side replies stay LOCAL ONLY — not a gap in this pass so much as
+// a structural one: clairmd-backend's POST /api/follow-ups (and therefore
+// the whole lazy-create path) is doctor-account-only by design, and this
+// prototype has no step anywhere that links a mock PATIENTS entry to a
+// real backend patient account. Even once a doctor's message has lazily
+// created the backend record, its patient_account_id is null (the doctor
+// side has no such id to supply either), so a patient-authenticated
+// POST /:id/messages would only ever 403 against it — not worth wiring a
+// call that's structurally guaranteed to fail. Real patient-account
+// linkage is a separate feature, same honesty standard as the feed's
+// "no follow relationship yet" note elsewhere in this app.
+function PatientFollowupReply({ followup, setFollowups }) {
   const [reply, setReply] = useState("");
   const send = () => {
     if (!reply.trim() || !setFollowups) return;
-    setFollowups((prev) => prev.map((f) => f.id === followupId ? { ...f, messages: [...f.messages, { from: "patient", text: reply, at: Date.now() }] } : f));
+    setFollowups((prev) => prev.map((f) => f.id === followup.id ? { ...f, messages: [...f.messages, { from: "patient", text: reply, at: Date.now() }] } : f));
     setReply("");
   };
   return (
@@ -18074,13 +18184,20 @@ const SHARE_TARGETS = ["Instagram", "WhatsApp", "X", "TikTok"];
 function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion }) {
   const [reactions, setReactions] = useState({}); // { [postId]: "like" | "dislike" | undefined }
   const [followedNames, setFollowedNames] = useState([]); // starts empty — demonstrates the cold-start algorithm
+  const [reactSyncMessage, setReactSyncMessage] = useState(null);
 
   const toggleFollow = (name) => {
     setFollowedNames((prev) => prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]);
   };
 
-  const react = (postId, type) => {
+  // Only posts created through this session's own WritePostModal (while
+  // connected to the backend) carry a backendId — the seeded
+  // DOCTOR_FEED_POSTS demo content never does, so reacting to those stays
+  // exactly as local-only as it always was.
+  const react = (postId, type, backendId) => {
     setReactions((prev) => ({ ...prev, [postId]: prev[postId] === type ? undefined : type }));
+    if (!backendId || !getAuthToken()) return;
+    reactToFeedPostOnBackend(backendId, type).catch((err) => setReactSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
   };
 
   const shareTo = (platform, post) => {
@@ -18124,6 +18241,12 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
         <div className="flex items-center gap-2 mb-1">
           <Rss size={20} className="text-[#0F5C56]" />
           <h1 className="text-2xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Doctor updates</h1>
+        </div>
+        <div className="mb-4">
+          <BackendSyncPanel accountType="patient" notConnectedLabel="Backend: not connected — reactions stay on this device only" />
+          {reactSyncMessage && (
+            <p className="text-[11px] mt-1.5 text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{reactSyncMessage.text}</p>
+          )}
         </div>
         <p className="text-xs text-[#8A958E] mb-6" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           {followingSomeone ? `From doctors you follow: ${followedNames.join(" · ")}` : "You're not following any doctors yet"}
@@ -18177,10 +18300,10 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
 
                 <div className="px-4 py-3 flex items-center justify-between border-t border-[#EEF1EE]">
                   <div className="flex items-center gap-3">
-                    <button onClick={() => react(post.id, "like")} className={`flex items-center gap-1 text-xs ${reaction === "like" ? "text-[#0F5C56] font-medium" : "text-[#8A958E]"}`}>
+                    <button onClick={() => react(post.id, "like", post.backendId)} className={`flex items-center gap-1 text-xs ${reaction === "like" ? "text-[#0F5C56] font-medium" : "text-[#8A958E]"}`}>
                       👍 {likeCount}
                     </button>
-                    <button onClick={() => react(post.id, "dislike")} className={`flex items-center gap-1 text-xs ${reaction === "dislike" ? "text-[#B34A3C] font-medium" : "text-[#8A958E]"}`}>
+                    <button onClick={() => react(post.id, "dislike", post.backendId)} className={`flex items-center gap-1 text-xs ${reaction === "dislike" ? "text-[#B34A3C] font-medium" : "text-[#8A958E]"}`}>
                       👎 {dislikeCount}
                     </button>
                     {onAskQuestion && (
@@ -18750,7 +18873,7 @@ function PatientPortalView({ patients, onBack, followups, setFollowups, feedPost
                       );
                     })}
                   </div>
-                  <PatientFollowupReply followupId={myFollowup.id} setFollowups={setFollowups} />
+                  <PatientFollowupReply followup={myFollowup} setFollowups={setFollowups} />
                 </div>
               );
             })()}
@@ -19018,6 +19141,30 @@ function QuickStatsCalculator() {
 
 function BedAvailabilityPanel({ onBack }) {
   const [beds, setBeds] = useState({ total: 12, available: 4 });
+  const [syncMessage, setSyncMessage] = useState(null);
+
+  // Loads the hospital's real saved status on open, if connected — falls
+  // back to the local default silently (no backend, no token, or no
+  // status saved yet are all normal, not errors worth surfacing here).
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    loadBedStatusFromBackend()
+      .then((s) => { if (s && s.updated_at) setBeds({ total: s.total_beds, available: s.available_beds }); })
+      .catch(() => {});
+  }, []);
+
+  const pushToBackend = (next) => {
+    setSyncMessage({ type: "pending", text: "Saving…" });
+    syncBedStatusToBackend(next.total, next.available)
+      .then(() => setSyncMessage({ type: "success", text: "Saved to backend." }))
+      .catch((err) => setSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+  };
+
+  const updateField = (field) => (e) => {
+    const next = { ...beds, [field]: Number(e.target.value) };
+    setBeds(next);
+  };
+
   return (
     <div className="p-5">
       <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
@@ -19029,16 +19176,22 @@ function BedAvailabilityPanel({ onBack }) {
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div>
           <label className="text-xs text-[#8A958E]">Total beds</label>
-          <input type="number" value={beds.total} onChange={(e) => setBeds((b) => ({ ...b, total: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+          <input type="number" value={beds.total} onChange={updateField("total")} onBlur={() => pushToBackend(beds)} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
         </div>
         <div>
           <label className="text-xs text-[#8A958E]">Available right now</label>
-          <input type="number" value={beds.available} onChange={(e) => setBeds((b) => ({ ...b, available: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
+          <input type="number" value={beds.available} onChange={updateField("available")} onBlur={() => pushToBackend(beds)} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
         </div>
       </div>
-      <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-sm p-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-sm p-3 text-sm mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Showing to patients as: <span className="font-semibold">{beds.available} of {beds.total} beds available</span>
       </div>
+      {syncMessage && (
+        <p className={`text-[11px] mb-3 ${syncMessage.type === "error" ? "text-[#B34A3C]" : syncMessage.type === "pending" ? "text-[#8A958E]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          {syncMessage.text}
+        </p>
+      )}
+      <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — bed status saves locally only" />
     </div>
   );
 }
@@ -19062,6 +19215,17 @@ function InventoryManagerPanel({ onBack, theme }) {
   const [newItem, setNewItem] = useState({ name: "", category: "Medication", quantity: "", unit: "", reorderAt: "", expiryDate: "", supplier: "" });
   const [adjusting, setAdjusting] = useState(null); // item id currently showing the adjust-stock input
   const [adjustAmount, setAdjustAmount] = useState("");
+  const [syncMessage, setSyncMessage] = useState(null);
+
+  // Replaces the demo rows above with the hospital's real saved inventory
+  // on open, if connected — the 4 sample items are just a starting demo,
+  // not something to preserve once a real account has its own data.
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    loadInventoryFromBackend()
+      .then((real) => { if (real.length > 0) setItems(real.map((i, idx) => ({ ...i, id: `backend-${idx}` }))); })
+      .catch(() => {});
+  }, []);
 
   const today = new Date();
   const daysUntil = (dateStr) => {
@@ -19076,10 +19240,16 @@ function InventoryManagerPanel({ onBack, theme }) {
   const lowStockCount = items.filter((i) => i.quantity <= i.reorderAt).length;
   const expiringCount = items.filter((i) => { const d = daysUntil(i.expiryDate); return d !== null && d <= 30; }).length;
 
+  // Added locally first (always works), then synced to the backend in the
+  // background — same shape as every other local-first sync in this file.
+  // The local row is stamped with the real backendId once the POST
+  // resolves, so a later adjust/remove on this same item can reach the
+  // backend too; until then those actions just stay local-only.
   const addItem = () => {
     if (!newItem.name.trim() || newItem.quantity === "") return;
-    setItems((prev) => [...prev, {
-      id: Date.now(),
+    const localId = Date.now();
+    const item = {
+      id: localId,
       name: newItem.name,
       category: newItem.category,
       quantity: Number(newItem.quantity),
@@ -19087,18 +19257,35 @@ function InventoryManagerPanel({ onBack, theme }) {
       reorderAt: Number(newItem.reorderAt) || 0,
       expiryDate: newItem.expiryDate,
       supplier: newItem.supplier,
-    }]);
+    };
+    setItems((prev) => [...prev, item]);
     setNewItem({ name: "", category: "Medication", quantity: "", unit: "", reorderAt: "", expiryDate: "", supplier: "" });
     setShowAddForm(false);
+
+    if (!getAuthToken()) return;
+    createInventoryItemOnBackend(item)
+      .then((backendId) => setItems((prev) => prev.map((i) => (i.id === localId ? { ...i, backendId } : i))))
+      .catch((err) => setSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
   };
 
   const applyAdjustment = (id, delta) => {
     setItems((prev) => prev.map((i) => i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i));
     setAdjusting(null);
     setAdjustAmount("");
+
+    const item = items.find((i) => i.id === id);
+    if (item && item.backendId) {
+      adjustInventoryItemOnBackend(item.backendId, delta).catch((err) => setSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+    }
   };
 
-  const removeItem = (id) => setItems((prev) => prev.filter((i) => i.id !== id));
+  const removeItem = (id) => {
+    const item = items.find((i) => i.id === id);
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    if (item && item.backendId) {
+      deleteInventoryItemOnBackend(item.backendId).catch((err) => setSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+    }
+  };
 
   return (
     <div className="p-5">
@@ -19107,9 +19294,17 @@ function InventoryManagerPanel({ onBack, theme }) {
         <Package size={18} style={{ color: theme.color }} />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Inventory manager</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Track stock levels, reorder thresholds, and expiry dates for medications, consumables, and equipment.
       </p>
+      <div className="mb-4">
+        <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — inventory saves locally only" />
+        {syncMessage && (
+          <p className={`text-[11px] mt-1.5 ${syncMessage.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            {syncMessage.text}
+          </p>
+        )}
+      </div>
 
       <div className="flex gap-3 mb-4">
         <div className="flex-1 bg-white border border-[#D8DED9] rounded-md p-3">
@@ -20532,11 +20727,18 @@ function WritePostModal({ onClose, setFeedPosts, setPendingPostRequests, doctorD
 
   const publishGeneral = () => {
     if (!text.trim() || !ownRiskAck) return;
+    const localId = Date.now();
+    const postText = text;
     setFeedPosts((prev) => [
-      { id: Date.now(), kind: "update", doctor: doctorDisplayName, specialty: doctorSpecialty || "General Medicine", text, likes: 0, dislikes: 0, createdAt: Date.now(), pinned: false },
+      { id: localId, kind: "update", doctor: doctorDisplayName, specialty: doctorSpecialty || "General Medicine", text: postText, likes: 0, dislikes: 0, createdAt: Date.now(), pinned: false },
       ...prev,
     ]);
     setJustPosted(true);
+
+    if (!getAuthToken()) return;
+    createFeedPostOnBackend("update", postText)
+      .then((backendId) => setFeedPosts((prev) => prev.map((p) => (p.id === localId ? { ...p, backendId } : p))))
+      .catch(() => {}); // best-effort — no inline status UI in this compact modal; a failed sync just means this post stays local-only, same as it always was
   };
 
   const requestPermission = () => {
@@ -20556,7 +20758,10 @@ function WritePostModal({ onClose, setFeedPosts, setPendingPostRequests, doctorD
           <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Write something</h2>
           <button onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={18} /></button>
         </div>
-        <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Posted with your name, speciality, and the date/time it goes live — visible to patients who follow you.</p>
+        <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Posted with your name, speciality, and the date/time it goes live — visible to patients who follow you.</p>
+        <div className="mb-4">
+          <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — post saves locally only" />
+        </div>
 
         {justPosted ? (
           <div className="flex items-center gap-2 text-sm text-[#0F5C56] bg-[#F2F7F5] border border-[#D8DED9] rounded-sm p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -20640,9 +20845,38 @@ function WritePostModal({ onClose, setFeedPosts, setPendingPostRequests, doctorD
 
 function MyPostsPanel({ onBack, feedPosts, setFeedPosts, postExpiryMonths, setPostExpiryMonths, theme }) {
   const myPosts = feedPosts;
+  const [syncMessage, setSyncMessage] = useState(null);
 
-  const togglePin = (id) => setFeedPosts((prev) => prev.map((p) => p.id === id ? { ...p, pinned: !p.pinned } : p));
-  const deletePost = (id) => { if (confirm("Delete this post permanently?")) setFeedPosts((prev) => prev.filter((p) => p.id !== id)); };
+  // Loads this doctor's real saved expiry setting on open, if connected —
+  // only overrides the local default when a real value comes back.
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    loadFeedExpirySettingFromBackend().then((months) => { if (months) setPostExpiryMonths(months); }).catch(() => {});
+  }, []);
+
+  // Only posts created this session while connected (see WritePostModal)
+  // carry a backendId — toggling/deleting an older, local-only post just
+  // stays local, same as before this wiring existed.
+  const togglePin = (id) => {
+    setFeedPosts((prev) => prev.map((p) => p.id === id ? { ...p, pinned: !p.pinned } : p));
+    const post = feedPosts.find((p) => p.id === id);
+    if (post && post.backendId) {
+      togglePinFeedPostOnBackend(post.backendId, !post.pinned).catch((err) => setSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+    }
+  };
+  const deletePost = (id) => {
+    if (!confirm("Delete this post permanently?")) return;
+    const post = feedPosts.find((p) => p.id === id);
+    setFeedPosts((prev) => prev.filter((p) => p.id !== id));
+    if (post && post.backendId) {
+      deleteFeedPostOnBackend(post.backendId).catch((err) => setSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+    }
+  };
+  const updateExpiryMonths = (months) => {
+    setPostExpiryMonths(months);
+    if (!getAuthToken()) return;
+    saveFeedExpirySettingToBackend(months).catch((err) => setSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+  };
 
   return (
     <div className="p-5">
@@ -20651,13 +20885,19 @@ function MyPostsPanel({ onBack, feedPosts, setFeedPosts, postExpiryMonths, setPo
         <Rss size={18} style={{ color: theme.color }} />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>My posts</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>What patients see in their Doctor updates feed.</p>
+      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>What patients see in their Doctor updates feed.</p>
+      <div className="mb-4">
+        <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — pin/delete/expiry save locally only" />
+        {syncMessage && (
+          <p className="text-[11px] mt-1.5 text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{syncMessage.text}</p>
+        )}
+      </div>
 
       <div className="bg-white border border-[#D8DED9] rounded-md p-4 mb-4">
         <label className="text-xs text-[#8A958E]">Post lifespan (your subscription tier)</label>
         <select
           value={postExpiryMonths}
-          onChange={(e) => setPostExpiryMonths(Number(e.target.value))}
+          onChange={(e) => updateExpiryMonths(Number(e.target.value))}
           className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm"
           style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
         >
@@ -20734,18 +20974,28 @@ function FollowUpsPanel({ onBack, followups, setFollowups }) {
   const [adviceSent, setAdviceSent] = useState(false);
   const current = followups.find((f) => f.id === openId);
 
+  const [followupSyncMessage, setFollowupSyncMessage] = useState(null);
+
   const sendMessage = () => {
     if (!message.trim()) return;
-    setFollowups((prev) => prev.map((f) => f.id === openId ? { ...f, messages: [...f.messages, { from: "doctor", text: message, at: Date.now() }] } : f));
+    const text = message;
+    setFollowups((prev) => prev.map((f) => f.id === openId ? { ...f, messages: [...f.messages, { from: "doctor", text, at: Date.now() }] } : f));
     setMessage("");
+    if (!getAuthToken()) return;
+    syncFollowupMessageToBackend(current, text, false, null)
+      .catch((err) => setFollowupSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
   };
 
   const sendAdvice = () => {
     const now = Date.now();
     const feedbackLink = `clairmd.net/feedback/${current.id}?t=${now}`;
     const adviceText = `Follow-up advice: ${current.takeaways} Next visit: ${current.nextVisit}. Questions or feedback for your doctor? ${feedbackLink} (link active for 24 hours)`;
-    setFollowups((prev) => prev.map((f) => f.id === openId ? { ...f, messages: [...f.messages, { from: "doctor", text: adviceText, at: now, isAdviceLink: true, linkExpiresAt: now + 24 * 60 * 60 * 1000 }] } : f));
+    const linkExpiresAt = now + 24 * 60 * 60 * 1000;
+    setFollowups((prev) => prev.map((f) => f.id === openId ? { ...f, messages: [...f.messages, { from: "doctor", text: adviceText, at: now, isAdviceLink: true, linkExpiresAt }] } : f));
     setAdviceSent(true);
+    if (!getAuthToken()) return;
+    syncFollowupMessageToBackend(current, adviceText, true, linkExpiresAt)
+      .catch((err) => setFollowupSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
   };
 
   if (current) {
@@ -20789,6 +21039,13 @@ function FollowUpsPanel({ onBack, followups, setFollowups }) {
         <button className="w-full mb-3 flex items-center justify-center gap-2 text-sm py-2.5 bg-[#16241F] text-white rounded-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           <Video size={14} /> Start telemedicine consult
         </button>
+
+        <div className="mb-3">
+          <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — messages save locally only" />
+          {followupSyncMessage && (
+            <p className="text-[11px] mt-1.5 text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{followupSyncMessage.text}</p>
+          )}
+        </div>
 
         <div className="text-[11px] uppercase tracking-wider text-[#8A958E] mb-2">Chat</div>
         <div className="border border-[#D8DED9] rounded-sm p-3 space-y-2 mb-2 max-h-48 overflow-y-auto">
