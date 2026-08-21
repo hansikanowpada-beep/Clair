@@ -70,12 +70,61 @@ router.get("/oauth/callback", async (req, res) => {
       [accountId, driveEmail, encryptedRefreshToken, folderId]
     );
 
-    // Real deployment: redirect to the app's "Drive connected" success screen.
-    return res.send("Google Drive connected successfully. You can close this window.");
+    // The frontend opens this whole OAuth flow in a popup window (see
+    // ClairMDEHR.jsx's startDriveConnection) and polls GET /backup-status
+    // from the opener to notice when connected=true, rather than this
+    // page trying to postMessage back — simpler, and works even if the
+    // opener/popup relationship gets awkward across browsers. This just
+    // auto-closes the popup once the connection is actually stored, so a
+    // doctor doesn't have to manually close it. Falls back to a manual
+    // "close this window" instruction for the rare browser that blocks
+    // script-initiated window.close() on a window it didn't itself open
+    // via a same-origin script.
+    return res.send(`<!doctype html><html><body style="font-family:sans-serif;padding:24px;">
+      <p>Google Drive connected successfully. This window will close automatically.</p>
+      <script>window.close();</script>
+    </body></html>`);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error("Drive OAuth callback error:", err);
     return res.status(500).send("Something went wrong connecting Google Drive. Please try again.");
+  }
+});
+
+// Short-lived Drive access token, minted on demand from the stored
+// (encrypted-at-rest) refresh token. This is the one place a Drive
+// credential crosses this backend after the initial OAuth exchange — and
+// it's still just a token, never file content. The access token this
+// returns is scoped to drive.file only (see DRIVE_SCOPE above) and
+// typically expires in ~1 hour; the frontend uses it to talk to the Drive
+// API directly from the browser (see ClairMDEHR.jsx's uploadEncrypted-
+// BlobToDrive/downloadEncryptedBlobFromDrive), the same "content never
+// passes through this backend" design as the rest of this router.
+router.get("/access-token", requireAuth, async (req, res) => {
+  const connection = await pool.query(
+    `SELECT refresh_token_enc FROM drive_connections WHERE account_id = $1 AND revoked_at IS NULL`,
+    [req.account.id]
+  );
+  if (connection.rows.length === 0) {
+    return res.status(404).json({ error: "Google Drive isn't connected for this account." });
+  }
+
+  try {
+    const refreshToken = secrets.decrypt(connection.rows[0].refresh_token_enc);
+    const oauth2Client = getOAuthClient();
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+    const { token } = await oauth2Client.getAccessToken();
+    if (!token) throw new Error("No access token returned.");
+    res.json({ accessToken: token, expiresAt: oauth2Client.credentials.expiry_date || null });
+  } catch (err) {
+    req.log?.error({ err }, "Drive access token refresh failed");
+    // Most likely cause: the doctor revoked ClairMD's access from their
+    // Google account settings, outside this app entirely — the stored
+    // refresh token is then dead and re-connecting is the only fix.
+    // Deliberately NOT auto-clearing the drive_connections row here: a
+    // transient Google-side error would otherwise silently disconnect a
+    // still-valid connection.
+    res.status(502).json({ error: "Couldn't get a Google Drive access token — the connection may need to be reconnected." });
   }
 });
 
@@ -139,7 +188,7 @@ router.get("/backup-status", requireAuth, async (req, res) => {
     [req.account.id]
   );
   const connection = await pool.query(
-    `SELECT drive_account_email, connected_at, revoked_at FROM drive_connections WHERE account_id = $1`,
+    `SELECT drive_account_email, app_folder_id, connected_at, revoked_at FROM drive_connections WHERE account_id = $1`,
     [req.account.id]
   );
 
@@ -151,6 +200,11 @@ router.get("/backup-status", requireAuth, async (req, res) => {
   res.json({
     connected: connection.rows.length > 0 && !connection.rows[0].revoked_at,
     driveAccountEmail: connection.rows[0]?.drive_account_email || null,
+    // Not sensitive (just a Drive folder id, not a credential) — exposed
+    // so the client can upload directly into the right folder without a
+    // second lookup. See routes/drive.js's own file-content trust model:
+    // this backend still never sees what goes IN that folder.
+    appFolderId: connection.rows[0]?.app_folder_id || null,
     lastBackup: latest.rows[0] || null,
     quotaWarning, // powers the ~90%-full warning banner
   });

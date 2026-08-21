@@ -13,6 +13,44 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Google Drive upload/download — the actual file transfer, not just the
+  OAuth handshake** (2026-08-21). Until now, `routes/drive.js` could
+  connect a doctor's Drive account (OAuth exchange, app folder creation,
+  backup telemetry) but nothing ever actually used that connection to
+  move a file — records were created with a placeholder `driveFileId`
+  and the only place content ever landed was this backend's own
+  `patient_record_content` opaque-blob store. New:
+  - `GET /drive/access-token` — mints a short-lived (~1h) Drive access
+    token on demand from the stored, encrypted-at-rest refresh token.
+    This is the one place a Drive credential crosses this backend after
+    the initial OAuth exchange, and it's still just a token — the
+    frontend uses it to talk to the Drive REST API directly from the
+    browser, so file content never passes through this backend at all
+    (same trust model the router's own header comment already
+    described, just now actually exercised).
+  - `GET /drive/backup-status` now also returns `appFolderId` — not
+    sensitive (a folder id, not a credential), needed so the client can
+    upload straight into the right folder without a second lookup.
+  - The OAuth callback page now auto-closes itself (`window.close()`)
+    once the connection is stored, since the frontend drives the whole
+    flow via a popup + polling `GET /backup-status` rather than a
+    postMessage handshake — simpler, and doesn't depend on a
+    same-origin relationship between the popup and opener holding up
+    across browsers.
+  - No changes to `POST /oauth/start`, `GET /oauth/callback`'s actual
+    exchange logic, or `POST /backup-events` — all already correct.
+  - **Live-tested** against a real running stack (Postgres + Express):
+    confirmed `backup-status` correctly reports `connected: false` /
+    `appFolderId: null` before any connection, `access-token` correctly
+    404s before connecting and 401s with no auth at all, and
+    `oauth/start` returns a genuine `accounts.google.com` consent URL
+    carrying the account id as `state`. What is **not** live-tested: the
+    actual OAuth consent screen and a real upload/download round trip —
+    both need a real Google Cloud OAuth client, which doesn't exist in
+    this sandbox. See `clair-frontend/README.md`'s matching entry for
+    the Google Cloud Console setup steps needed before that becomes
+    possible.
+
 - **Co-admin assignment — the doctor side is now real, not just consent**
   (2026-08-21) — supersedes the earlier note further down in this file
   that said the assigning side "needs real per-recipient key-wrap crypto

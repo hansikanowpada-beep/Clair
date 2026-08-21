@@ -13135,29 +13135,32 @@ function printSummary(text, title) {
 }
 
 // ---------------------------------------------------------------------------
-// Backend sync (prototype) — talks to clairmd-backend's real
-// /api/auth and /api/record-content endpoints (see that repo's README).
-// This is a genuinely working client for those two endpoints, scoped
-// narrowly on purpose:
+// Backend sync (prototype) — talks to clairmd-backend's real /api/auth,
+// /api/record-content, /api/coadmin, and /api/drive endpoints (see that
+// repo's README). Scoped narrowly on purpose:
 //
 // - Auth: this prototype has no session/context layer threading an
 //   account through the whole app, so the token lives in localStorage and
 //   is read fresh wherever it's needed — a real app would hoist this into
 //   a proper auth context instead.
-// - Encryption key: record_key_wraps (the backend's real multi-holder,
-//   consent-gated key distribution — see routes/coadmin.js in
-//   clairmd-backend) is NOT implemented here. Each record instead gets its
-//   own AES-GCM key generated in the browser and kept in localStorage —
-//   good enough to prove the round trip (encrypt → PUT → GET → decrypt)
-//   actually works end-to-end against the real backend, but NOT the real
-//   key-wrap/consent scheme a production build needs for co-admin/patient
-//   access. Flagged here the same way DOCTOR_ADS's alert() stubs are
-//   flagged elsewhere in this file — a clearly-marked placeholder, not a
-//   finished feature.
-// - No Google Drive upload happens from this prototype (no OAuth flow
-//   wired) — records are created with a placeholder driveFileId, and the
-//   backend's opaque-blob sync (patient_record_content) is the only place
-//   the note content actually lands.
+// - Encryption key: each record gets its own AES-GCM key, generated in
+//   the browser and cached in localStorage. For the record's OWNER
+//   (the primary doctor) that's the whole story. For a co-admin or
+//   patient, that same key is real-key-wrapped with RSA-OAEP per
+//   recipient (record_key_wraps, routes/coadmin.js) — see the "Co-admin
+//   key-wrap crypto" section of this repo's README for the full design
+//   and its own known limitations (no cross-device key recovery, no
+//   revocation).
+// - Google Drive: each note is encrypted client-side and both (a) synced
+//   to this backend's own opaque-blob store (patient_record_content —
+//   works even if Drive is never connected) and (b) uploaded, still as
+//   ciphertext, to a dedicated non-descriptive folder in the doctor's OWN
+//   Drive via the Drive REST API directly from the browser, using a
+//   short-lived access token minted by GET /api/drive/access-token. This
+//   backend brokers the OAuth handshake and hands out that access token,
+//   but the file content itself never passes through it — same trust
+//   model as record_key_wraps. See uploadEncryptedBlobToDrive/
+//   downloadEncryptedBlobFromDrive below.
 // ---------------------------------------------------------------------------
 
 function getApiBase() {
@@ -13368,17 +13371,157 @@ async function loadCoAdminRecordContent(recordId) {
 }
 
 // Creates the backend pointer row (patient_record_index) this note's
-// content will hang off of. driveFileId is a placeholder — this prototype
-// doesn't upload anything to Google Drive.
+// content will hang off of. driveFileId starts as a placeholder — if this
+// doctor has Google Drive connected, syncNoteToBackend below overwrites it
+// with the real Drive file id once the actual upload succeeds (see PATCH
+// /api/records/:id there). Until then, or if Drive is never connected,
+// this stays a placeholder and the backend's own opaque-blob store
+// (patient_record_content) is the only place the content actually lands —
+// that path works independently either way.
 async function ensureBackendRecord(noteType) {
   const data = await apiRequest("/records", { method: "POST", body: { driveFileId: `clair-prototype-${Date.now()}`, noteType } });
   return data.record.id;
 }
 
-// Full round trip: create the pointer, encrypt the note, PUT it, then GET
-// + decrypt it straight back to confirm the backend actually stored what
-// was sent — not just "the PUT returned 200", but a genuine decrypt-and-
-// compare against the real /api/record-content endpoints.
+// --- Google Drive — the actual upload/download half of "encrypt before
+// upload, decrypt after download" (routes/drive.js handles only the OAuth
+// handshake + a short-lived access token; everything below talks to the
+// real Drive REST API directly from the browser, exactly like this file's
+// header comment describes). -----------------------------------------------
+
+const DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files";
+const DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files";
+
+// Access tokens are short-lived (~1h) and deliberately kept in memory
+// only, never localStorage — unlike the auth JWT, there's no reason for
+// this one to survive a page reload; re-minting it from the (still
+// server-side, still encrypted-at-rest) refresh token is cheap.
+let driveAccessTokenCache = null; // { token, expiresAt } | null
+
+async function getDriveAccessToken() {
+  const now = Date.now();
+  if (driveAccessTokenCache && driveAccessTokenCache.expiresAt && driveAccessTokenCache.expiresAt - now > 60000) {
+    return driveAccessTokenCache.token;
+  }
+  const data = await apiRequest("/drive/access-token");
+  driveAccessTokenCache = { token: data.accessToken, expiresAt: data.expiresAt || now + 55 * 60 * 1000 };
+  return driveAccessTokenCache.token;
+}
+
+async function loadDriveConnectionStatus() {
+  return apiRequest("/drive/backup-status");
+}
+
+// Opens the real Google OAuth consent screen in a popup and waits for the
+// connection to actually land in the backend (polling GET /backup-status)
+// rather than trying to postMessage with the callback page — see that
+// route's own comment in clairmd-backend for why. Bails out if the doctor
+// closes the popup before finishing, or after 2 minutes either way.
+async function startDriveConnection() {
+  const data = await apiRequest("/drive/oauth/start");
+  const popup = window.open(data.authUrl, "clairmd-drive-oauth", "width=520,height=680");
+  if (!popup) {
+    throw new Error("Popup blocked — allow popups for this site, then try again.");
+  }
+  const deadline = Date.now() + 120000;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    const status = await loadDriveConnectionStatus().catch(() => null);
+    if (status?.connected) {
+      if (!popup.closed) popup.close();
+      return status;
+    }
+    if (popup.closed) {
+      throw new Error("Google Drive connection window was closed before finishing.");
+    }
+  }
+  if (!popup.closed) popup.close();
+  throw new Error("Timed out waiting for the Google Drive connection to complete.");
+}
+
+function getCachedDriveFileId(recordId) {
+  return typeof localStorage !== "undefined" ? localStorage.getItem(`clair_drive_file_${recordId}`) : null;
+}
+function setCachedDriveFileId(recordId, fileId) {
+  if (typeof localStorage !== "undefined") localStorage.setItem(`clair_drive_file_${recordId}`, fileId);
+}
+
+// Uploads (first save) or updates (every save after) this record's
+// encrypted blob as a file in the doctor's own Drive, inside the
+// dedicated app folder the OAuth callback already created server-side.
+// The multipart body's metadata part carries only a non-descriptive
+// filename — the content part is the SAME opaque base64 ciphertext string
+// already sent to /api/record-content, so Drive never sees anything this
+// backend doesn't already treat as opaque either.
+async function uploadEncryptedBlobToDrive(recordId, encryptedBlob) {
+  const [accessToken, status] = await Promise.all([getDriveAccessToken(), loadDriveConnectionStatus()]);
+  const existingFileId = getCachedDriveFileId(recordId);
+
+  const metadata = { name: `clairmd-record-${recordId}.enc` };
+  // parents is only valid on CREATE — Drive v3 rejects it on an update
+  // body (moving a file needs addParents/removeParents query params
+  // instead), so this is only ever set for a brand-new file.
+  if (!existingFileId && status.appFolderId) metadata.parents = [status.appFolderId];
+
+  const boundary = "clairmd-boundary";
+  const body =
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+    `--${boundary}\r\nContent-Type: text/plain\r\n\r\n${encryptedBlob}\r\n--${boundary}--`;
+
+  const url = existingFileId ? `${DRIVE_UPLOAD_URL}/${existingFileId}?uploadType=multipart` : `${DRIVE_UPLOAD_URL}?uploadType=multipart`;
+  const res = await fetch(url, {
+    method: existingFileId ? "PATCH" : "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": `multipart/related; boundary=${boundary}` },
+    body,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Google Drive upload failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  setCachedDriveFileId(recordId, data.id);
+  return data.id;
+}
+
+// Resolves which real Drive file backs a record. Prefers this browser's
+// own cache (set the moment it uploaded); falls back to the backend's
+// pointer row, which uploadEncryptedBlobToDrive/syncNoteToBackend keep in
+// sync via PATCH /api/records/:id — needed for e.g. a fresh browser
+// profile that never did the upload itself.
+async function resolveDriveFileId(recordId) {
+  const cached = getCachedDriveFileId(recordId);
+  if (cached) return cached;
+  const data = await apiRequest(`/records/${recordId}`);
+  if (!data.record.drive_file_id || data.record.drive_file_id.startsWith("clair-prototype-")) {
+    throw new Error("This record hasn't been uploaded to Google Drive yet.");
+  }
+  setCachedDriveFileId(recordId, data.record.drive_file_id);
+  return data.record.drive_file_id;
+}
+
+async function downloadEncryptedBlobFromDrive(recordId) {
+  const [accessToken, fileId] = await Promise.all([getDriveAccessToken(), resolveDriveFileId(recordId)]);
+  const res = await fetch(`${DRIVE_FILES_URL}/${fileId}?alt=media`, { headers: { Authorization: `Bearer ${accessToken}` } });
+  if (!res.ok) throw new Error(`Google Drive download failed (${res.status}).`);
+  return res.text();
+}
+
+async function recordDriveBackupEvent(status, extra = {}) {
+  return apiRequest("/drive/backup-events", { method: "POST", body: { status, ...extra } });
+}
+
+// Full round trip: create the pointer, encrypt the note, PUT it to the
+// backend's opaque-blob store, then GET + decrypt it straight back to
+// confirm the backend genuinely stored what was sent. Then, if this
+// doctor has Google Drive connected, does the SAME thing again against
+// Drive itself — upload the ciphertext, download it straight back,
+// decrypt, and compare — since Drive (not this backend) is the intended
+// primary durable copy (see patient_record_content's design comment in
+// clairmd-backend's schema.sql). The Drive half is best-effort: a
+// failure there (not connected, popup never finished, token expired)
+// never throws — the already-verified backend sync stands on its own —
+// it's surfaced in the returned object instead, so a caller CAN show it
+// without being forced to handle it as an error.
 async function syncNoteToBackend(noteType, noteText) {
   const recordId = await ensureBackendRecord(noteType);
   const encryptedBlob = await encryptRecordText(recordId, noteText);
@@ -13389,7 +13532,28 @@ async function syncNoteToBackend(noteType, noteText) {
   if (roundTripText !== noteText) {
     throw new Error("Backend round-trip verification failed — decrypted content didn't match what was sent.");
   }
-  return { recordId };
+
+  let driveSynced = false;
+  let driveError = null;
+  try {
+    const status = await loadDriveConnectionStatus();
+    if (status.connected) {
+      await uploadEncryptedBlobToDrive(recordId, encryptedBlob);
+      const driveBlob = await downloadEncryptedBlobFromDrive(recordId);
+      const driveRoundTrip = await decryptRecordText(recordId, driveBlob);
+      if (driveRoundTrip !== noteText) {
+        throw new Error("Drive round-trip verification failed — decrypted content didn't match what was sent.");
+      }
+      await apiRequest(`/records/${recordId}`, { method: "PATCH", body: { driveFileId: getCachedDriveFileId(recordId) } });
+      await recordDriveBackupEvent("success", { fileSizeBytes: encryptedBlob.length });
+      driveSynced = true;
+    }
+  } catch (err) {
+    driveError = err.message;
+    recordDriveBackupEvent("failed", { errorMessage: err.message.slice(0, 500) }).catch(() => {});
+  }
+
+  return { recordId, driveSynced, driveError };
 }
 
 // Several actions (lab orders, referrals, care-team instructions) need
@@ -15741,7 +15905,11 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
     // a save failure).
     setSyncMessage({ type: "pending", text: "Syncing to backend…" });
     syncNoteToBackend("opd", slipText)
-      .then(({ recordId }) => setSyncMessage({ type: "success", text: `Synced to backend (record ${recordId.slice(0, 8)}…, verified round-trip).` }))
+      .then(({ recordId, driveSynced, driveError }) => setSyncMessage({
+        type: "success",
+        text: `Synced to backend (record ${recordId.slice(0, 8)}…, verified round-trip).` +
+          (driveSynced ? " Also backed up to Google Drive, verified round-trip." : driveError ? ` Google Drive backup skipped: ${driveError}` : ""),
+      }))
       .catch((err) => setSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
 
     return true;
@@ -21580,8 +21748,86 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
       </div>
 
       <MyPlanAndBilling theme={theme} />
+      <DriveConnectionPanel theme={theme} />
       <DataRightsPanel theme={theme} />
       <CoAdminPanel theme={theme} />
+    </div>
+  );
+}
+
+// Real Google Drive OAuth connection + backup status, using
+// clairmd-backend's actual /api/drive routes and the real upload/download
+// helpers above (uploadEncryptedBlobToDrive etc.) — every OPD/ICU-Ward
+// save already tries this automatically once connected (see
+// syncNoteToBackend); this panel is just where a doctor connects in the
+// first place and sees the result.
+function DriveConnectionPanel({ theme }) {
+  const [status, setStatus] = useState(null); // null while unloaded, or the /backup-status response
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState(null);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    loadDriveConnectionStatus().then(setStatus).catch(() => setStatus(null));
+  };
+  useEffect(refresh, []);
+
+  const doConnect = async () => {
+    setConnecting(true);
+    setConnectError(null);
+    try {
+      setStatus(await startDriveConnection());
+    } catch (err) {
+      setConnectError(err.message);
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  return (
+    <div className="mt-5 pt-5 border-t border-[#D8DED9]">
+      <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Google Drive backup</div>
+      <p className="text-xs text-[#8A958E] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Every OPD/ICU-Ward note is encrypted in your browser (AES-GCM) before it ever leaves it, then uploaded — still as ciphertext — into a dedicated, non-descriptive folder in YOUR OWN Google Drive. ClairMD routes the connection but genuinely cannot read what's inside that folder.
+      </p>
+      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — connect below to link Google Drive" onConnected={refresh} />
+
+      {getAuthToken() && (
+        <div className="mt-3">
+          {!status ? (
+            <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
+          ) : status.connected ? (
+            <div className="text-xs px-3 py-2 border border-[#D8DED9] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0F5C56]" />
+                Connected as {status.driveAccountEmail}
+              </div>
+              {status.lastBackup ? (
+                <p className="text-[#8A958E]">Last backup: {status.lastBackup.status} · {new Date(status.lastBackup.occurred_at).toLocaleString()}</p>
+              ) : (
+                <p className="text-[#8A958E]">No backup uploaded yet — save an OPD or ICU/Ward note to trigger the first one.</p>
+              )}
+              {status.quotaWarning && (
+                <p className="text-[#B34A3C] mt-1">Your Drive storage is over 90% full — new backups may start failing.</p>
+              )}
+              <button type="button" onClick={refresh} className="text-[#0F5C56] underline decoration-dotted mt-1">Refresh</button>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={doConnect}
+                disabled={connecting}
+                className="text-xs px-3 py-1.5 rounded-sm text-white font-medium"
+                style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}
+              >
+                {connecting ? "Waiting for Google sign-in…" : "Connect Google Drive"}
+              </button>
+              {connectError && <p className="text-xs text-[#B34A3C] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{connectError}</p>}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -22726,7 +22972,11 @@ export default function ClairMDEHR() {
                     // the end of this component for where the result shows.
                     setGlobalSyncMessage({ type: "pending", text: "Syncing ICU/Ward note to backend…" });
                     syncNoteToBackend("icu_ward", icuWardSlipText)
-                      .then(({ recordId }) => setGlobalSyncMessage({ type: "success", text: `ICU/Ward note synced to backend (record ${recordId.slice(0, 8)}…, verified round-trip).` }))
+                      .then(({ recordId, driveSynced, driveError }) => setGlobalSyncMessage({
+                        type: "success",
+                        text: `ICU/Ward note synced to backend (record ${recordId.slice(0, 8)}…, verified round-trip).` +
+                          (driveSynced ? " Also backed up to Google Drive, verified round-trip." : driveError ? ` Google Drive backup skipped: ${driveError}` : ""),
+                      }))
                       .catch((err) => setGlobalSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
                     setBackConfirm(null);
                     setNewEntryMode(null);

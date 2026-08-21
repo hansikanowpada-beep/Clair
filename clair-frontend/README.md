@@ -391,6 +391,80 @@ mount-only effect. Backward compatible: every other `BackendSyncPanel`
 usage in this file (there are around ten) doesn't pass the new prop, so
 none of them changed behavior.
 
+## Google Drive encrypt-upload / download-decrypt (real, end to end)
+
+The other genuinely-missing piece from earlier in this file's own module
+comment: "no Google Drive upload happens from this prototype." As of
+2026-08-21 it does, using `clairmd-backend`'s real OAuth connection and
+the real Drive REST API called directly from the browser — the actual
+"encrypt before it leaves the device, decrypt after it comes back" flow
+the product was always meant to have, not a stand-in for it.
+
+- **`getDriveAccessToken()`** — fetches a short-lived Drive access token
+  from `GET /api/drive/access-token`, cached in memory only (never
+  `localStorage` — unlike the auth JWT, there's no reason for a ~1h Drive
+  token to survive a reload; re-minting it is cheap and it's more
+  sensitive than most things this file already caches).
+- **`startDriveConnection()`** — opens the real Google OAuth consent
+  screen in a popup (`GET /api/drive/oauth/start`'s `authUrl`) and polls
+  `GET /api/drive/backup-status` every 2s until `connected: true`,
+  instead of relying on a postMessage handshake with the callback page.
+  Times out after 2 minutes; throws a clear error if the doctor closes
+  the popup before finishing.
+- **`uploadEncryptedBlobToDrive(recordId, encryptedBlob)`** — creates (or,
+  on every later save, updates in place) a file in the doctor's dedicated
+  Drive app folder via the real `multipart/related` Drive v3 upload
+  endpoint. The metadata part is just a non-descriptive filename; the
+  content part is the exact same opaque base64 ciphertext already sent to
+  `/api/record-content` — Drive never sees anything this backend doesn't
+  already treat as opaque too. The real Drive file id is cached in
+  `localStorage` (`clair_drive_file_<recordId>`) so the second save
+  updates the same file instead of creating a duplicate.
+- **`downloadEncryptedBlobFromDrive(recordId)`** / **`resolveDriveFileId`**
+  — the read side: resolves the real file id (this browser's own cache,
+  or falling back to the backend's `patient_record_index.drive_file_id`
+  pointer for a fresh browser profile) and downloads it via Drive's
+  `alt=media` endpoint.
+- **`syncNoteToBackend`** (existing, from the original merge) now does the
+  full Drive round trip too, automatically, on every OPD/ICU-Ward save —
+  after its existing backend verification succeeds, it uploads to Drive
+  (if connected), downloads what it just uploaded, decrypts it, and
+  compares against the original text, exactly mirroring the backend
+  verification already in place. This is best-effort by design: a Drive
+  failure (not connected, popup never finished, an expired token) never
+  throws — the already-verified backend sync stands on its own — it's
+  returned as `{ driveSynced, driveError }` alongside the existing
+  `recordId`, and both OPD/ICU-Ward save flows now show it in their
+  sync-status message when relevant.
+- **`DriveConnectionPanel`** — new, in `DoctorProfilePanel` between
+  `MyPlanAndBilling` and `DataRightsPanel`. A real "Connect Google Drive"
+  button (drives `startDriveConnection`), and once connected, the real
+  account email, last backup status/time from `GET /backup-status`, and a
+  quota warning banner when `quotaWarning` comes back true.
+- **What this does NOT change**: the backend's own `patient_record_content`
+  sync (this file's very first "Backend sync" section) keeps working
+  completely independently of Drive — a doctor who never connects Drive
+  at all still gets a fully working, verified encrypt/sync/decrypt round
+  trip against `clairmd-backend` alone, exactly as before this feature
+  existed.
+- **Live-tested**: the backend's new/changed routes were verified against
+  a real running Postgres + Express stack — `backup-status` correctly
+  reports not-connected, `access-token` correctly 404s before connecting,
+  `oauth/start` returns a genuine `accounts.google.com` URL. **Not**
+  live-tested: the actual consent screen, or a real upload/download round
+  trip — both need a real Google Cloud OAuth client (Client ID/Secret),
+  which doesn't exist in this sandbox. To get one for testing (no real
+  end-users needed — Google's OAuth "Testing" publish status supports up
+  to 100 explicitly-added test-user Google accounts with no app-review
+  process): create a Google Cloud project, enable the Google Drive API,
+  configure the OAuth consent screen as **External** / **Testing** with
+  the `drive.file` scope and your own Google account added as a test
+  user, then create a **Web application** OAuth client with authorized
+  redirect URI `http://localhost:4000/api/drive/oauth/callback` (must
+  match `GOOGLE_REDIRECT_URI` in `clairmd-backend/.env` exactly). Once
+  real `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` values are in `.env`,
+  this whole flow is ready to live-test the same way co-admin was.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain
