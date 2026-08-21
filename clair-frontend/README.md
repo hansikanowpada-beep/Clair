@@ -213,6 +213,44 @@ always resolves to one real, registered account, never a typed name.
   put that UI. The backend endpoint (`POST /:id/acknowledge`) exists and
   is ready for whenever that view does.
 
+## Notifications, patient records/consent, billing, and data rights
+
+Four more previously-unwired backend routes now have real UI:
+
+- **`NotificationsBell`** — new, in the sidebar header next to the
+  "ClairMD Clinic" logo (visible in every view, not tied to one patient).
+  Polls `GET /api/notifications` every 30 seconds — matching
+  `clairmd-backend`'s own design, which has no real push/email delivery
+  wired server-side either, only a pollable queue — and marks read via
+  `POST /:id/read`. Referral and care-team-instruction notifications show
+  a generic label per `notification_type` rather than resolving the raw
+  ids in the payload into names, since the endpoint doesn't provide those
+  names and this is a read-only inbox, not worth a second lookup just to
+  personalize the text.
+- **`MyRecordsAndConsent`** — new, in the patient portal's summary tab.
+  Shows which doctors hold a pointer to one of the patient's records
+  (`GET /api/patient/records`) and any co-admin access requests awaiting
+  a decision (`GET /api/patient/consent-requests`), with real
+  grant/decline buttons (`POST /api/coadmin/consent`). That consent
+  action needs no client-side crypto — it's a plain boolean gate on an
+  already-submitted key wrap — so it's real even though the other half of
+  co-admin (a doctor assigning one and wrapping a key) isn't built
+  anywhere in this frontend; there's simply no request for a patient to
+  ever see yet.
+- **`MyPlanAndBilling`** — new, in `DoctorProfilePanel`, added below (not
+  merged into) the existing "In-app billing" toggle, since that's the
+  clinic's own patient-billing feature — a different concept from a
+  doctor's own subscription to ClairMD, which is what this shows for
+  real (`GET /api/billing/plan`, `GET /api/billing/history`).
+- **`DataRightsPanel`** — new, also in `DoctorProfilePanel`. "Export my
+  data" downloads the real `GET /api/data-rights/export` response as JSON
+  (reusing the existing `downloadText` helper); "Deactivate account"
+  requires the real password and calls the real
+  `POST /api/data-rights/deactivate`, then disconnects the local session.
+  Matches the backend's own scope note verbatim: this covers platform
+  metadata only, never the clinical records held in a doctor's own
+  Google Drive.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain

@@ -13,6 +13,19 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Notifications, patient records/consent, billing, and data rights now
+  have real frontend callers** (2026-08-21) — no backend code changed for
+  these four (`routes/notifications.js`, `routes/patient.js`,
+  `routes/billing.js`'s `GET /plan`/`GET /history`, and
+  `routes/dataRights.js` were already fully built), but until now nothing
+  in `ClairMDEHR.jsx` ever called them. Also newly wired:
+  `POST /api/coadmin/consent` (a patient granting/declining co-admin
+  access) — this needs no client-side crypto to call, unlike the rest of
+  `coadmin.js`, since it's a plain boolean gate on an already-submitted
+  key wrap. What's still NOT wired from the frontend: the other side of
+  co-admin (a doctor assigning a co-admin and wrapping a record's key for
+  them), since that genuinely needs real per-recipient key-wrap crypto
+  this prototype doesn't have yet.
 - **Account directory search** (2026-08-21, `routes/accountDirectory.js`,
   new, no migration needed — it only reads `accounts`) — a real gap this
   closed: referrals and care-team instructions both require a real

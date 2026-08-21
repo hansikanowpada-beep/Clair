@@ -13516,6 +13516,60 @@ async function acknowledgeCareTeamInstructionOnBackend(id) {
   return data.instruction;
 }
 
+// --- Notifications ---------------------------------------------------------
+// clairmd-backend's own README is explicit that this is poll-based only —
+// no real push/email delivery is wired server-side either — so
+// NotificationsBell below polls on an interval rather than expecting a
+// live push, matching what the backend actually does.
+async function loadNotifications() {
+  const data = await apiRequest("/notifications");
+  return data.notifications;
+}
+async function markNotificationReadOnBackend(id) {
+  const data = await apiRequest(`/notifications/${id}/read`, { method: "POST" });
+  return data.notification;
+}
+
+// --- Patient's own record pointers + co-admin consent requests ---------
+async function loadMyPatientRecords() {
+  const data = await apiRequest("/patient/records");
+  return data.records;
+}
+async function loadMyConsentRequests() {
+  const data = await apiRequest("/patient/consent-requests");
+  return data.pendingConsentRequests;
+}
+// Granting/declining consent itself needs no client-side crypto — it's a
+// plain boolean gate on an already-submitted key wrap (see routes/
+// coadmin.js). What's genuinely NOT built is the other side: a doctor
+// assigning a co-admin and wrapping a record's key for them in the first
+// place, which needs real per-recipient key-wrap crypto this prototype
+// doesn't have. So a request can be responded to here once one exists,
+// but nothing in this app can create one yet.
+async function respondToConsentRequestOnBackend(patientRecordId, consentGranted) {
+  await apiRequest("/coadmin/consent", { method: "POST", body: { patientRecordId, consentGranted } });
+}
+
+// --- Doctor's own ClairMD subscription (distinct from DoctorProfilePanel's
+// "In-app billing" toggle, which is the clinic's own patient-billing
+// feature, a different concept entirely) -----------------------------------
+async function loadMyPlanTier() {
+  const data = await apiRequest("/billing/plan");
+  return data.planTier;
+}
+async function loadMyBillingHistory() {
+  const data = await apiRequest("/billing/history");
+  return data.events;
+}
+
+// --- DPDP data rights: export / deactivate ------------------------------
+async function exportMyDataFromBackend() {
+  return apiRequest("/data-rights/export");
+}
+async function deactivateMyAccountOnBackend(password) {
+  return apiRequest("/data-rights/deactivate", { method: "POST", body: { password } });
+}
+
 // Compact, reusable connect/status widget — email+password only (matches
 // the real backend's actual signup/login fields; the license-number field
 // only appears for doctor account types, since /api/auth/signup requires
@@ -13613,6 +13667,113 @@ function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel
             <p className={`text-[10px] ${status.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`}>{status.text}</p>
           )}
         </form>
+      )}
+    </div>
+  );
+}
+
+// Human-readable label per notification_type — the raw payload only ever
+// carries ids (referralId, fromDoctorId, ...), never a display name, so
+// this stays a generic label rather than trying to resolve those ids into
+// names (that would mean extra lookups the notifications endpoint itself
+// doesn't provide).
+const NOTIFICATION_TYPE_LABELS = {
+  referral_created: "New referral received",
+  referral_responded: "Your referral was responded to",
+  care_team_instruction_created: "New care-team instruction",
+  care_team_instruction_acknowledged: "Instruction acknowledged",
+};
+function describeNotification(n) {
+  if (n.notification_type === "referral_responded" && n.payload?.status) {
+    return `Your referral was ${n.payload.status}`;
+  }
+  return NOTIFICATION_TYPE_LABELS[n.notification_type] || n.notification_type;
+}
+
+// Poll-based, matching clairmd-backend's own design (its README is
+// explicit that no real push/email delivery is wired server-side either)
+// — this polls GET /api/notifications on an interval rather than
+// expecting a live push, since there genuinely isn't one to expect yet.
+function NotificationsBell() {
+  const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [connectedEmail, setConnectedEmail] = useState(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    apiRequest("/auth/me").then((data) => setConnectedEmail(data.account.email)).catch(() => {});
+  }, []);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    loadNotifications().then(setNotifications).catch(() => {});
+  };
+  useEffect(() => {
+    refresh();
+    const interval = setInterval(refresh, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  const markRead = (id) => {
+    markNotificationReadOnBackend(id)
+      .then(() => setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))))
+      .catch(() => {});
+  };
+
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        title="Notifications"
+        className="relative w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7] hover:text-[#16241F]"
+      >
+        <Bell size={16} />
+        {unreadCount > 0 && (
+          <span className="absolute top-0.5 right-0.5 min-w-[14px] h-[14px] px-0.5 flex items-center justify-center text-[9px] font-medium text-white bg-[#B34A3C] rounded-full">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-1 w-72 bg-white border border-[#D8DED9] rounded-sm shadow-xl z-50">
+          <div className="px-3 py-2 border-b border-[#D8DED9] flex items-center justify-between">
+            <span className="text-[11px] uppercase tracking-wide text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Notifications</span>
+            {getAuthToken() && <button onClick={refresh} className="text-[10px] text-[#0F5C56] underline decoration-dotted">Refresh</button>}
+          </div>
+          {!connectedEmail ? (
+            <div className="p-3">
+              <p className="text-xs text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend to see real notifications — referrals and care-team instructions enqueue these for real once you are.</p>
+              <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected" />
+            </div>
+          ) : notifications.length === 0 ? (
+            <p className="text-xs text-[#8A958E] p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No notifications yet.</p>
+          ) : (
+            <div className="max-h-72 overflow-y-auto">
+              {notifications.map((n) => (
+                <div key={n.id} className={`px-3 py-2 border-b border-[#EEF1EE] flex items-start justify-between gap-2 ${n.read_at ? "" : "bg-[#F2F7F5]"}`}>
+                  <div>
+                    <div className="text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "#16241F" }}>{describeNotification(n)}</div>
+                    <div className="text-[10px] text-[#8A958E] mt-0.5">{new Date(n.created_at).toLocaleString()}</div>
+                  </div>
+                  {!n.read_at && (
+                    <button onClick={() => markRead(n.id)} className="text-[10px] text-[#0F5C56] underline decoration-dotted shrink-0">Mark read</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -18570,6 +18731,87 @@ function PatientFollowupReply({ followup, setFollowups }) {
   );
 }
 
+// The patient's own view of which doctors hold a pointer to one of their
+// records, plus any co-admin consent decisions waiting on them. Real
+// backend data once connected — clairmd-backend never lets this backend
+// see the record's actual content either way (see patient.js's own
+// comment), only which doctor holds the pointer.
+function MyRecordsAndConsent() {
+  const [records, setRecords] = useState(null); // null = not loaded yet
+  const [consentRequests, setConsentRequests] = useState([]);
+  const [busyId, setBusyId] = useState(null);
+  const [statusMessage, setStatusMessage] = useState(null);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    loadMyPatientRecords().then(setRecords).catch(() => {});
+    loadMyConsentRequests().then(setConsentRequests).catch(() => {});
+  };
+  useEffect(refresh, []);
+
+  const respond = (req, granted) => {
+    setBusyId(req.id);
+    respondToConsentRequestOnBackend(req.patient_record_id, granted)
+      .then(() => { setStatusMessage({ type: "success", text: `Consent ${granted ? "granted" : "declined"}.` }); refresh(); })
+      .catch((err) => setStatusMessage({ type: "error", text: err.message }))
+      .finally(() => setBusyId(null));
+  };
+
+  return (
+    <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+      <div className="flex items-center justify-between mb-1">
+        <SectionLabel>Your linked records</SectionLabel>
+        {getAuthToken() && <button onClick={refresh} className="text-[11px] text-[#0F5C56] underline decoration-dotted">Refresh</button>}
+      </div>
+      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Which doctors hold a pointer to one of your records on the real backend — never the record's actual content, which stays encrypted in that doctor's own Drive.
+      </p>
+      <BackendSyncPanel accountType="patient" notConnectedLabel="Backend: not connected — showing this device's local records only" />
+
+      {getAuthToken() && (
+        <>
+          <div className="mt-4">
+            {records === null ? (
+              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
+            ) : records.length === 0 ? (
+              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No records linked to this account yet.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {records.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-xs px-3 py-2 border border-[#D8DED9] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <span>{r.primary_doctor_name}</span>
+                    <span className="text-[#8A958E]">Updated {new Date(r.updated_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {consentRequests.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-[#EEF1EE]">
+              <span className="text-[11px] uppercase tracking-wide text-[#8A958E]">Co-admin access awaiting your decision</span>
+              <div className="space-y-2 mt-2">
+                {consentRequests.map((req) => (
+                  <div key={req.id} className="flex items-center justify-between gap-3 p-3 border border-[#F0DDB0] bg-[#FBF6EC] rounded-md">
+                    <span className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{req.co_admin_doctor_name} is requesting standby access to one of your records.</span>
+                    <div className="flex gap-1.5 shrink-0">
+                      <button disabled={busyId === req.id} onClick={() => respond(req, true)} className="text-[11px] px-2 py-1 rounded-sm text-white disabled:opacity-50" style={{ backgroundColor: "#0F5C56" }}>Grant</button>
+                      <button disabled={busyId === req.id} onClick={() => respond(req, false)} className="text-[11px] px-2 py-1 rounded-sm border border-[#EFC9C1] text-[#B34A3C] disabled:opacity-50">Decline</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {statusMessage && (
+            <p className={`text-xs mt-3 ${statusMessage.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{statusMessage.text}</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 const SHARE_TARGETS = ["Instagram", "WhatsApp", "X", "TikTok"];
 
 function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion }) {
@@ -19327,6 +19569,8 @@ function PatientPortalView({ patients, onBack, followups, setFollowups, feedPost
                 </div>
               );
             })()}
+
+            <MyRecordsAndConsent />
 
             <div className="bg-[#F7F9F7] border border-[#EEF1EE] rounded-md p-4 text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               <span className="font-medium">Note:</span> medicine-stock reminders are on the Billing tab. Wearable heart-rate monitoring, automatic emergency calling, and automatic medicine reordering are not part of this app — those would need real hardware integration, emergency-response partnerships, and payment-wallet licensing that go well beyond what a clinic EHR can safely claim to do.
@@ -21168,6 +21412,139 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
           </div>
         )}
       </div>
+
+      <MyPlanAndBilling theme={theme} />
+      <DataRightsPanel theme={theme} />
+    </div>
+  );
+}
+
+// Your ClairMD subscription (plan_tier + billing_events) — distinct from
+// the "In-app billing" toggle above, which is the clinic's own patient-
+// billing feature, a different concept entirely.
+function MyPlanAndBilling({ theme }) {
+  const [planTier, setPlanTier] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    loadMyPlanTier().then(setPlanTier).catch(() => {});
+    loadMyBillingHistory().then(setHistory).catch(() => {});
+  };
+  useEffect(refresh, []);
+
+  return (
+    <div className="mt-5 pt-5 border-t border-[#D8DED9]">
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your ClairMD subscription</div>
+        {getAuthToken() && <button onClick={refresh} className="text-[11px] text-[#0F5C56] underline decoration-dotted">Refresh</button>}
+      </div>
+      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your real plan and billing history with ClairMD itself.</p>
+      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — showing nothing until you are" />
+      {getAuthToken() && (
+        <div className="mt-3">
+          {planTier && (
+            <div className="inline-block text-xs px-2.5 py-1 rounded-sm text-white font-medium mb-3" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              Current plan: {planTier}
+            </div>
+          )}
+          {history.length === 0 ? (
+            <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No billing events on file yet.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {history.map((e) => (
+                <div key={e.id} className="flex items-center justify-between text-xs px-3 py-2 border border-[#D8DED9] rounded-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                  <span>{e.plan_tier}</span>
+                  <span>{e.amount_paise != null ? `₹${(e.amount_paise / 100).toFixed(2)}` : "—"}</span>
+                  <span className="text-[#8A958E]">{new Date(e.occurred_at).toLocaleDateString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// DPDP data rights — export (right to access) and deactivate (soft
+// delete). Permanent/hard erasure is deliberately not built on the
+// backend either — see clairmd-backend's routes/dataRights.js for why
+// that's a legal/retention-policy decision, not something to invent here.
+function DataRightsPanel({ theme }) {
+  const [exportStatus, setExportStatus] = useState(null);
+  const [password, setPassword] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [deactivateStatus, setDeactivateStatus] = useState(null);
+  const [deactivated, setDeactivated] = useState(false);
+
+  const doExport = () => {
+    setExportStatus({ type: "pending", text: "Exporting…" });
+    exportMyDataFromBackend()
+      .then((data) => {
+        downloadText(`clairmd-data-export-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data, null, 2));
+        setExportStatus({ type: "success", text: "Downloaded." });
+      })
+      .catch((err) => setExportStatus({ type: "error", text: err.message }));
+  };
+
+  const doDeactivate = () => {
+    if (!password) return;
+    deactivateMyAccountOnBackend(password)
+      .then(() => { setDeactivated(true); backendLogout(); })
+      .catch((err) => setDeactivateStatus({ type: "error", text: err.message }));
+  };
+
+  if (deactivated) {
+    return (
+      <div className="mt-5 pt-5 border-t border-[#D8DED9]">
+        <div className="flex items-center gap-2 text-sm text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <CheckCircle2 size={16} /> Account deactivated on the backend and you've been disconnected. This did not affect any clinical records in your Google Drive.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-5 pt-5 border-t border-[#D8DED9]">
+      <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your data — DPDP rights</div>
+      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Covers what this platform's own database holds about your account — not your clinical records, which are encrypted and stay in your own Google Drive.
+      </p>
+      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected" />
+      {getAuthToken() && (
+        <div className="mt-3 space-y-4">
+          <div>
+            <button onClick={doExport} className="text-xs px-3 py-1.5 rounded-sm border border-[#D8DED9] text-[#3C4A42] hover:bg-[#F7F9F7] inline-flex items-center gap-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <Download size={12} /> Export my data
+            </button>
+            {exportStatus && (
+              <p className={`text-xs mt-1.5 ${exportStatus.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{exportStatus.text}</p>
+            )}
+          </div>
+
+          <div className="p-3 border border-[#EFC9C1] bg-[#FBEFEC] rounded-md">
+            <div className="text-xs font-medium text-[#B34A3C] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Deactivate account</div>
+            <p className="text-[11px] text-[#7A2F25] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              Signs you out and deactivates your ClairMD account. Doesn't touch your Drive-held clinical records or reassign patients — do that first.
+            </p>
+            {!confirming ? (
+              <button onClick={() => setConfirming(true)} className="text-[11px] px-2.5 py-1 rounded-sm border border-[#EFC9C1] text-[#B34A3C]">Deactivate account…</button>
+            ) : (
+              <div className="space-y-2">
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Confirm your password" className="w-full px-3 py-2 border border-[#EFC9C1] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
+                <div className="flex gap-1.5">
+                  <button onClick={doDeactivate} disabled={!password} className="text-[11px] px-2.5 py-1 rounded-sm text-white disabled:opacity-50" style={{ backgroundColor: "#B34A3C" }}>Confirm deactivation</button>
+                  <button onClick={() => { setConfirming(false); setPassword(""); }} className="text-[11px] px-2.5 py-1 rounded-sm border border-[#D8DED9] text-[#5B6B63]">Cancel</button>
+                </div>
+                {deactivateStatus && (
+                  <p className="text-xs text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{deactivateStatus.text}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -21842,8 +22219,13 @@ export default function ClairMDEHR() {
           {!sidebarCollapsed && (
           <>
           <div className="px-5 py-5 border-b border-[#D8DED9]">
-            <div className="text-xs tracking-widest text-[#8A958E] uppercase" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Prototype</div>
-            <div className="text-2xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: theme.color }}>ClairMD Clinic</div>
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-xs tracking-widest text-[#8A958E] uppercase" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Prototype</div>
+                <div className="text-2xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: theme.color }}>ClairMD Clinic</div>
+              </div>
+              <NotificationsBell />
+            </div>
             {doctorSpecialty && (
               <div className="text-[11px] mt-1 px-2 py-0.5 rounded-sm inline-block text-white" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>{theme.label}</div>
             )}
