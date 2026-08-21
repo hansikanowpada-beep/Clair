@@ -17679,9 +17679,11 @@ class DraftPatientErrorBoundary extends React.Component {
 function DoctorAdRail() {
   const [popupAd, setPopupAd] = useState(null);
 
+  // Plum accent — the ad rail's own third color, distinct from the sidebar
+  // nav's marigold (Admin) and slate-blue (Library) above it.
   return (
-    <div className="shrink-0 px-3 py-3 border-t border-[#D8DED9]" style={{ flexShrink: 0 }}>
-      <div className="text-[10px] uppercase tracking-wider text-[#8A958E] mb-2 px-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Sponsored</div>
+    <div className="shrink-0 px-3 py-3 border-t-2" style={{ flexShrink: 0, borderColor: "#6B4C93" }}>
+      <div className="text-[10px] uppercase tracking-wider mb-2 px-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "#6B4C93" }}>Sponsored</div>
       <div className="space-y-2">
         {DOCTOR_ADS.map((ad, i) => (
           <AdCard key={i} ad={ad} onOpenPopup={() => setPopupAd(ad)} />
@@ -17702,7 +17704,7 @@ function AdCard({ ad, onOpenPopup }) {
   };
 
   return (
-    <div className="bg-[#F7F9F7] border border-[#EEF1EE] rounded-sm overflow-hidden">
+    <div className="bg-[#F7F9F7] border-2 rounded-sm overflow-hidden" style={{ borderColor: "#D8C5E8" }}>
       <button
         onClick={goToSponsor}
         className="block w-full relative"
@@ -21107,89 +21109,97 @@ export default function ClairMDEHR() {
               <Users size={16} />Patients
             </button>
 
-            <button
-              onClick={() => setAdminOpen((v) => !v)}
-              className="w-full flex items-center justify-between pt-2 pb-1 px-3 text-[10px] uppercase tracking-wide text-[#8A958E] hover:text-[#3C4A42]"
-              style={{ fontFamily: "'IBM Plex Mono', monospace" }}
-            >
-              Admin
-              {adminOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
-            {adminOpen && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setSidebarView("buildHospital")}
-                  className={`w-full flex items-center gap-2.5 pl-5 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors mb-1 border ${
-                    sidebarView === "buildHospital" ? "font-medium" : "hover:bg-[#FBF6EC]"
-                  }`}
-                  style={{ backgroundColor: "#FBF6EC", borderColor: "#F0DDB0", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" }}
-                >
-                  <Hammer size={16} className="shrink-0" />Build a hospital
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSidebarView("campMode")}
-                  className={`w-full flex items-center gap-2.5 pl-5 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors mb-1 border ${
-                    sidebarView === "campMode" ? "font-medium" : "hover:bg-[#EAF3F1]"
-                  }`}
-                  style={{ backgroundColor: "#EAF3F1", borderColor: "#BFDAD5", color: "#0F5C56", fontFamily: "'IBM Plex Sans', sans-serif" }}
-                >
-                  <Tent size={16} className="shrink-0" />Camp / medical aid mode
-                </button>
-                {[
-                  { key: "statistics", label: "Statistics", icon: BarChart3 },
-                  { key: "beds", label: "Bed availability", icon: BedDouble },
-                  { key: "inventory", label: "Inventory manager", icon: Package },
-                  { key: "planner", label: "Planner", icon: CalendarDays },
-                  { key: "followups", label: "Follow-ups", icon: ClipboardList },
-                  { key: "virtualOpd", label: "Virtual OPD", icon: GraduationCap, premium: true },
-                ].map((item) => {
-                  const locked = item.premium && doctorPlan !== "premium";
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={() => !locked && setSidebarView(item.key)}
-                      disabled={locked}
-                      title={locked ? "Premium feature — upgrade to unlock" : ""}
-                      className={`w-full flex items-center justify-between gap-2.5 pl-5 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors ${
-                        locked ? "text-[#B8C0BC] cursor-not-allowed" : sidebarView === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#F7F9F7]"
-                      }`}
-                      style={!locked && sidebarView === item.key ? { backgroundColor: `${theme.color}14`, color: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
-                    >
-                      <span className="flex items-center gap-2.5"><item.icon size={16} className="shrink-0" />{item.label}</span>
-                      {locked && <Lock size={12} />}
-                    </button>
-                  );
-                })}
-              </>
-            )}
-
-            <button
-              onClick={() => setLibraryOpen((v) => !v)}
-              className="w-full flex items-center justify-between pt-2 pb-1 px-3 text-[10px] uppercase tracking-wide text-[#8A958E] hover:text-[#3C4A42]"
-              style={{ fontFamily: "'IBM Plex Mono', monospace" }}
-            >
-              Library
-              {libraryOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-            </button>
-            {libraryOpen && [
-              { key: "medicalCondition", label: "Medical condition", icon: BookOpen },
-              { key: "aetiology", label: "Aetiology", icon: BookOpen },
-              { key: "symptoms", label: "Symptoms", icon: Activity },
-              { key: "drugDatabase", label: "Drug database", icon: Pill },
-            ].map((item) => (
+            {/* Admin group — marigold accent, shared by the section header and every
+                item nested under it, so the whole block reads as one colored zone
+                distinct from Library (slate-blue) and the ad rail (plum) below. */}
+            <div className="border-l-2 pl-1" style={{ borderColor: "#F0DDB0" }}>
               <button
-                key={item.key}
-                onClick={() => { setLibraryModalKey(item.key); setLibraryModalMinimized(false); }}
-                className={`w-full flex items-center gap-2 pl-5 pr-2 py-2.5 rounded-sm text-xs whitespace-nowrap text-left transition-colors ${
-                  libraryModalKey === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#F7F9F7]"
-                }`}
-                style={libraryModalKey === item.key ? { backgroundColor: `${theme.color}14`, color: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
+                onClick={() => setAdminOpen((v) => !v)}
+                className="w-full flex items-center justify-between pt-2 pb-1 px-2 text-[10px] uppercase tracking-wide hover:text-[#7A5A19]"
+                style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#B3822E" }}
               >
-                <item.icon size={14} className="shrink-0" />{item.label}
+                Admin
+                {adminOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
               </button>
-            ))}
+              {adminOpen && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSidebarView("buildHospital")}
+                    className={`w-full flex items-center gap-2.5 pl-4 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors mb-1 border ${
+                      sidebarView === "buildHospital" ? "font-medium" : "hover:bg-[#FBF6EC]"
+                    }`}
+                    style={{ backgroundColor: "#FBF6EC", borderColor: "#F0DDB0", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" }}
+                  >
+                    <Hammer size={16} className="shrink-0" />Build a hospital
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSidebarView("campMode")}
+                    className={`w-full flex items-center gap-2.5 pl-4 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors mb-1 border ${
+                      sidebarView === "campMode" ? "font-medium" : "hover:bg-[#FBF6EC]"
+                    }`}
+                    style={{ backgroundColor: "#FBF6EC", borderColor: "#F0DDB0", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" }}
+                  >
+                    <Tent size={16} className="shrink-0" />Camp / medical aid mode
+                  </button>
+                  {[
+                    { key: "statistics", label: "Statistics", icon: BarChart3 },
+                    { key: "beds", label: "Bed availability", icon: BedDouble },
+                    { key: "inventory", label: "Inventory manager", icon: Package },
+                    { key: "planner", label: "Planner", icon: CalendarDays },
+                    { key: "followups", label: "Follow-ups", icon: ClipboardList },
+                    { key: "virtualOpd", label: "Virtual OPD", icon: GraduationCap, premium: true },
+                  ].map((item) => {
+                    const locked = item.premium && doctorPlan !== "premium";
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => !locked && setSidebarView(item.key)}
+                        disabled={locked}
+                        title={locked ? "Premium feature — upgrade to unlock" : ""}
+                        className={`w-full flex items-center justify-between gap-2.5 pl-4 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors ${
+                          locked ? "text-[#B8C0BC] cursor-not-allowed" : sidebarView === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#FBF6EC]"
+                        }`}
+                        style={!locked && sidebarView === item.key ? { backgroundColor: "#FBF6EC", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
+                      >
+                        <span className="flex items-center gap-2.5"><item.icon size={16} className="shrink-0" />{item.label}</span>
+                        {locked && <Lock size={12} />}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+
+            {/* Library group — slate-blue accent, same treatment as Admin above. */}
+            <div className="border-l-2 pl-1 mt-1" style={{ borderColor: "#C9D6E3" }}>
+              <button
+                onClick={() => setLibraryOpen((v) => !v)}
+                className="w-full flex items-center justify-between pt-2 pb-1 px-2 text-[10px] uppercase tracking-wide hover:text-[#2B3E58]"
+                style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#4C6A8C" }}
+              >
+                Library
+                {libraryOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
+              {libraryOpen && [
+                { key: "medicalCondition", label: "Medical condition", icon: BookOpen },
+                { key: "aetiology", label: "Aetiology", icon: BookOpen },
+                { key: "symptoms", label: "Symptoms", icon: Activity },
+                { key: "drugDatabase", label: "Drug database", icon: Pill },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => { setLibraryModalKey(item.key); setLibraryModalMinimized(false); }}
+                  className={`w-full flex items-center gap-2 pl-4 pr-2 py-2.5 rounded-sm text-xs whitespace-nowrap text-left transition-colors ${
+                    libraryModalKey === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#EDF1F6]"
+                  }`}
+                  style={libraryModalKey === item.key ? { backgroundColor: "#EDF1F6", color: "#3A5478", fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
+                >
+                  <item.icon size={14} className="shrink-0" />{item.label}
+                </button>
+              ))}
+            </div>
 
             {[
               { key: "doctorProfile", label: "Doctor profile", icon: UserCircle2 },
