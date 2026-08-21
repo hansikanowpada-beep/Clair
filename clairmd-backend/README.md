@@ -13,6 +13,46 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Co-admin assignment — the doctor side is now real, not just consent**
+  (2026-08-21) — supersedes the earlier note further down in this file
+  that said the assigning side "needs real per-recipient key-wrap crypto
+  this prototype doesn't have." It now does. New:
+  - `024_account_public_keys.sql` adds `accounts.public_key` (nullable
+    TEXT) — an RSA-OAEP public key, SPKI-encoded, base64. Only the public
+    half is ever stored server-side; the matching private key is
+    generated in the browser and never sent here (see `ClairMDEHR.jsx`'s
+    `getOrCreateKeyPair`). A public key isn't sensitive by definition, so
+    this needed no new access control — just a place to put it.
+  - `PUT /api/auth/public-key` — any authenticated account publishes its
+    own public key. `GET /api/auth/me` now also returns `public_key`.
+  - `routes/accountDirectory.js`'s search now also returns `public_key`
+    per result — needed so a doctor picking a co-admin can wrap that
+    record key immediately, without a second round trip. Still never
+    returns email/phone; a public key is the one field in this table
+    that's supposed to be public.
+  - Two new read routes on `routes/coadmin.js`, both previously missing
+    entirely: `GET /coadmin/my-assignment` (a doctor's own current
+    co-admin, if any — `/assign` was write-only before, with no way to
+    check what's currently set) and `GET /coadmin/my-wraps` (every key
+    wrap the calling account holds — the co-admin's own "which records
+    was I actually given access to" view; before this, the only read
+    route was `GET /key-wraps/:patientRecordId`, which is useless without
+    already knowing a record id to ask about).
+  - No changes to `POST /coadmin/assign`, `POST /coadmin/key-wraps`, `POST
+    /coadmin/consent`, or `GET /coadmin/key-wraps/:patientRecordId` — all
+    four already had everything the new frontend flow needed; this only
+    added what was missing around them.
+  - **Known, deliberately out-of-scope limitations**, same ones flagged
+    to the user before building this: no key backup/recovery (a private
+    key lives in exactly one browser; a second device can't unwrap
+    anything wrapped for the first device's public key, and the frontend
+    refuses to silently generate a second keypair and orphan the first),
+    and no revocation (removing a co-admin's `record_key_wraps` row
+    doesn't stop them from decrypting a copy they already fetched — real
+    revocation needs key rotation, i.e. re-encrypting content with a new
+    key and re-wrapping it for everyone still authorized, which is
+    meaningfully more work and wasn't attempted here).
+
 - **Founder/admin dashboard now has a real frontend caller** (2026-08-21) —
   no backend code changed here; `routes/admin.js`'s four read-only routes
   were already fully built (see the 2026-08-18 entry further down), but

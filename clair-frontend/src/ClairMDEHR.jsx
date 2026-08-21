@@ -13262,6 +13262,111 @@ async function decryptRecordText(recordId, encryptedBlob) {
   return new TextDecoder().decode(plaintext);
 }
 
+// True only if THIS browser already holds the actual AES key it used to
+// encrypt a given record (i.e. it's the browser that created/synced that
+// record's content — see getOrCreateRecordKey above). Deliberately does
+// NOT call getOrCreateRecordKey itself: that function generates a fresh
+// key on a cache miss, which is correct when a record is first created,
+// but wrong here — silently generating a "key" for a record whose real
+// key lives on a different device would produce a wrap that looks valid
+// but can't decrypt anything real. Used to filter which records are safe
+// to wrap for a co-admin (see assignCoAdminOnBackend below).
+function hasLocalRecordKey(recordId) {
+  return typeof localStorage !== "undefined" && !!localStorage.getItem(`clair_record_key_${recordId}`);
+}
+
+// --- Per-account RSA-OAEP keypair — the real key-wrap crypto for co-admin
+// access (routes/coadmin.js), replacing the "not built yet" gap this
+// prototype had before. The private key is generated in the browser and
+// NEVER leaves it (not even to this app's own backend); only the public
+// key (SPKI, base64) is published via PUT /api/auth/public-key so other
+// accounts can wrap a record's AES key for this one. This is genuinely
+// the same trust model as record_key_wraps itself: the backend routes
+// ciphertext, never sees a plaintext key.
+//
+// Known, explicitly-accepted limitation: there's no key backup/recovery
+// flow. If this account logs in from a second browser/device, that
+// browser has no private key, so it can't unwrap anything wrapped for the
+// first one's public key — and (see below) this function refuses to
+// silently generate a second keypair and overwrite the published public
+// key, since that would orphan every wrap already made for the first one.
+// A real deployment needs a proper backup/recovery design (e.g. a
+// password-derived wrap of the private key); not attempted here.
+async function getOrCreateKeyPair() {
+  if (!(typeof crypto !== "undefined" && crypto.subtle)) {
+    throw new Error("Encryption isn't available in this browser context (Web Crypto requires https or localhost).");
+  }
+  const storedPrivate = localStorage.getItem("clair_private_key");
+  if (storedPrivate) {
+    return crypto.subtle.importKey("pkcs8", base64ToBytes(storedPrivate), { name: "RSA-OAEP", hash: "SHA-256" }, false, ["unwrapKey"]);
+  }
+
+  const me = await apiRequest("/auth/me");
+  if (me.account.public_key) {
+    throw new Error("This account already has a co-admin key published from a different device, and this browser doesn't have the matching private key. Multi-device key recovery isn't built in this prototype.");
+  }
+
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
+    true,
+    ["wrapKey", "unwrapKey"]
+  );
+  const privateRaw = new Uint8Array(await crypto.subtle.exportKey("pkcs8", keyPair.privateKey));
+  localStorage.setItem("clair_private_key", bytesToBase64(privateRaw));
+  const publicRaw = new Uint8Array(await crypto.subtle.exportKey("spki", keyPair.publicKey));
+  await apiRequest("/auth/public-key", { method: "PUT", body: { publicKey: bytesToBase64(publicRaw) } });
+  return keyPair.privateKey;
+}
+
+// Wraps one record's existing AES-GCM key with a recipient's RSA-OAEP
+// public key (SPKI, base64, as returned by the account-directory search or
+// GET /api/auth/me) — the actual crypto behind co-admin assignment. Only
+// ever called on a record this browser already holds the real key for
+// (see hasLocalRecordKey).
+async function wrapRecordKeyForRecipient(recordId, recipientPublicKeyB64) {
+  const aesKey = await getOrCreateRecordKey(recordId);
+  const publicKey = await crypto.subtle.importKey(
+    "spki",
+    base64ToBytes(recipientPublicKeyB64),
+    { name: "RSA-OAEP", hash: "SHA-256" },
+    false,
+    ["wrapKey"]
+  );
+  const wrapped = new Uint8Array(await crypto.subtle.wrapKey("raw", aesKey, publicKey, { name: "RSA-OAEP" }));
+  return bytesToBase64(wrapped);
+}
+
+// Co-admin/patient side: fetches this account's wrapped key for a record
+// (subject to coadmin.js's consent gate), unwraps it with this account's
+// own private key, and caches the result in the SAME localStorage slot
+// getOrCreateRecordKey reads from — so the existing encrypt/decrypt
+// helpers (and syncNoteToBackend's round trip) work completely unchanged
+// for a co-admin, exactly the way they already do for the primary doctor.
+async function fetchAndCacheWrappedRecordKey(recordId) {
+  const data = await apiRequest(`/coadmin/key-wraps/${recordId}`);
+  const privateKey = await getOrCreateKeyPair();
+  const aesKey = await crypto.subtle.unwrapKey(
+    "raw",
+    base64ToBytes(data.wrappedKey),
+    privateKey,
+    { name: "RSA-OAEP" },
+    { name: "AES-GCM", length: 256 },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  const rawKey = new Uint8Array(await crypto.subtle.exportKey("raw", aesKey));
+  localStorage.setItem(`clair_record_key_${recordId}`, bytesToBase64(rawKey));
+}
+
+// Full read path for a co-admin viewing a record they've been granted
+// (and consented) access to: unwrap the key, fetch the encrypted content,
+// decrypt it locally. Mirrors syncNoteToBackend's round trip but read-only.
+async function loadCoAdminRecordContent(recordId) {
+  await fetchAndCacheWrappedRecordKey(recordId);
+  const data = await apiRequest(`/record-content/${recordId}`);
+  return decryptRecordText(recordId, data.content.encrypted_blob);
+}
+
 // Creates the backend pointer row (patient_record_index) this note's
 // content will hang off of. driveFileId is a placeholder — this prototype
 // doesn't upload anything to Google Drive.
@@ -13541,13 +13646,50 @@ async function loadMyConsentRequests() {
 }
 // Granting/declining consent itself needs no client-side crypto — it's a
 // plain boolean gate on an already-submitted key wrap (see routes/
-// coadmin.js). What's genuinely NOT built is the other side: a doctor
-// assigning a co-admin and wrapping a record's key for them in the first
-// place, which needs real per-recipient key-wrap crypto this prototype
-// doesn't have. So a request can be responded to here once one exists,
-// but nothing in this app can create one yet.
+// coadmin.js).
 async function respondToConsentRequestOnBackend(patientRecordId, consentGranted) {
   await apiRequest("/coadmin/consent", { method: "POST", body: { patientRecordId, consentGranted } });
+}
+
+// --- Co-admin assignment (the doctor side) — was the one genuinely
+// unbuilt half of co-admin; now real, using getOrCreateKeyPair/
+// wrapRecordKeyForRecipient above. ---------------------------------------
+async function loadMyCoAdminAssignment() {
+  const data = await apiRequest("/coadmin/my-assignment");
+  return data.assignment;
+}
+
+// One-time setup, matching coadmin.js's own "not re-sent later" design:
+// registers the assignment, then wraps every one of the doctor's own
+// patient records that THIS browser holds the real key for, and submits
+// each wrap. Records this browser never actually opened (no local key —
+// see hasLocalRecordKey) are skipped rather than given a fabricated wrap
+// that couldn't decrypt the real content; returned per-record so the
+// caller can show exactly what happened, not just "done".
+async function assignCoAdminOnBackend(coAdminDoctorId, coAdminPublicKeyB64) {
+  await apiRequest("/coadmin/assign", { method: "POST", body: { coAdminDoctorId } });
+  const { records } = await apiRequest("/records");
+  const results = [];
+  for (const record of records) {
+    if (!hasLocalRecordKey(record.id)) {
+      results.push({ recordId: record.id, ok: false, reason: "No local key for this record in this browser — skipped rather than wrapping a key that wouldn't match the synced content." });
+      continue;
+    }
+    try {
+      const wrappedKey = await wrapRecordKeyForRecipient(record.id, coAdminPublicKeyB64);
+      await apiRequest("/coadmin/key-wraps", { method: "POST", body: { patientRecordId: record.id, wrappedKey } });
+      results.push({ recordId: record.id, ok: true });
+    } catch (err) {
+      results.push({ recordId: record.id, ok: false, reason: err.message });
+    }
+  }
+  return results;
+}
+
+// --- Co-admin's own view (the recipient side) ---------------------------
+async function loadMyCoAdminWraps() {
+  const data = await apiRequest("/coadmin/my-wraps");
+  return data.wraps;
 }
 
 // --- Doctor's own ClairMD subscription (distinct from DoctorProfilePanel's
@@ -21433,6 +21575,173 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
 
       <MyPlanAndBilling theme={theme} />
       <DataRightsPanel theme={theme} />
+      <CoAdminPanel theme={theme} />
+    </div>
+  );
+}
+
+// Real key-wrap crypto (see getOrCreateKeyPair/wrapRecordKeyForRecipient
+// above) for both halves of co-admin access: assigning a colleague as your
+// own co-admin (this doctor wraps each of their own patient records' keys
+// for the recipient), and viewing records another doctor assigned you to
+// (unwrap-and-decrypt, gated by the patient's own consent — see
+// PatientPortalView's consent-request UI for that side).
+function CoAdminPanel({ theme }) {
+  const [assignment, setAssignment] = useState(null);
+  const [picked, setPicked] = useState(null);
+  const [assigning, setAssigning] = useState(false);
+  const [assignResults, setAssignResults] = useState(null);
+  const [assignError, setAssignError] = useState(null);
+  const [wraps, setWraps] = useState([]);
+  const [openRecordId, setOpenRecordId] = useState(null);
+  const [openRecordText, setOpenRecordText] = useState(null);
+  const [openRecordError, setOpenRecordError] = useState(null);
+  const [openRecordLoading, setOpenRecordLoading] = useState(false);
+  const [keyPairError, setKeyPairError] = useState(null);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    loadMyCoAdminAssignment().then(setAssignment).catch(() => {});
+    loadMyCoAdminWraps().then(setWraps).catch(() => {});
+  };
+  useEffect(refresh, []);
+
+  // Publishes this account's own public key on first visit to this panel
+  // (a no-op after the first time — getOrCreateKeyPair reuses the cached
+  // private key) so OTHER doctors can find a public_key on file when they
+  // search for this account to assign as their co-admin. Without this,
+  // nobody could ever be assigned before opening this panel themselves —
+  // best-effort, matching this file's local-first pattern: a failure here
+  // (e.g. a key already published from a different browser) is surfaced,
+  // not silently swallowed, since it directly explains why assignment
+  // might not work for this account.
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    getOrCreateKeyPair().catch((err) => setKeyPairError(err.message));
+  }, []);
+
+  const doAssign = async () => {
+    if (!picked) return;
+    if (!picked.public_key) {
+      setAssignError(`${picked.display_name} hasn't set up co-admin encryption yet (no public key on file) — they need to open this same "Co-admin access" panel once first.`);
+      return;
+    }
+    setAssigning(true);
+    setAssignError(null);
+    setAssignResults(null);
+    try {
+      const results = await assignCoAdminOnBackend(picked.id, picked.public_key);
+      setAssignResults(results);
+      refresh();
+    } catch (err) {
+      setAssignError(err.message);
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const openRecord = async (recordId) => {
+    setOpenRecordId(recordId);
+    setOpenRecordText(null);
+    setOpenRecordError(null);
+    setOpenRecordLoading(true);
+    try {
+      setOpenRecordText(await loadCoAdminRecordContent(recordId));
+    } catch (err) {
+      setOpenRecordError(err.message);
+    } finally {
+      setOpenRecordLoading(false);
+    }
+  };
+
+  const failedResults = assignResults ? assignResults.filter((r) => !r.ok) : [];
+
+  return (
+    <div className="mt-5 pt-5 border-t border-[#D8DED9]">
+      <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Co-admin access</div>
+      <p className="text-xs text-[#8A958E] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Real end-to-end key-wrap crypto (clairmd-backend's routes/coadmin.js) — a co-admin genuinely cannot read a patient's record until that patient explicitly consents. Opening this panel while connected publishes your own public key so other doctors can assign you as their co-admin.
+      </p>
+      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — co-admin access needs a real account" />
+      {keyPairError && (
+        <p className="text-xs text-[#B34A3C] mt-2 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{keyPairError}</p>
+      )}
+
+      {getAuthToken() && (
+        <>
+          <div className="mt-4">
+            <div className="text-xs font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your co-admin</div>
+            {assignment ? (
+              <div className="text-xs px-3 py-2 border border-[#D8DED9] rounded-sm mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                Currently assigned: <span className="font-medium">{assignment.co_admin_doctor_name}</span>
+                <span className="text-[#8A958E]"> since {new Date(assignment.assigned_at).toLocaleDateString()}</span>
+              </div>
+            ) : (
+              <p className="text-xs text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No co-admin assigned yet.</p>
+            )}
+            <AccountPicker
+              types={["individual_doctor", "hospital_doctor"]}
+              placeholder="Search a doctor to assign as your co-admin…"
+              selected={picked}
+              onSelect={setPicked}
+              onClear={() => { setPicked(null); setAssignError(null); setAssignResults(null); }}
+            />
+            {picked && (
+              <button
+                type="button"
+                onClick={doAssign}
+                disabled={assigning}
+                className="mt-2 text-xs px-3 py-1.5 rounded-sm text-white font-medium"
+                style={{ backgroundColor: theme.color }}
+              >
+                {assigning ? "Assigning and wrapping keys…" : `Assign ${picked.display_name} as co-admin`}
+              </button>
+            )}
+            {assignError && <p className="text-xs text-[#B34A3C] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{assignError}</p>}
+            {assignResults && (
+              <div className="mt-2 text-[11px] text-[#5B6B63] space-y-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <p>{assignResults.length - failedResults.length} of {assignResults.length} record(s) wrapped for the new co-admin.</p>
+                {failedResults.length > 0 && (
+                  <p className="text-[#8A958E]">{failedResults.length} skipped — {failedResults[0].reason}</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <div className="text-xs font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Records shared with you as a co-admin</div>
+            {wraps.length === 0 ? (
+              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No other doctor has assigned you as their co-admin yet.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {wraps.map((w) => (
+                  <div key={w.id} className="text-xs border border-[#D8DED9] rounded-sm px-3 py-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span>Primary doctor: <span className="font-medium">{w.primary_doctor_name}</span></span>
+                      {w.consent_granted === true ? (
+                        <button type="button" onClick={() => openRecord(w.patient_record_id)} className="text-[#0F5C56] underline decoration-dotted shrink-0">View</button>
+                      ) : (
+                        <span className="text-[#8A958E] shrink-0">Awaiting patient consent</span>
+                      )}
+                    </div>
+                    {openRecordId === w.patient_record_id && (
+                      <div className="mt-2 pt-2 border-t border-[#D8DED9]">
+                        {openRecordLoading ? (
+                          <p className="text-[#8A958E]">Decrypting…</p>
+                        ) : openRecordError ? (
+                          <p className="text-[#B34A3C]">{openRecordError}</p>
+                        ) : (
+                          <pre className="whitespace-pre-wrap text-[11px]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{openRecordText}</pre>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

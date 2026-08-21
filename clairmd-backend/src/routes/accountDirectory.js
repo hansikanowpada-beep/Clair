@@ -6,10 +6,15 @@ const { requireAuth } = require("../middleware/auth");
 const router = express.Router();
 
 // Minimal-disclosure account search — powers "pick a real doctor to refer
-// to" and "pick a real care-team member to instruction" pickers in the
-// frontend. Returns only id/display_name/specialty/account_type, never
-// email/phone: enough to identify who you're picking, nothing a directory
-// lookup shouldn't hand out. Requires auth (any account type) but is not
+// to", "pick a real care-team member to instruction", and "pick a co-admin"
+// pickers in the frontend. Returns only id/display_name/specialty/
+// account_type/public_key, never email/phone: enough to identify who
+// you're picking (and, for co-admin assignment, wrap a record's key for
+// them), nothing a directory lookup shouldn't hand out. public_key is
+// itself not sensitive — it's meant to be public, that's the entire point
+// of a public key — and is null for any account that hasn't generated a
+// keypair yet (see routes/auth.js's PUT /public-key). Requires auth (any
+// account type) but is not
 // scoped to the caller's own hospital/affiliations — narrowing that is a
 // real feature (e.g. "only show doctors at hospitals I'm affiliated
 // with"), not built here; flagged rather than silently assumed.
@@ -36,7 +41,7 @@ router.get("/", requireAuth, async (req, res) => {
   if (q.length < 2) return res.json({ accounts: [] });
 
   const result = await pool.query(
-    `SELECT id, display_name, specialty, account_type
+    `SELECT id, display_name, specialty, account_type, public_key
      FROM accounts
      WHERE account_type = ANY($1) AND deactivated_at IS NULL AND id != $2
        AND (display_name ILIKE $3 OR specialty ILIKE $3)

@@ -48,6 +48,7 @@ CREATE TABLE accounts (
     bed_count           INTEGER,                 -- only meaningful when account_type = 'hospital'; NULL otherwise
     feed_post_expiry_months INTEGER NOT NULL DEFAULT 6, -- doctor-only setting; how long their feed_posts stay visible
     two_factor_enabled  BOOLEAN NOT NULL DEFAULT false,
+    public_key          TEXT,                    -- RSA-OAEP public key (SPKI, base64) for co-admin key-wrap crypto (024_account_public_keys.sql); NULL until the account generates one client-side; matching private key never leaves the browser
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     deactivated_at      TIMESTAMPTZ              -- soft delete; see offboarding checklist logic

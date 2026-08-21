@@ -123,12 +123,28 @@ router.post("/login", loginLimiter, async (req, res) => {
 
 router.get("/me", requireAuth, async (req, res) => {
   const result = await pool.query(
-    `SELECT id, account_type, email, display_name, specialty, plan_tier, two_factor_enabled, created_at
+    `SELECT id, account_type, email, display_name, specialty, plan_tier, two_factor_enabled, public_key, created_at
      FROM accounts WHERE id = $1`,
     [req.account.id]
   );
   if (result.rows.length === 0) return res.status(404).json({ error: "Account not found." });
   return res.json({ account: result.rows[0] });
+});
+
+// Publishes this account's RSA-OAEP public key (SPKI, base64) for co-admin
+// key-wrap crypto — see routes/coadmin.js. The matching private key never
+// reaches this backend; only the client that generated the keypair has it
+// (see ClairMDEHR.jsx's getOrCreateKeyPair). A public key is, by
+// definition, not sensitive — no extra access check beyond being logged in
+// as the account whose key this is.
+const publicKeySchema = z.object({ publicKey: z.string().min(1).max(4000) });
+
+router.put("/public-key", requireAuth, async (req, res) => {
+  const parsed = publicKeySchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "publicKey is required." });
+
+  await pool.query(`UPDATE accounts SET public_key = $1, updated_at = now() WHERE id = $2`, [parsed.data.publicKey, req.account.id]);
+  return res.json({ publicKey: parsed.data.publicKey });
 });
 
 function signToken(accountId, accountType) {

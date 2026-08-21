@@ -233,10 +233,10 @@ Four more previously-unwired backend routes now have real UI:
   a decision (`GET /api/patient/consent-requests`), with real
   grant/decline buttons (`POST /api/coadmin/consent`). That consent
   action needs no client-side crypto — it's a plain boolean gate on an
-  already-submitted key wrap — so it's real even though the other half of
-  co-admin (a doctor assigning one and wrapping a key) isn't built
-  anywhere in this frontend; there's simply no request for a patient to
-  ever see yet.
+  already-submitted key wrap. The other half — a doctor assigning a
+  co-admin and actually wrapping a key — was not built when this was
+  first written; see "Co-admin key-wrap crypto" below for where that
+  stood as of 2026-08-21.
 - **`MyPlanAndBilling`** — new, in `DoctorProfilePanel`, added below (not
   merged into) the existing "In-app billing" toggle, since that's the
   clinic's own patient-billing feature — a different concept from a
@@ -291,6 +291,68 @@ patient account can reach).
   whatever doctor/patient session token was active before — a known
   limitation of this prototype's no-session-context design, not new to
   this feature.
+
+## Co-admin key-wrap crypto (real end-to-end)
+
+The one previously-genuine gap in this whole prototype — every other
+"backend sync" feature in this file has an honest simplification
+somewhere, but co-admin assignment had *no* crypto at all, not even a
+placeholder. As of 2026-08-21 it's real RSA-OAEP + AES-GCM key wrapping,
+matching `clairmd-backend`'s `record_key_wraps` design exactly, not a
+shortcut around it.
+
+- **`getOrCreateKeyPair()`** — new, alongside the existing per-record
+  AES-GCM helpers. Generates a 2048-bit RSA-OAEP keypair the first time an
+  account needs one, keeps the private key in `localStorage`
+  (`clair_private_key`) and nowhere else, and publishes only the public
+  key to `PUT /api/auth/public-key`. If the backend already has a public
+  key on file for this account and this browser has no matching private
+  key, it refuses to generate a second keypair rather than silently
+  overwriting the published one — that would orphan every wrap already
+  made for the original key, permanently. There is no recovery flow for
+  that case in this prototype; it's a real limitation, not hidden.
+- **`wrapRecordKeyForRecipient(recordId, recipientPublicKeyB64)`** — wraps
+  a record's existing AES-GCM key (the same one `getOrCreateRecordKey`
+  already manages) with a recipient's RSA-OAEP public key. Only ever
+  called for a record this browser genuinely holds the real key for (see
+  `hasLocalRecordKey` below) — never fabricates a key for a record it
+  doesn't actually have.
+- **`hasLocalRecordKey(recordId)`** — a plain cache check, deliberately
+  NOT reusing `getOrCreateRecordKey` (which generates a fresh key on a
+  cache miss — correct when creating a new note, wrong here, since a
+  freshly-generated key for a record whose real key lives on a different
+  device would produce a wrap that looks valid but decrypts nothing).
+- **`fetchAndCacheWrappedRecordKey(recordId)`** / **`loadCoAdminRecordContent(recordId)`**
+  — the recipient side: fetches the wrapped key from
+  `GET /api/coadmin/key-wraps/:id` (subject to the backend's own consent
+  gate), unwraps it with this account's private key, and caches the
+  result in the exact same `localStorage` slot `getOrCreateRecordKey`
+  reads from — so the existing `decryptRecordText` works completely
+  unmodified for a co-admin, the same way it already does for the primary
+  doctor. No parallel decrypt path was needed.
+- **`assignCoAdminOnBackend(coAdminDoctorId, coAdminPublicKeyB64)`** — the
+  actual assignment flow: registers the assignment
+  (`POST /api/coadmin/assign`), lists the doctor's own records
+  (`GET /api/records`), and wraps + submits a key for every one this
+  browser has a real key for. Records this browser never opened are
+  skipped with an explicit reason in the per-record result, not silently
+  dropped or faked.
+- **`CoAdminPanel`** — new, in `DoctorProfilePanel` below `DataRightsPanel`.
+  Two halves on one page: "Your co-admin" (an `AccountPicker` search +
+  assign button, showing exactly how many of your records got wrapped and
+  why any were skipped) and "Records shared with you as a co-admin" (every
+  wrap `GET /api/coadmin/my-wraps` returns, with a "View" button that only
+  appears once `consent_granted` is true — before that it shows "Awaiting
+  patient consent", matching the backend's access gate precisely rather
+  than showing a button that would just 403). Opening this panel while
+  connected also publishes this doctor's own public key, since without
+  that nobody could ever be assigned before visiting this exact panel
+  themselves first.
+- **Not built, by deliberate scope decision** (same ones explained to the
+  user before starting this): key backup/recovery across devices, and
+  revocation (removing an assignment doesn't stop a co-admin from
+  decrypting a copy of the key they already fetched — real revocation
+  needs key rotation, which is separate, larger work).
 
 ## Renaming
 

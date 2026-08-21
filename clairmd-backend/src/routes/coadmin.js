@@ -95,6 +95,41 @@ router.post("/consent", requireAuth, requireAccountType("patient"), async (req, 
   res.json({ updated: true });
 });
 
+// This doctor's current co-admin assignment, if any — lets the frontend
+// show "currently assigned: Dr. X" instead of being blind between visits.
+// Existed as a write-only upsert (/assign, above) with no matching read
+// until now.
+router.get("/my-assignment", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+  const result = await pool.query(
+    `SELECT a.co_admin_doctor_id, acc.display_name AS co_admin_doctor_name, a.assigned_at, a.revoked_at
+     FROM co_admin_assignments a JOIN accounts acc ON acc.id = a.co_admin_doctor_id
+     WHERE a.primary_doctor_id = $1 AND a.revoked_at IS NULL`,
+    [req.account.id]
+  );
+  res.json({ assignment: result.rows[0] || null });
+});
+
+// Every key wrap held by the calling account — the co-admin side's
+// equivalent of "which records was I given access to," which had no
+// listing endpoint at all until now (only the per-record GET below,
+// which is useless without already knowing a patientRecordId). Never
+// reveals patient identity beyond what the primary doctor's own name
+// already implies — no chart access without the consent this row itself
+// tracks.
+router.get("/my-wraps", requireAuth, async (req, res) => {
+  const result = await pool.query(
+    `SELECT k.id, k.patient_record_id, k.holder_role, k.consent_granted, k.consent_recorded_at, k.created_at,
+            r.primary_doctor_id, a.display_name AS primary_doctor_name
+     FROM record_key_wraps k
+     JOIN patient_record_index r ON r.id = k.patient_record_id
+     JOIN accounts a ON a.id = r.primary_doctor_id
+     WHERE k.holder_account_id = $1
+     ORDER BY k.created_at DESC`,
+    [req.account.id]
+  );
+  res.json({ wraps: result.rows });
+});
+
 // Fetch the wrapped key this account is entitled to for a given record.
 // Enforces the consent gate at read time.
 router.get("/key-wraps/:patientRecordId", requireAuth, async (req, res) => {
