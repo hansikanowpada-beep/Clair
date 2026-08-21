@@ -158,6 +158,34 @@ CREATE TABLE patient_record_content (
 );
 
 -- ---------------------------------------------------------------------------
+-- Lab orders — structured, task-scoped, PLAINTEXT test metadata, unlike
+-- patient_record_content above. Same reasoning as care_team_instructions'
+-- plaintext diagnosis_summary below: a lab tech or the ordering doctor
+-- needs to read "what test, what category, is it done" without holding a
+-- decryption key. test_name/category are bounded, structured metadata
+-- (mirrors the frontend's fixed DIAGNOSIS_META test lists), not clinical
+-- narrative — result_note is the one free-text field and stays brief.
+-- ---------------------------------------------------------------------------
+
+CREATE TYPE lab_order_status AS ENUM ('pending', 'completed', 'cancelled');
+CREATE TYPE lab_order_category AS ENUM ('blood', 'urine', 'radiological', 'microbiological', 'immunological');
+
+CREATE TABLE lab_orders (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    patient_record_id   UUID NOT NULL REFERENCES patient_record_index(id) ON DELETE CASCADE,
+    ordering_doctor_id  UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    category            lab_order_category NOT NULL,
+    test_name           TEXT NOT NULL,
+    status              lab_order_status NOT NULL DEFAULT 'pending',
+    result_note         TEXT,
+    ordered_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    completed_at        TIMESTAMPTZ
+);
+
+CREATE INDEX idx_lab_orders_record ON lab_orders (patient_record_id);
+CREATE INDEX idx_lab_orders_doctor_pending ON lab_orders (ordering_doctor_id) WHERE status = 'pending';
+
+-- ---------------------------------------------------------------------------
 -- Co-admin assignment — one co-admin doctor per primary doctor at a time.
 -- ---------------------------------------------------------------------------
 

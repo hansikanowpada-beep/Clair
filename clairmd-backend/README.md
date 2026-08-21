@@ -13,6 +13,42 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Lab orders** (2026-08-21, `018_lab_orders.sql` + `routes/labOrders.js`) —
+  the ClairMDEHR frontend prototype has an "order a test" UI (blood/urine/
+  radiological/microbiological/immunological, per `DIAGNOSIS_META`'s fixed
+  test lists) with zero backend behind it — orders only ever lived in
+  React state, gone on refresh. `lab_orders` is a real, structured table,
+  and deliberately **not** encrypted like `patient_record_content`: the
+  whole point of an order is that a party without chart access (a lab
+  tech, or just the doctor checking status later) needs to read what test
+  was ordered and whether it's done, without holding any decryption key.
+  Same reasoning `care_team_instructions` (`007_care_team_instructions.sql`)
+  already uses for its plaintext `diagnosis_summary` column — bounded,
+  structured, task-scoped metadata is a different thing from the free-text
+  clinical narrative `schema.sql`'s header bans from this database.
+  - `POST /api/lab-orders` (primary doctor only, verified against
+    `patient_record_index.primary_doctor_id`) creates an order in
+    `pending` status. `GET /api/lab-orders` lists the calling doctor's own
+    orders across all their patients (optionally `?patientRecordId=...` to
+    scope to one record), matching `records.js`'s own "list my records"
+    convention. `PATCH /api/lab-orders/:id` updates `status` and/or a
+    brief `resultNote`; `completed_at` is set/cleared server-side purely
+    from the `status` transition, never accepted as a client-supplied
+    field.
+  - **No tier/usage gate**, on purpose — ordering a test isn't part of the
+    OPD/ICU-Ward note-creation quota in `services/tierAccess.js`, it's a
+    separate, unlimited clinical action, same stance as everything else
+    in this backend that isn't note creation itself.
+  - **Not live-tested** — no database in this sandbox. Checked instead:
+    the migration is valid standalone SQL (two `CREATE TYPE` enums plus one
+    `CREATE TABLE`, no `ALTER TYPE` risk), the route file passes
+    `node --check`, every `require()` path resolves, and the ownership
+    check + all three queries were manually walked against the existing
+    `patient_record_index` shape they join against/reference.
+  - **Frontend wiring not done in this change** — this is backend-only;
+    `ClairMDEHR.jsx`'s `orderTest`/`labOrders` state still isn't calling
+    these endpoints yet.
+
 - **Patient record content sync** (2026-08-21, `017_patient_record_content.sql`
   + `routes/recordContent.js`) — the frontend's ClairMDEHR prototype builds a
   full OPD/ICU-Ward note client-side (history, vitals, all 11 examination
