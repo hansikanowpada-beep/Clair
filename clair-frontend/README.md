@@ -70,6 +70,21 @@ check against the backend) but scoped narrowly:
   a different URL to target a non-default backend (defaults to
   `http://localhost:4000/api`).
 
+**Lab orders** work the same way: clicking "+ Order" next to a suggested
+test (in the in-house-lab view of a patient's differential/workup tab)
+records it locally immediately, then POSTs to the real
+`POST /api/lab-orders` in the background — unlike note content, this goes
+as **plaintext** (test name + category), matching `clairmd-backend`'s own
+design (a lab order only works if a party without chart access can read
+what's being ordered). Since ordering a test isn't tied to any "save"
+moment the way a note is, the first order for a given patient in a session
+lazily creates one shared `patient_record_index` row for that patient
+(cached in `localStorage` under `clair_lab_record_<patientId>`) that
+subsequent orders for the same patient reuse, rather than minting a new
+backend record per test. The "· Ordered" badge turns red with "(sync
+failed)" if the backend call didn't succeed — the local order itself is
+never rolled back either way.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain

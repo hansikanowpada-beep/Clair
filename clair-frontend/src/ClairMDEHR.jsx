@@ -13287,6 +13287,33 @@ async function syncNoteToBackend(noteType, noteText) {
   return { recordId };
 }
 
+// Lab orders need *some* patient_record_index row to hang off, but unlike
+// an OPD/ICU-Ward save there's no natural "save" moment that creates one —
+// a test can be ordered before any note for this encounter has been saved
+// at all. Rather than mint a new backend record per test (noisy, and
+// wrong: multiple orders for one patient in one session should share a
+// record), this lazily creates ONE record per patient the first time a
+// test is ordered for them, then reuses it — cached in localStorage the
+// same way per-record encryption keys already are.
+async function getOrCreateLabRecordId(patientId) {
+  const storageKey = `clair_lab_record_${patientId}`;
+  const existing = localStorage.getItem(storageKey);
+  if (existing) return existing;
+  const recordId = await ensureBackendRecord("opd");
+  localStorage.setItem(storageKey, recordId);
+  return recordId;
+}
+
+// Lab order metadata (which test, which category, is it done) is sent as
+// plaintext, unlike the note content above — see clairmd-backend's
+// schema.sql comment on lab_orders for why: a lab order only does its job
+// if a party without chart access can read what's actually being ordered.
+async function syncLabOrderToBackend(patientId, category, testName) {
+  const patientRecordId = await getOrCreateLabRecordId(patientId);
+  const data = await apiRequest("/lab-orders", { method: "POST", body: { patientRecordId, category, testName } });
+  return { orderId: data.order.id };
+}
+
 // Compact, reusable connect/status widget — email+password only (matches
 // the real backend's actual signup/login fields; the license-number field
 // only appears for doctor account types, since /api/auth/signup requires
@@ -14132,21 +14159,23 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
   );
 }
 
-function TestGroup({ label, items, patientId, orders, onOrder }) {
+function TestGroup({ label, category, items, patientId, orders, onOrder }) {
   if (!items || items.length === 0) return null;
   return (
     <div className="mb-2">
       <span className="text-[11px] uppercase tracking-wide text-[#8A958E]">{label}</span>
       <div className="flex flex-wrap gap-1.5 mt-1">
         {items.map((t, i) => {
-          const ordered = orders.some((o) => o.patientId === patientId && o.test === t);
+          const order = orders.find((o) => o.patientId === patientId && o.test === t);
           return (
             <span key={i} className="flex items-center gap-1.5 text-xs px-2 py-1 bg-[#F2F7F5] border border-[#D8DED9] rounded-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               {t}
-              {ordered ? (
-                <span className="text-[10px] text-[#0F5C56] font-medium">· Ordered</span>
+              {order ? (
+                <span className={`text-[10px] font-medium ${order.syncStatus === "failed" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} title={order.syncStatus === "failed" ? "Ordered locally — backend sync failed, see console" : order.syncStatus === "synced" ? "Ordered and synced to backend" : undefined}>
+                  · Ordered{order.syncStatus === "failed" ? " (sync failed)" : ""}
+                </span>
               ) : (
-                <button onClick={() => onOrder(t)} className="text-[10px] text-[#0F5C56] underline decoration-dotted">+ Order</button>
+                <button onClick={() => onOrder(t, category)} className="text-[10px] text-[#0F5C56] underline decoration-dotted">+ Order</button>
               )}
             </span>
           );
@@ -15475,8 +15504,25 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
 });
 
 function DifferentialWorkupTab({ patient, hasOwnLab, labOrders, setLabOrders, ddxSpace, setDdxSpace, ddxSpaceNotes, setDdxSpaceNotes, workupSpace, setWorkupSpace, workupNotes, setWorkupNotes }) {
-  const orderTest = (test) => setLabOrders((prev) => [...prev, { id: Date.now() + Math.random(), patientId: patient.id, test, status: "Pending", orderedOn: "Today" }]);
   const isDraft = patient.id === "DRAFT";
+
+  // Orders locally first (immediate UI feedback, works offline) then syncs
+  // to the backend in the background — same "local save always succeeds,
+  // sync is best-effort after" shape as the OPD/ICU-Ward note saves.
+  // Skipped entirely for a not-yet-real DRAFT patient (ICU-Ward's new-
+  // entry flow, before the patient itself is saved) since there's no
+  // stable patient identity yet to key a backend record on.
+  const orderTest = (test, category) => {
+    const localId = Date.now() + Math.random();
+    setLabOrders((prev) => [...prev, { id: localId, patientId: patient.id, test, category, status: "Pending", orderedOn: "Today", syncStatus: isDraft ? undefined : "pending" }]);
+    if (isDraft) return;
+    syncLabOrderToBackend(patient.id, category, test)
+      .then(() => setLabOrders((prev) => prev.map((o) => (o.id === localId ? { ...o, syncStatus: "synced" } : o))))
+      .catch((err) => {
+        console.warn("Lab order backend sync failed:", err.message);
+        setLabOrders((prev) => prev.map((o) => (o.id === localId ? { ...o, syncStatus: "failed" } : o)));
+      });
+  };
 
   return (
     <div className="space-y-5">
@@ -15569,11 +15615,11 @@ function EncounterWorkupCard({
                   </div>
                   {hasOwnLab ? (
                     <>
-                      <TestGroup label="Blood" items={meta.tests.blood} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
-                      <TestGroup label="Urine" items={meta.tests.urine} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
-                      <TestGroup label="Radiological" items={meta.tests.radiological} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
-                      <TestGroup label="Microbiological" items={meta.tests.microbiological} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
-                      <TestGroup label="Immunological" items={meta.tests.immunological} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
+                      <TestGroup label="Blood" category="blood" items={meta.tests.blood} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
+                      <TestGroup label="Urine" category="urine" items={meta.tests.urine} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
+                      <TestGroup label="Radiological" category="radiological" items={meta.tests.radiological} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
+                      <TestGroup label="Microbiological" category="microbiological" items={meta.tests.microbiological} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
+                      <TestGroup label="Immunological" category="immunological" items={meta.tests.immunological} patientId={patient.id} orders={labOrders} onOrder={orderTest} />
                     </>
                   ) : (
                     <>
