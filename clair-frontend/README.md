@@ -251,6 +251,47 @@ Four more previously-unwired backend routes now have real UI:
   metadata only, never the clinical records held in a doctor's own
   Google Drive.
 
+## Founder/admin dashboard
+
+New top-level app mode, alongside "clinic" and "patient" — `appMode ===
+"admin"`, entered via a small, deliberately unobtrusive "Founder admin →"
+text link tucked under the sidebar logo (not a normal nav item, and not
+the same thing as the sidebar's existing "Admin" group — that one is
+hospital/clinic administration tools for a doctor account; this is a
+whole separate founder/platform-operator persona that no doctor or
+patient account can reach).
+
+- **`AdminDashboardView`** — login-only, no signup tab, matching
+  `clairmd-backend` exactly: `admin` accounts have no public signup route
+  at all (see that repo's `routes/auth.js` and
+  `db/createAdminAccount.js`), so there is nothing to sign up for here.
+  After a real login, it checks the returned `account_type`; a correct
+  password on a non-admin account still gets rejected with an explicit
+  "this isn't a founder-admin account" message rather than silently
+  showing an empty or broken dashboard.
+- Once connected as a genuine admin account, it fetches and renders all
+  four of `clairmd-backend`'s `GET /api/admin/*` routes: `/overview`
+  (accounts by type, doctor/hospital plan tiers, signups this month vs
+  last, this month's revenue), `/hospitals-at-risk` (hospitals currently
+  restricted for unresolved overage billing, plus pending overage
+  counts), `/backup-health` (Drive backup failure rate over the last 7
+  days), and `/notification-health` (delivered vs undelivered
+  notifications over 7 days — expect 0 delivered until real FCM/SMTP
+  credentials exist, which the card says explicitly rather than looking
+  like a bug). A manual "Refresh" re-fetches all four; a failed fetch
+  shows an explicit error banner instead of failing silently, since the
+  entire point of this view is to surface platform problems — swallowing
+  an error here would defeat it.
+- No backend code changed for this — `routes/admin.js`'s four routes were
+  already fully built; this is purely the first real frontend caller for
+  them.
+- Shares the same single browser-wide `clair_auth_token` as every other
+  backend-sync surface in this prototype (see the module comment above
+  `getApiBase()` in `ClairMDEHR.jsx`), so logging in here replaces
+  whatever doctor/patient session token was active before — a known
+  limitation of this prototype's no-session-context design, not new to
+  this feature.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain

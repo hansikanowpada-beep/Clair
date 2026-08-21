@@ -13,6 +13,32 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Founder/admin dashboard now has a real frontend caller** (2026-08-21) —
+  no backend code changed here; `routes/admin.js`'s four read-only routes
+  were already fully built (see the 2026-08-18 entry further down), but
+  until now nothing in `ClairMDEHR.jsx` could reach them. Frontend adds a
+  new `AdminDashboardView`, a whole separate top-level app mode
+  (`appMode === "admin"`) alongside "clinic" and "patient" — entered via a
+  small, deliberately unobtrusive "Founder admin →" link under the sidebar
+  logo, not a normal nav item, since this isn't a persona a doctor or
+  patient account can use. Login-only, no signup tab, matching the
+  backend exactly: `admin` has no entry in `routes/auth.js`'s signup
+  schema at all, so there's nothing to sign up for. After a successful
+  login it checks the returned `account_type` — a real password on a
+  non-admin account still gets bounced with an explicit "this isn't a
+  founder-admin account" message and the token is dropped, rather than
+  silently rendering an empty or 403-riddled dashboard. Once connected as
+  a genuine admin account, it fetches and renders all four routes:
+  `/overview` (accounts by type, plan tiers, signups this month vs last,
+  this month's revenue), `/hospitals-at-risk`, `/backup-health`, and
+  `/notification-health`, with a manual refresh button and an explicit
+  error banner if any call fails rather than failing silently — this view
+  exists specifically to surface platform problems, so a swallowed error
+  here would defeat the point. Shares the same single browser-wide auth
+  token as every other backend-sync surface in this prototype (see
+  `ClairMDEHR.jsx`'s module comment above `getApiBase()`), so logging in
+  here replaces whatever doctor/patient session was active before — a
+  known limitation, not new to this change.
 - **Notifications, patient records/consent, billing, and data rights now
   have real frontend callers** (2026-08-21) — no backend code changed for
   these four (`routes/notifications.js`, `routes/patient.js`,

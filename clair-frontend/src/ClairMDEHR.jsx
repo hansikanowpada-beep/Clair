@@ -13570,6 +13570,24 @@ async function deactivateMyAccountOnBackend(password) {
   return apiRequest("/data-rights/deactivate", { method: "POST", body: { password } });
 }
 
+// --- Founder/admin platform dashboard (routes/admin.js) — every route is
+// gated server-side to account_type = 'admin', which (see clairmd-backend's
+// db/createAdminAccount.js) has no public signup at all; these calls will
+// 403 for any other logged-in account. All four are read-only aggregates,
+// never patient clinical content. ------------------------------------------
+async function loadAdminOverview() {
+  return apiRequest("/admin/overview");
+}
+async function loadAdminHospitalsAtRisk() {
+  return apiRequest("/admin/hospitals-at-risk");
+}
+async function loadAdminBackupHealth() {
+  return apiRequest("/admin/backup-health");
+}
+async function loadAdminNotificationHealth() {
+  return apiRequest("/admin/notification-health");
+}
+
 // Compact, reusable connect/status widget — email+password only (matches
 // the real backend's actual signup/login fields; the license-number field
 // only appears for doctor account types, since /api/auth/signup requires
@@ -21958,8 +21976,256 @@ function VerificationBanner({ verified, onVerify }) {
   );
 }
 
+// Founder-admin dashboard — a whole separate app mode from "clinic" and
+// "patient" (see appMode below), because a founder-admin account is a
+// different persona entirely, not a doctor or patient view. Login-only:
+// unlike BackendSyncPanel, there's deliberately no signup tab here, since
+// /api/auth/signup's schema has no 'admin' option (see routes/auth.js) —
+// the only way to get one is clairmd-backend's `npm run create-admin`
+// script run directly against the database. Shares the same single
+// browser-wide auth token as every other backend-sync surface in this
+// prototype (see the module comment above getApiBase()), so logging in
+// here replaces whatever doctor/patient session token was active before.
+function AdminDashboardView({ onBack }) {
+  const [connectedAccount, setConnectedAccount] = useState(null); // null | { email, accountType }
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [loginError, setLoginError] = useState(null);
+  const [data, setData] = useState({ overview: null, risk: null, backup: null, notif: null });
+  const [loadError, setLoadError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    apiRequest("/auth/me")
+      .then((d) => setConnectedAccount({ email: d.account.email, accountType: d.account.account_type }))
+      .catch(() => setAuthToken(null));
+  }, []);
+
+  const isAdmin = connectedAccount?.accountType === "admin";
+
+  const loadDashboard = () => {
+    setLoading(true);
+    setLoadError(null);
+    Promise.all([loadAdminOverview(), loadAdminHospitalsAtRisk(), loadAdminBackupHealth(), loadAdminNotificationHealth()])
+      .then(([overview, risk, backup, notif]) => setData({ overview, risk, backup, notif }))
+      .catch((err) => setLoadError(err.message))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (isAdmin) loadDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
+
+  const submitLogin = async (e) => {
+    e.preventDefault();
+    setLoginBusy(true);
+    setLoginError(null);
+    try {
+      const account = await backendLogin({ email: loginForm.email, password: loginForm.password });
+      if (account.account_type !== "admin") {
+        // Login itself succeeded (right password) — it's just not a
+        // founder-admin account. Drop the token rather than leaving a
+        // non-admin session sitting in the shared auth slot.
+        setAuthToken(null);
+        setLoginError(`"${account.email}" isn't a founder-admin account. Admin accounts can only be created via clairmd-backend's create-admin script, not through this app.`);
+        return;
+      }
+      setConnectedAccount({ email: account.email, accountType: account.account_type });
+    } catch (err) {
+      setLoginError(err.message);
+    } finally {
+      setLoginBusy(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F7F9F7] p-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="max-w-4xl mx-auto">
+        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to clinic view</button>
+        <div className="flex items-center gap-2 mb-1">
+          <ShieldCheck size={18} className="text-[#0F5C56]" />
+          <h1 className="text-xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD — Founder admin</h1>
+        </div>
+        <p className="text-xs text-[#8A958E] mb-5 max-w-2xl">
+          Platform-wide, read-only aggregates from clairmd-backend's /api/admin routes — account counts, plan tiers, hospitals restricted for overage billing, backup reliability, and notification delivery. Never patient clinical content; this backend has none to show (see routes/admin.js).
+        </p>
+
+        {!isAdmin ? (
+          <div className="bg-white border border-[#D8DED9] rounded-md p-5 max-w-sm">
+            {connectedAccount && (
+              <p className="text-xs text-[#B34A3C] mb-3">Connected as {connectedAccount.email}, which is not a founder-admin account.</p>
+            )}
+            <form onSubmit={submitLogin} className="space-y-2">
+              <input type="email" required value={loginForm.email} onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} placeholder="Admin email" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" />
+              <input type="password" required value={loginForm.password} onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} placeholder="Password" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" />
+              <button type="submit" disabled={loginBusy} className="text-xs px-3 py-2 rounded-sm text-white font-medium" style={{ backgroundColor: "#0F5C56" }}>
+                {loginBusy ? "Connecting…" : "Log in"}
+              </button>
+              {loginError && <p className="text-xs text-[#B34A3C]">{loginError}</p>}
+            </form>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 mb-4 text-xs text-[#5B6B63]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#0F5C56]" />
+              Connected as {connectedAccount.email}
+              <button onClick={loadDashboard} disabled={loading} className="text-[#0F5C56] underline decoration-dotted">{loading ? "Refreshing…" : "Refresh"}</button>
+              <button
+                onClick={() => { backendLogout(); setConnectedAccount(null); setData({ overview: null, risk: null, backup: null, notif: null }); }}
+                className="text-[#8A958E] underline decoration-dotted hover:text-[#B34A3C]"
+              >
+                Disconnect
+              </button>
+            </div>
+            {loadError && (
+              <div className="bg-[#FBEFEC] border border-[#E3B3A8] rounded-sm p-3 text-xs text-[#7A2F25] mb-4">Couldn't load dashboard data: {loadError}</div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <AdminOverviewCard overview={data.overview} />
+              <AdminHospitalsAtRiskCard risk={data.risk} />
+              <AdminBackupHealthCard backup={data.backup} />
+              <AdminNotificationHealthCard notif={data.notif} />
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AdminOverviewCard({ overview }) {
+  return (
+    <div className="bg-white border border-[#D8DED9] rounded-md p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Users size={15} className="text-[#0F5C56]" />
+        <h2 className="text-sm font-medium">Platform overview</h2>
+      </div>
+      {!overview ? (
+        <p className="text-xs text-[#8A958E]">Loading…</p>
+      ) : (
+        <>
+          <div className="space-y-1 mb-3">
+            {overview.accountsByType.map((row) => (
+              <div key={row.account_type} className="flex justify-between text-xs">
+                <span className="text-[#5B6B63]">{row.account_type}</span>
+                <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#D8DED9] text-center">
+            <div>
+              <div className="text-[10px] text-[#8A958E] uppercase">Signups (mo)</div>
+              <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{overview.signupsThisMonth}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-[#8A958E] uppercase">Last month</div>
+              <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{overview.signupsLastMonth}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-[#8A958E] uppercase">Revenue (mo)</div>
+              <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>₹{(overview.revenueThisMonthPaise / 100).toFixed(2)}</div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function AdminHospitalsAtRiskCard({ risk }) {
+  return (
+    <div className="bg-white border border-[#D8DED9] rounded-md p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <AlertTriangle size={15} className="text-[#B34A3C]" />
+        <h2 className="text-sm font-medium">Hospitals at risk</h2>
+      </div>
+      {!risk ? (
+        <p className="text-xs text-[#8A958E]">Loading…</p>
+      ) : risk.restrictedHospitals.length === 0 ? (
+        <p className="text-xs text-[#8A958E]">No hospitals currently restricted for overage billing.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {risk.restrictedHospitals.map((h) => (
+            <div key={h.id} className="text-xs border border-[#D8DED9] rounded-sm px-2.5 py-1.5">
+              <div className="font-medium">{h.display_name}</div>
+              <div className="text-[#8A958E]">{h.bed_count} beds · {h.hospital_plan_tier} · restricted {new Date(h.admin_restricted_at).toLocaleDateString()}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {risk && risk.pendingOverageByHospital.length > 0 && (
+        <p className="text-[10px] text-[#8A958E] mt-2">{risk.pendingOverageByHospital.length} hospital/status combination(s) with uncollected overage entries.</p>
+      )}
+    </div>
+  );
+}
+
+function AdminBackupHealthCard({ backup }) {
+  return (
+    <div className="bg-white border border-[#D8DED9] rounded-md p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <ShieldAlert size={15} className="text-[#0F5C56]" />
+        <h2 className="text-sm font-medium">Backup health (7d)</h2>
+      </div>
+      {!backup ? (
+        <p className="text-xs text-[#8A958E]">Loading…</p>
+      ) : backup.last7Days.length === 0 ? (
+        <p className="text-xs text-[#8A958E]">No backup events recorded in the last 7 days.</p>
+      ) : (
+        <>
+          <div className="space-y-1 mb-2">
+            {backup.last7Days.map((row) => (
+              <div key={row.status} className="flex justify-between text-xs">
+                <span className="text-[#5B6B63] capitalize">{row.status}</span>
+                <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-[#8A958E]">{backup.accountsWithRecentFailureCount} account(s) with a failure in the last 7 days.</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function AdminNotificationHealthCard({ notif }) {
+  return (
+    <div className="bg-white border border-[#D8DED9] rounded-md p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Bell size={15} className="text-[#0F5C56]" />
+        <h2 className="text-sm font-medium">Notification delivery (7d)</h2>
+      </div>
+      {!notif ? (
+        <p className="text-xs text-[#8A958E]">Loading…</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div className="text-[10px] text-[#8A958E] uppercase">Total</div>
+              <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{notif.last7Days.total}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-[#8A958E] uppercase">Delivered</div>
+              <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{notif.last7Days.delivered}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-[#8A958E] uppercase">Undelivered</div>
+              <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{notif.last7Days.undelivered}</div>
+            </div>
+          </div>
+          {notif.last7Days.total > 0 && notif.last7Days.delivered === 0 && (
+            <p className="text-[10px] text-[#8A958E] mt-2">Zero delivered is expected until real FCM/SMTP credentials are configured — see clairmd-backend's services/notifications.js.</p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ClairMDEHR() {
-  const [appMode, setAppMode] = useState("clinic"); // clinic | patient
+  const [appMode, setAppMode] = useState("clinic"); // clinic | patient | admin
   const [selectedId, setSelectedId] = useState(null);
   const [newEntryMode, setNewEntryMode] = useState(null); // null | "opd" | "icuward"
   const [backConfirm, setBackConfirm] = useState(null); // null | "opd" | "icuward"
@@ -22013,6 +22279,10 @@ export default function ClairMDEHR() {
 
   if (appMode === "patient") {
     return <PatientPortalView patients={PATIENTS} onBack={() => setAppMode("clinic")} followups={followups} setFollowups={setFollowups} feedPosts={feedPosts} setFeedPosts={setFeedPosts} postExpiryMonths={postExpiryMonths} pendingPostRequests={pendingPostRequests} setPendingPostRequests={setPendingPostRequests} />;
+  }
+
+  if (appMode === "admin") {
+    return <AdminDashboardView onBack={() => setAppMode("clinic")} />;
   }
 
   const tabs = [
@@ -22229,6 +22499,15 @@ export default function ClairMDEHR() {
             {doctorSpecialty && (
               <div className="text-[11px] mt-1 px-2 py-0.5 rounded-sm inline-block text-white" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>{theme.label}</div>
             )}
+            <button
+              type="button"
+              onClick={() => setAppMode("admin")}
+              title="Founder-admin platform dashboard — requires an admin account, not a doctor login"
+              className="text-[10px] text-[#8A958E] hover:text-[#5B6B63] underline decoration-dotted mt-1.5"
+              style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+            >
+              Founder admin →
+            </button>
           </div>
 
           <style>{`
