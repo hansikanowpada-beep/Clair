@@ -1,9 +1,9 @@
-# Clair EHR — Frontend Prototype
+# ClairMD EHR — Frontend Prototype
 
-`src/ClairEHR.jsx` is the single-file React prototype for the clinic/patient
+`src/ClairMDEHR.jsx` is the single-file React prototype for the clinic/patient
 app, merged from three uploaded prototype exports (two were byte-identical;
 the third was a strict superset adding the features below) and rebranded
-from "Arogya" to "Clair" to match this repository's name.
+from "Arogya" to "ClairMD" to match this product's name.
 
 ## Features merged in from the newer prototype
 
@@ -72,9 +72,12 @@ check against the backend) but scoped narrowly:
 
 ## Renaming
 
-All in-app branding was updated from "Arogya" to "Clair":
+All in-app branding was updated from "Arogya" to "ClairMD" (not plain
+"Clair" — the product name is ClairMD, domains `clairmd.net` /
+`clairmd.in`):
 
-- "Arogya Clinic" → "Clair Clinic" (patient home screen, discharge slip
+- "Arogya Clinic" → "ClairMD Clinic" (patient home screen, discharge slip
   footer, hospital directory, hospital-affiliation form placeholders)
-- `arogyaclinic.app` feedback links → `clairclinic.app`
-- The exported component `ArogyaEHR` → `ClairEHR`
+- `arogyaclinic.app` feedback links → `clairmd.net`
+- The exported component `ArogyaEHR` → `ClairMDEHR` (file renamed
+  `ClairEHR.jsx` → `ClairMDEHR.jsx` to match)

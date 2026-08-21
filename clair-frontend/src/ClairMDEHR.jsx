@@ -13114,7 +13114,7 @@ ${s.precautions}
 NEXT VISIT
 ${s.nextVisit}
 
-— Clair Clinic`;
+— ClairMD Clinic`;
 }
 
 function downloadText(filename, text) {
@@ -13688,7 +13688,7 @@ const CME_FEED = {
 // --- Bed availability (hospital sets this; patients see it read-only) -------
 
 const NEARBY_HOSPITALS = [
-  { name: "Clair Clinic (this clinic)", totalBeds: 12, availableBeds: 4, phone: "+91-98xxxxxx00", distanceKm: 0 },
+  { name: "ClairMD Clinic (this clinic)", totalBeds: 12, availableBeds: 4, phone: "+91-98xxxxxx00", distanceKm: 0 },
   { name: "City General Hospital", totalBeds: 180, availableBeds: 11, phone: "+91-98xxxxxx41", distanceKm: 3.2 },
   { name: "Sunrise Multispeciality", totalBeds: 90, availableBeds: 0, phone: "+91-98xxxxxx52", distanceKm: 5.6 },
 ];
@@ -17792,7 +17792,7 @@ const SPECIALTY_THEMES = {
 };
 
 const ACCOUNT_TYPES = [
-  { key: "hospital", label: "Hospital / clinic", nameLabel: "Hospital / clinic name", namePlaceholder: "e.g. Clair Clinic" },
+  { key: "hospital", label: "Hospital / clinic", nameLabel: "Hospital / clinic name", namePlaceholder: "e.g. ClairMD Clinic" },
   { key: "soloDoctor", label: "Individual doctor", nameLabel: "Full name", namePlaceholder: "Dr. Full Name" },
   { key: "affiliatedDoctor", label: "Doctor working in a hospital", nameLabel: "Full name", namePlaceholder: "Dr. Full Name" },
 ];
@@ -17891,7 +17891,7 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
           {accountType === "affiliatedDoctor" && (
             <div>
               <label className="text-xs text-[#8A958E]">Hospital you're affiliated with</label>
-              <input value={form.affiliatedHospital} onChange={update("affiliatedHospital")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="e.g. Clair Clinic" />
+              <input value={form.affiliatedHospital} onChange={update("affiliatedHospital")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="e.g. ClairMD Clinic" />
             </div>
           )}
           <div>
@@ -18622,7 +18622,7 @@ function PatientPortalView({ patients, onBack, followups, setFollowups, feedPost
           </select>
         </div>
         <p className="text-sm text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          {account.forWhom === "other" ? `Managing care for ${account.otherName || "a family member"} (${account.otherRelation})` : "Your records at Clair Clinic"}
+          {account.forWhom === "other" ? `Managing care for ${account.otherName || "a family member"} (${account.otherRelation})` : "Your records at ClairMD Clinic"}
         </p>
         <p className="text-[11px] text-[#0F5C56] mb-4 font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free for patients — always.</p>
 
@@ -20694,7 +20694,7 @@ function FollowUpsPanel({ onBack, followups, setFollowups }) {
 
   const sendAdvice = () => {
     const now = Date.now();
-    const feedbackLink = `clairclinic.app/feedback/${current.id}?t=${now}`;
+    const feedbackLink = `clairmd.net/feedback/${current.id}?t=${now}`;
     const adviceText = `Follow-up advice: ${current.takeaways} Next visit: ${current.nextVisit}. Questions or feedback for your doctor? ${feedbackLink} (link active for 24 hours)`;
     setFollowups((prev) => prev.map((f) => f.id === openId ? { ...f, messages: [...f.messages, { from: "doctor", text: adviceText, at: now, isAdviceLink: true, linkExpiresAt: now + 24 * 60 * 60 * 1000 }] } : f));
     setAdviceSent(true);
@@ -20812,7 +20812,7 @@ function VerificationBanner({ verified, onVerify }) {
   );
 }
 
-export default function ClairEHR() {
+export default function ClairMDEHR() {
   const [appMode, setAppMode] = useState("clinic"); // clinic | patient
   const [selectedId, setSelectedId] = useState(null);
   const [newEntryMode, setNewEntryMode] = useState(null); // null | "opd" | "icuward"
@@ -21074,7 +21074,7 @@ export default function ClairEHR() {
           <>
           <div className="px-5 py-5 border-b border-[#D8DED9]">
             <div className="text-xs tracking-widest text-[#8A958E] uppercase" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Prototype</div>
-            <div className="text-2xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: theme.color }}>Clair Clinic</div>
+            <div className="text-2xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: theme.color }}>ClairMD Clinic</div>
             {doctorSpecialty && (
               <div className="text-[11px] mt-1 px-2 py-0.5 rounded-sm inline-block text-white" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>{theme.label}</div>
             )}
