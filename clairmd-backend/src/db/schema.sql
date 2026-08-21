@@ -454,7 +454,7 @@ CREATE INDEX idx_inventory_items_hospital ON inventory_items (hospital_account_i
 -- separate feature, not built here.
 -- ---------------------------------------------------------------------------
 
-CREATE TYPE feed_post_kind AS ENUM ('update', 'achievement', 'video');
+CREATE TYPE feed_post_kind AS ENUM ('update', 'achievement', 'video', 'case_highlight');
 CREATE TYPE feed_reaction_value AS ENUM ('like', 'dislike');
 
 CREATE TABLE feed_posts (
@@ -479,3 +479,32 @@ CREATE TABLE feed_post_reactions (
     reacted_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (post_id, account_id)
 );
+
+-- ---------------------------------------------------------------------------
+-- Feed post approval requests — a doctor asks to post about a specific
+-- patient's case; nothing goes live until that patient approves it.
+-- patient_account_id is nullable, same reasoning as patient_followups: no
+-- step anywhere links a mock frontend patient to a real backend account,
+-- so a request is addressed to a NAME, not an account id, and gets
+-- CLAIMED (patient_account_id set) only when a genuinely authenticated
+-- patient whose own display_name matches actually responds.
+-- ---------------------------------------------------------------------------
+
+CREATE TYPE feed_post_request_status AS ENUM ('pending', 'approved', 'declined');
+
+CREATE TABLE feed_post_requests (
+    id                    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    doctor_id             UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    patient_account_id    UUID REFERENCES accounts(id) ON DELETE SET NULL,
+    patient_display_name  TEXT NOT NULL,
+    findings              TEXT,
+    course                TEXT,
+    workup                TEXT,
+    status                feed_post_request_status NOT NULL DEFAULT 'pending',
+    created_feed_post_id  UUID REFERENCES feed_posts(id) ON DELETE SET NULL,
+    requested_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    responded_at          TIMESTAMPTZ
+);
+
+CREATE INDEX idx_feed_post_requests_doctor ON feed_post_requests (doctor_id);
+CREATE INDEX idx_feed_post_requests_pending_by_name ON feed_post_requests (patient_display_name) WHERE status = 'pending';

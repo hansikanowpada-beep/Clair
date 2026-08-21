@@ -13,6 +13,45 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Feed post approval requests** (2026-08-21, `023_feed_post_requests.sql`
+  + `routes/feedPostRequests.js`) — the last piece of the specialty feed:
+  in `WritePostModal`, a doctor can ask to post about a *specific
+  patient's* case instead of a general update, and nothing goes live
+  until that patient approves it (`PatientInboxTab`'s "Post approvals"
+  tab). This had no backend at all until now, same as the four features
+  above it in this file.
+  - `patient_account_id` is **nullable at creation** — same reasoning as
+    `patient_followups`: nothing in this prototype links a mock
+    `PATIENTS` entry to a real backend account, so a request is created
+    addressed to a NAME (`patient_display_name`), not an account id.
+    `GET /api/feed-post-requests/pending-for-me` matches pending requests
+    against the *caller's own* `display_name` — a name match, not a
+    foreign-key join, deliberately as loose as the frontend's own
+    matching (`r.patientName === patient.name`) already is.
+  - The request only gets **claimed** — `patient_account_id` set — the
+    moment a genuinely authenticated patient whose display name matches
+    actually responds (`POST /:id/approve` or `/:id/decline`). At that
+    point the response is unambiguously real no matter how loosely the
+    request itself was addressed going in.
+  - `POST /:id/approve` creates the real `feed_posts` row (`kind:
+    'case_highlight'`, a new enum value added via `ALTER TYPE ... ADD
+    VALUE` — same pattern and same Postgres-12+ caveat as `admin` in
+    `016_admin_dashboard.sql`) and updates the request to `approved` in
+    one transaction, so a mid-flight failure can never leave an approved
+    request with no matching post or vice versa. `text` is accepted from
+    the client rather than recomposed server-side — the frontend already
+    builds it deterministically (`formatCaseHighlight`), so the stored
+    post stays byte-identical to what the patient actually saw and
+    approved rather than risking drift from a second composition.
+  - **Not live-tested** — no database in this sandbox. Checked instead:
+    the migration is valid standalone SQL, the route file passes
+    `node --check`, every `require()` path resolves, and the approve
+    transaction (`BEGIN`/insert/update/`COMMIT`, with `ROLLBACK` on any
+    error) was manually walked against `pg`'s standard client-checkout
+    pattern already used correctly elsewhere in this codebase (verified
+    directly, not assumed — `routes/billing.js`'s webhook handler is the
+    other place that acquires its own client for a real transaction).
+
 - **Patient follow-ups, hospital bed/inventory operations, and the
   specialty feed** (2026-08-21, migrations `019`–`022` + `routes/
   followUps.js`, `routes/bedAvailability.js`, `routes/inventory.js`,

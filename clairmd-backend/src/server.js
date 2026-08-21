@@ -37,6 +37,7 @@ const hospitalBillingRoutes = require("./routes/hospitalBilling");
 const bedAvailabilityRoutes = require("./routes/bedAvailability");
 const inventoryRoutes = require("./routes/inventory");
 const feedPostsRoutes = require("./routes/feedPosts");
+const feedPostRequestsRoutes = require("./routes/feedPostRequests");
 const adminRoutes = require("./routes/admin");
 
 const app = express();
@@ -106,6 +107,7 @@ app.use("/api/hospital-billing", hospitalBillingRoutes);
 app.use("/api/bed-availability", bedAvailabilityRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/feed-posts", feedPostsRoutes);
+app.use("/api/feed-post-requests", feedPostRequestsRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use((req, res) => {
