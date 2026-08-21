@@ -1,10 +1,14 @@
 // Arogya Clinic — platform backend entry point.
 //
-// This process handles ONLY: accounts/auth, Google Drive connection
-// management, backup telemetry, key-wrap routing, care-team instructions,
-// referrals, and billing/usage metadata. It never receives, stores, or
-// reads patient clinical content — that is encrypted client-side and lives
-// in each doctor's own Google Drive. See src/db/schema.sql for the full
+// This process handles: accounts/auth, Google Drive connection management,
+// backup telemetry, key-wrap routing, care-team instructions, referrals,
+// billing/usage metadata, and — since patient_record_content
+// (017_patient_record_content.sql) — an optional sync path for a record's
+// clinical content, ALWAYS as an opaque, client-side-encrypted blob it has
+// no way to decrypt. This process never receives, stores, or reads
+// clinical content in plaintext; every route that ever touches it deals
+// only in ciphertext (see routes/recordContent.js and
+// routes/emergencyProfile.js). See src/db/schema.sql for the full
 // rationale before adding any new table or route.
 
 const express = require("express");
@@ -18,6 +22,7 @@ const authRoutes = require("./routes/auth");
 const driveRoutes = require("./routes/drive");
 const coadminRoutes = require("./routes/coadmin");
 const recordsRoutes = require("./routes/records");
+const recordContentRoutes = require("./routes/recordContent");
 const careTeamRoutes = require("./routes/careTeam");
 const referralsRoutes = require("./routes/referrals");
 const billingRoutes = require("./routes/billing");
@@ -81,6 +86,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/drive", driveRoutes);
 app.use("/api/coadmin", coadminRoutes);
 app.use("/api/records", recordsRoutes);
+app.use("/api/record-content", recordContentRoutes);
 app.use("/api/care-team", careTeamRoutes);
 app.use("/api/referrals", referralsRoutes);
 app.use("/api/billing", billingRoutes);

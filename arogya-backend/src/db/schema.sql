@@ -10,12 +10,15 @@
 -- letting this drift from migrations/ defeats the point of keeping it.
 -- =============================================================================
 --
--- CRITICAL DESIGN RULE: this database stores PLATFORM METADATA ONLY.
--- It must NEVER contain patient clinical content (diagnoses, prescriptions,
--- notes, attachments). That data is encrypted client-side and lives in each
--- doctor's own Google Drive. See technical spec section 2-3 for the full
--- rationale. If you find yourself wanting to add a "notes" or "diagnosis"
--- column to any table below, stop — that content does not belong here.
+-- CRITICAL DESIGN RULE: this database stores PLATFORM METADATA ONLY, plus —
+-- for emergency_profiles and patient_record_content specifically — OPAQUE
+-- CIPHERTEXT this backend cannot decrypt. It must NEVER contain patient
+-- clinical content in PLAINTEXT (diagnoses, prescriptions, notes,
+-- attachments). The doctor's own Google Drive remains the primary,
+-- durable copy of clinical content either way. See technical spec section
+-- 2-3 for the full rationale. If you find yourself wanting to add a
+-- "notes" or "diagnosis" column that holds readable text to any table
+-- below, stop — that content does not belong here.
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -134,6 +137,24 @@ CREATE TABLE record_key_wraps (
     consent_recorded_at TIMESTAMPTZ,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (patient_record_id, holder_account_id)
+);
+
+-- ---------------------------------------------------------------------------
+-- Patient record content — opaque encrypted blob, one per patient_record_
+-- index row. Same trust model as emergency_profiles below: ciphertext only,
+-- this backend never holds the key. An ADDITIONAL, optional sync path
+-- alongside drive_file_id above — not a replacement for the doctor's own
+-- Drive copy — that lets a record's content follow the same distribution
+-- this backend already does for keys (record_key_wraps), so a consented
+-- co-admin/patient can fetch and decrypt it without needing Drive access
+-- to the primary doctor's own folder. Never add a plaintext column here.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE patient_record_content (
+    patient_record_id  UUID PRIMARY KEY REFERENCES patient_record_index(id) ON DELETE CASCADE,
+    encrypted_blob      TEXT NOT NULL,           -- opaque ciphertext; backend never decrypts this
+    blob_version        INTEGER NOT NULL DEFAULT 1,
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- ---------------------------------------------------------------------------

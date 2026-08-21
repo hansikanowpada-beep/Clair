@@ -2,13 +2,60 @@
 
 Handles accounts/auth, Google Drive connection management, backup
 telemetry, key-wrap routing, care-team instructions, referrals, and
-billing/usage metadata **only**. It never receives, stores, or reads
-patient clinical content — that's encrypted client-side and lives in each
-doctor's own Google Drive. See `src/db/schema.sql`'s header comment before
-adding any table or route; if you're about to add a "diagnosis" or "notes"
-column anywhere in this codebase, stop and re-read that comment.
+billing/usage metadata. Since `patient_record_content`
+(2026-08-21, see below) it also stores one **opaque, client-side-encrypted
+blob per patient record** as an optional sync path alongside the doctor's
+own Drive copy — this process never receives, stores, or reads clinical
+content in **plaintext**, and has no way to decrypt what it stores. See
+`src/db/schema.sql`'s header comment before adding any table or route; if
+you're about to add a "diagnosis" or "notes" column that holds *readable*
+text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
+
+- **Patient record content sync** (2026-08-21, `017_patient_record_content.sql`
+  + `routes/recordContent.js`) — the frontend's ClairEHR prototype builds a
+  full OPD/ICU-Ward note client-side (history, vitals, all 11 examination
+  systems including their new Present/Absent findings, differential
+  diagnosis, workup, plan, etc.), and until now this backend had no way to
+  persist any of it — `patient_record_index` is pointer-only, by design.
+  `patient_record_content` adds exactly one thing: a place to sync that
+  note as a single **opaque, client-side-encrypted blob**, one per
+  `patient_record_index` row — same trust model as `emergency_profiles`
+  (`011_emergency_access.sql`), same reasoning: this process stores and
+  routes ciphertext it cannot itself decrypt, so the "never plaintext
+  clinical content" rule at the top of `schema.sql` holds regardless of
+  what gets synced here. Deliberately an ADDITIONAL path alongside the
+  doctor's own Drive copy (`drive_file_id`), not a replacement — a client
+  can write to Drive, to this endpoint, or both; this backend enforces no
+  preference between them.
+  - `PUT /api/record-content/:recordId` (primary doctor only, verified
+    against `patient_record_index.primary_doctor_id` rather than trusted
+    from the URL) accepts `{ encryptedBlob }` and upserts it, bumping
+    `blob_version` on every re-sync the same way `emergency_profiles`
+    does. `GET /api/record-content/:recordId` is readable by the primary
+    doctor OR anyone holding a `record_key_wraps` row for that record —
+    the exact same access predicate `records.js`'s `GET /:id` already
+    uses for the pointer, so content visibility never exceeds pointer
+    visibility. Actual decryption still requires fetching the wrapped key
+    separately through `/api/coadmin/key-wraps/:id`, which stays
+    consent-gated for co-admins exactly as before — this change doesn't
+    touch that gate at all.
+  - **No tier/usage check on either route**, on purpose, matching this
+    backend's existing "editing an existing record is never restricted"
+    stance (same as `records.js`'s `PATCH`) — quota is enforced once, at
+    record creation (`POST /api/records`), and syncing a record's content
+    is editing, not creating.
+  - **Not live-tested** — no database in this sandbox to run the migration
+    or the insert/select against. Checked instead: the migration is valid
+    standalone SQL (a straightforward single `CREATE TABLE`, no
+    `ALTER TYPE` risk like `016`'s), the route file passes `node --check`,
+    every `require()` path resolves, and the two queries were manually
+    walked against the new table's columns and the existing
+    `record_key_wraps`/`patient_record_index` shapes they join against.
+    Treat this the same as everything else in this section not explicitly
+    marked "live-tested": carefully written, not yet proven against a
+    real Postgres instance.
 
 - **Founder/admin dashboard** (2026-08-18) — a real gap until now: every
   route in this backend assumed the caller was a doctor, hospital,
