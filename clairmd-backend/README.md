@@ -52,6 +52,20 @@ text anywhere in this codebase, stop and re-read that comment.
     revocation needs key rotation, i.e. re-encrypting content with a new
     key and re-wrapping it for everyone still authorized, which is
     meaningfully more work and wasn't attempted here).
+  - **Live-tested against a real, running stack** — this is the first
+    thing in this backend actually run end to end rather than just read
+    for correctness. Started a real Postgres 16 instance, applied all 24
+    migrations fresh (including this one), ran the real Express server,
+    and drove the full protocol over real HTTP with genuine RSA-OAEP/
+    AES-GCM WebCrypto operations: two doctor accounts, a patient account,
+    a real record, a real key wrap, and a real decrypt that produced back
+    the exact original plaintext. Also checked the negative paths: an
+    uninvolved third doctor gets 404 on both the record content and the
+    key wrap (no leak), and a patient revoking consent immediately locks
+    the co-admin out again (403). The same flow was then also driven
+    through a real Chromium browser against the real frontend file (see
+    `clair-frontend/README.md`'s matching entry) — that pass caught and
+    fixed one genuine bug in `CoAdminPanel`'s key-publish timing.
 
 - **Founder/admin dashboard now has a real frontend caller** (2026-08-21) —
   no backend code changed here; `routes/admin.js`'s four read-only routes

@@ -13736,7 +13736,7 @@ async function loadAdminNotificationHealth() {
 // it for those). Deliberately separate from the flashy multi-step signup
 // wizard elsewhere in this file (that one simulates the full product UX;
 // this one just needs to get a real token from the real backend).
-function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel = "Backend: not connected — notes save locally only" }) {
+function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel = "Backend: not connected — notes save locally only", onConnected }) {
   const isDoctorType = accountType === "individual_doctor" || accountType === "hospital_doctor";
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("login"); // login | signup
@@ -13757,7 +13757,8 @@ function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel
   // than left around to keep silently failing every request that uses it.
   useEffect(() => {
     if (!getAuthToken()) return;
-    apiRequest("/auth/me").then((data) => setConnectedEmail(data.account.email)).catch(() => setAuthToken(null));
+    apiRequest("/auth/me").then((data) => { setConnectedEmail(data.account.email); onConnected?.(data.account); }).catch(() => setAuthToken(null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const submit = async (e) => {
@@ -13770,6 +13771,11 @@ function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel
         : await backendLogin({ email, password });
       setConnectedEmail(account.email);
       setStatus({ type: "success", text: `Connected to backend as ${account.email}.` });
+      // Lets a parent panel react to a FRESH connection (e.g. re-fetch its
+      // own data, or — CoAdminPanel — publish this account's public key)
+      // rather than relying on an incidental re-render to notice the new
+      // token, which isn't guaranteed to happen right after signup/login.
+      onConnected?.(account);
     } catch (err) {
       setStatus({ type: "error", text: err.message });
     } finally {
@@ -21606,19 +21612,24 @@ function CoAdminPanel({ theme }) {
   };
   useEffect(refresh, []);
 
-  // Publishes this account's own public key on first visit to this panel
-  // (a no-op after the first time — getOrCreateKeyPair reuses the cached
-  // private key) so OTHER doctors can find a public_key on file when they
-  // search for this account to assign as their co-admin. Without this,
-  // nobody could ever be assigned before opening this panel themselves —
-  // best-effort, matching this file's local-first pattern: a failure here
-  // (e.g. a key already published from a different browser) is surfaced,
-  // not silently swallowed, since it directly explains why assignment
-  // might not work for this account.
-  useEffect(() => {
-    if (!getAuthToken()) return;
+  // Publishes this account's own public key so OTHER doctors can find a
+  // public_key on file when they search for this account to assign as
+  // their co-admin — without this, nobody could ever be assigned before
+  // opening this panel themselves first. Wired to BackendSyncPanel's
+  // onConnected below (fires both for an already-valid token found at
+  // mount, AND right after a fresh login/signup submitted from inside
+  // this very panel) rather than a mount-only effect — a mount-only
+  // effect would miss the "just signed up right here" case entirely,
+  // since signing up happens strictly after this component has already
+  // mounted. A no-op after the first time either way — getOrCreateKeyPair
+  // reuses the cached private key. Best-effort, matching this file's
+  // local-first pattern: a failure here (e.g. a key already published
+  // from a different browser) is surfaced, not silently swallowed, since
+  // it directly explains why assignment might not work for this account.
+  const onBackendConnected = () => {
     getOrCreateKeyPair().catch((err) => setKeyPairError(err.message));
-  }, []);
+    refresh();
+  };
 
   const doAssign = async () => {
     if (!picked) return;
@@ -21662,7 +21673,10 @@ function CoAdminPanel({ theme }) {
       <p className="text-xs text-[#8A958E] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Real end-to-end key-wrap crypto (clairmd-backend's routes/coadmin.js) — a co-admin genuinely cannot read a patient's record until that patient explicitly consents. Opening this panel while connected publishes your own public key so other doctors can assign you as their co-admin.
       </p>
-      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — co-admin access needs a real account" />
+      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — co-admin access needs a real account" onConnected={onBackendConnected} />
+      {getAuthToken() && (
+        <button type="button" onClick={refresh} className="text-[11px] text-[#0F5C56] underline decoration-dotted mt-1.5">Refresh</button>
+      )}
       {keyPairError && (
         <p className="text-xs text-[#B34A3C] mt-2 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{keyPairError}</p>
       )}

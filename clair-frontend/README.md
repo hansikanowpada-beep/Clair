@@ -344,15 +344,52 @@ shortcut around it.
   wrap `GET /api/coadmin/my-wraps` returns, with a "View" button that only
   appears once `consent_granted` is true — before that it shows "Awaiting
   patient consent", matching the backend's access gate precisely rather
-  than showing a button that would just 403). Opening this panel while
-  connected also publishes this doctor's own public key, since without
-  that nobody could ever be assigned before visiting this exact panel
-  themselves first.
+  than showing a button that would just 403). A manual "Refresh" link
+  re-fetches both halves.
 - **Not built, by deliberate scope decision** (same ones explained to the
   user before starting this): key backup/recovery across devices, and
   revocation (removing an assignment doesn't stop a co-admin from
   decrypting a copy of the key they already fetched — real revocation
   needs key rotation, which is separate, larger work).
+
+### Live-tested end to end (2026-08-21) — one real bug found and fixed
+
+Everything above was verified against a genuinely running stack, not just
+read for correctness: real Postgres 16, real `clairmd-backend` (all 24
+migrations applied fresh, including `024_account_public_keys.sql`), and
+for the crypto/API layer, a Node script driving real HTTP calls with the
+exact same WebCrypto operations this file uses — two doctor accounts, a
+patient account, a real record, a real RSA-OAEP wrap, and a real decrypt
+that produced back the exact original plaintext. Negative paths were
+checked too: an uninvolved third doctor gets 404 on both the content and
+the wrap, and a patient revoking consent immediately locks the co-admin
+out again (403).
+
+The crypto/API layer alone doesn't exercise `CoAdminPanel`'s actual React
+code, so it was also driven through a real browser (a throwaway Vite
+scaffold pointed at this exact file, not a copy of it, since this repo
+has no bundler of its own to launch) with two isolated browser contexts —
+one per doctor, each with its own `localStorage`/token, exactly like two
+different people on two different machines. Signed up through the real
+signup form, searched for the real co-admin through the real
+`AccountPicker`, clicked the real "Assign" button, and watched the
+second browser's "Awaiting patient consent" → "View" → decrypted note
+text transition happen for real after a patient API call granted
+consent.
+
+That browser run caught a genuine bug this file's own text had missed:
+**`CoAdminPanel`'s public-key publish only ran once, at mount** — so
+signing up through the panel's *own* embedded `BackendSyncPanel` (which
+necessarily happens *after* the panel has already mounted) never
+triggered it. A doctor could open the panel, sign up right there, and
+still never get a public key published — nobody could ever assign them
+as a co-admin. Fixed by giving `BackendSyncPanel` an optional
+`onConnected(account)` callback, fired both when an already-valid token
+is found at mount AND right after a fresh login/signup — `CoAdminPanel`
+now wires its key-publish + refresh into that callback instead of a
+mount-only effect. Backward compatible: every other `BackendSyncPanel`
+usage in this file (there are around ten) doesn't pass the new prop, so
+none of them changed behavior.
 
 ## Renaming
 
