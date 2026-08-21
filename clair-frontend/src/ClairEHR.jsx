@@ -3458,53 +3458,59 @@ const DIAGNOSIS_META = {
 // free, open-access citation for further reading. Informational reference
 // only: presents what to examine, not a diagnosis, score, or recommendation
 // (kept deliberately outside CDSCO Class A boundaries in that respect).
+// `signs` on a section (where present) lists the discrete positive/negative
+// clinical findings worth a quick Present/Absent toggle instead of free
+// typing — narrative/numeric sections (vitals, cranial nerve testing, etc.)
+// deliberately have no `signs` and stay free-text only. Toggling a sign
+// writes/updates a "Label: Present"/"Label: Absent" line in that section's
+// notes — nothing is assumed for a sign the doctor hasn't touched.
 const EXAM_TEMPLATES = {
   general: {
     name: "General Examination",
     sections: [
-      { title: "General inspection", items: ["Overall appearance, distress, consciousness level", "Build, nutritional status, hydration", "Pallor, jaundice, cyanosis, clubbing, oedema", "Gait and posture on entering the room"] },
+      { title: "General inspection", items: ["Overall appearance, distress, consciousness level", "Build, nutritional status, hydration", "Pallor, jaundice, cyanosis, clubbing, oedema", "Gait and posture on entering the room"], signs: ["Pallor", "Jaundice", "Cyanosis", "Clubbing", "Oedema"] },
       { title: "Vital signs", items: ["Temperature", "Pulse rate, rhythm, volume", "Respiratory rate", "Blood pressure", "Oxygen saturation"] },
-      { title: "Lymph nodes", items: ["Cervical, axillary, inguinal regions — size, tenderness, consistency, mobility"] },
-      { title: "Skin, hair, nails", items: ["Colour, texture, lesions", "Hair distribution", "Nail changes (clubbing, koilonychia, splinter haemorrhages)"] },
+      { title: "Lymph nodes", items: ["Cervical, axillary, inguinal regions — size, tenderness, consistency, mobility"], signs: ["Cervical lymphadenopathy", "Axillary lymphadenopathy", "Inguinal lymphadenopathy"] },
+      { title: "Skin, hair, nails", items: ["Colour, texture, lesions", "Hair distribution", "Nail changes (clubbing, koilonychia, splinter haemorrhages)"], signs: ["Skin lesions", "Nail clubbing", "Koilonychia", "Splinter haemorrhages"] },
     ],
     source: { title: "The General Examination", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK1740/" },
   },
   cardiovascular: {
     name: "Cardiovascular System",
     sections: [
-      { title: "Inspection", items: ["Precordium — visible pulsations, scars, deformity", "Jugular venous pulse — height, waveform", "Peripheral signs — clubbing, splinter haemorrhages, peripheral cyanosis"] },
-      { title: "Palpation", items: ["Radial, brachial, carotid, femoral, popliteal, dorsalis pedis pulses — rate, rhythm, volume, character", "Apex beat — location, character", "Heaves and thrills over precordium", "Peripheral oedema"] },
+      { title: "Inspection", items: ["Precordium — visible pulsations, scars, deformity", "Jugular venous pulse — height, waveform", "Peripheral signs — clubbing, splinter haemorrhages, peripheral cyanosis"], signs: ["Visible precordial pulsations", "Raised JVP", "Peripheral cyanosis", "Clubbing"] },
+      { title: "Palpation", items: ["Radial, brachial, carotid, femoral, popliteal, dorsalis pedis pulses — rate, rhythm, volume, character", "Apex beat — location, character", "Heaves and thrills over precordium", "Peripheral oedema"], signs: ["Pulse irregularity", "Displaced apex beat", "Parasternal heave", "Thrill", "Peripheral oedema"] },
       { title: "Percussion", items: ["Cardiac borders (limited clinical value, largely superseded by imaging)"] },
-      { title: "Auscultation", items: ["Heart sounds S1, S2 at all four areas (mitral, tricuspid, pulmonary, aortic)", "Added sounds — S3, S4, murmurs, clicks, rubs", "Carotid and femoral bruits", "Blood pressure in both arms if indicated"] },
+      { title: "Auscultation", items: ["Heart sounds S1, S2 at all four areas (mitral, tricuspid, pulmonary, aortic)", "Added sounds — S3, S4, murmurs, clicks, rubs", "Carotid and femoral bruits", "Blood pressure in both arms if indicated"], signs: ["S3 gallop", "S4 gallop", "Murmur", "Pericardial rub", "Carotid bruit", "Femoral bruit"] },
     ],
     source: { title: "Cardiac Exam", org: "StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK553078/" },
   },
   respiratory: {
     name: "Respiratory System",
     sections: [
-      { title: "Inspection", items: ["Respiratory rate, rhythm, effort", "Chest shape and symmetry", "Use of accessory muscles, intercostal recession", "Scars, deformity, visible masses"] },
-      { title: "Palpation", items: ["Tracheal position", "Chest expansion (symmetry and degree)", "Tactile vocal fremitus", "Tenderness, lymphadenopathy"] },
-      { title: "Percussion", items: ["Percussion note across all lung zones, comparing sides", "Dullness, hyper-resonance, stony dullness"] },
-      { title: "Auscultation", items: ["Breath sounds — normal vesicular vs. bronchial", "Added sounds — crackles, wheeze, pleural rub", "Vocal resonance"] },
+      { title: "Inspection", items: ["Respiratory rate, rhythm, effort", "Chest shape and symmetry", "Use of accessory muscles, intercostal recession", "Scars, deformity, visible masses"], signs: ["Tachypnoea", "Chest asymmetry", "Accessory muscle use", "Intercostal recession"] },
+      { title: "Palpation", items: ["Tracheal position", "Chest expansion (symmetry and degree)", "Tactile vocal fremitus", "Tenderness, lymphadenopathy"], signs: ["Tracheal deviation", "Reduced chest expansion", "Reduced vocal fremitus", "Chest wall tenderness"] },
+      { title: "Percussion", items: ["Percussion note across all lung zones, comparing sides", "Dullness, hyper-resonance, stony dullness"], signs: ["Dullness", "Hyper-resonance", "Stony dullness"] },
+      { title: "Auscultation", items: ["Breath sounds — normal vesicular vs. bronchial", "Added sounds — crackles, wheeze, pleural rub", "Vocal resonance"], signs: ["Reduced breath sounds", "Bronchial breathing", "Crackles", "Wheeze", "Pleural rub"] },
     ],
     source: { title: "Lung Exam", org: "StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK459253/" },
   },
   gastrointestinal: {
     name: "Gastrointestinal / Abdominal System",
     sections: [
-      { title: "Inspection", items: ["Abdominal contour, distension, visible masses or peristalsis", "Scars, striae, dilated veins, hernial orifices", "Umbilicus"] },
-      { title: "Palpation", items: ["Light palpation — tenderness, guarding, rigidity (all quadrants)", "Deep palpation — masses, organomegaly (liver, spleen, kidneys)", "Specific signs (e.g. Murphy's sign) where clinically indicated"] },
-      { title: "Percussion", items: ["Liver span", "Shifting dullness / fluid thrill (ascites)", "Percussion tenderness"] },
-      { title: "Auscultation", items: ["Bowel sounds — presence, character, frequency", "Bruits (renal, aortic, hepatic) where indicated"] },
+      { title: "Inspection", items: ["Abdominal contour, distension, visible masses or peristalsis", "Scars, striae, dilated veins, hernial orifices", "Umbilicus"], signs: ["Abdominal distension", "Visible masses", "Visible peristalsis", "Dilated veins", "Hernial orifice swelling"] },
+      { title: "Palpation", items: ["Light palpation — tenderness, guarding, rigidity (all quadrants)", "Deep palpation — masses, organomegaly (liver, spleen, kidneys)", "Specific signs (e.g. Murphy's sign) where clinically indicated"], signs: ["Tenderness", "Guarding", "Rigidity", "Hepatomegaly", "Splenomegaly", "Palpable kidney", "Murphy's sign"] },
+      { title: "Percussion", items: ["Liver span", "Shifting dullness / fluid thrill (ascites)", "Percussion tenderness"], signs: ["Shifting dullness", "Fluid thrill", "Percussion tenderness"] },
+      { title: "Auscultation", items: ["Bowel sounds — presence, character, frequency", "Bruits (renal, aortic, hepatic) where indicated"], signs: ["Bowel sounds present", "Renal bruit", "Aortic bruit", "Hepatic bruit"] },
     ],
     source: { title: "Abdominal Examination", org: "StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK459220/" },
   },
   musculoskeletal: {
     name: "Locomotor (Musculoskeletal) System",
     sections: [
-      { title: "Inspection", items: ["Gait, posture, deformity", "Joint swelling, erythema, muscle wasting", "Symmetry between sides"] },
-      { title: "Palpation", items: ["Warmth, tenderness, effusion at each joint", "Bony landmarks and soft-tissue structures"] },
-      { title: "Movement", items: ["Active and passive range of motion at relevant joints", "Pain or crepitus on movement", "Muscle power (grade 0–5)"] },
+      { title: "Inspection", items: ["Gait, posture, deformity", "Joint swelling, erythema, muscle wasting", "Symmetry between sides"], signs: ["Gait abnormality", "Postural deformity", "Joint swelling", "Erythema", "Muscle wasting"] },
+      { title: "Palpation", items: ["Warmth, tenderness, effusion at each joint", "Bony landmarks and soft-tissue structures"], signs: ["Warmth", "Tenderness", "Joint effusion"] },
+      { title: "Movement", items: ["Active and passive range of motion at relevant joints", "Pain or crepitus on movement", "Muscle power (grade 0–5)"], signs: ["Reduced range of motion", "Pain on movement", "Crepitus"] },
       { title: "Special tests", items: ["Joint-specific stress/stability tests as clinically indicated"] },
     ],
     source: { title: "An Overview of the Musculoskeletal System", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK266/" },
@@ -3512,21 +3518,21 @@ const EXAM_TEMPLATES = {
   nervous: {
     name: "Nervous System",
     sections: [
-      { title: "Mental status & speech", items: ["Level of consciousness, orientation", "Speech — fluency, articulation, comprehension"] },
-      { title: "Cranial nerves", items: ["I–XII, tested systematically as clinically indicated"] },
-      { title: "Motor system", items: ["Bulk, tone, power (all limbs, graded 0–5)", "Involuntary movements"] },
-      { title: "Reflexes", items: ["Deep tendon reflexes (biceps, triceps, supinator, knee, ankle)", "Plantar response"] },
-      { title: "Sensory system", items: ["Light touch, pain, vibration, proprioception"] },
-      { title: "Coordination & gait", items: ["Finger-nose, heel-shin testing", "Gait observation, Romberg's test"] },
+      { title: "Mental status & speech", items: ["Level of consciousness, orientation", "Speech — fluency, articulation, comprehension"], signs: ["Altered consciousness", "Disorientation", "Speech abnormality"] },
+      { title: "Cranial nerves", items: ["I–XII, tested systematically as clinically indicated"], signs: ["Cranial nerve deficit"] },
+      { title: "Motor system", items: ["Bulk, tone, power (all limbs, graded 0–5)", "Involuntary movements"], signs: ["Reduced muscle bulk", "Abnormal tone", "Reduced power", "Involuntary movements"] },
+      { title: "Reflexes", items: ["Deep tendon reflexes (biceps, triceps, supinator, knee, ankle)", "Plantar response"], signs: ["Reduced/absent deep tendon reflexes", "Exaggerated reflexes", "Extensor plantar response (Babinski)"] },
+      { title: "Sensory system", items: ["Light touch, pain, vibration, proprioception"], signs: ["Reduced light touch", "Reduced pain sensation", "Reduced vibration sense", "Reduced proprioception"] },
+      { title: "Coordination & gait", items: ["Finger-nose, heel-shin testing", "Gait observation, Romberg's test"], signs: ["Dysmetria (finger-nose/heel-shin)", "Positive Romberg's sign", "Ataxic gait"] },
     ],
     source: { title: "An Overview of the Nervous System", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK373/" },
   },
   urogenital: {
     name: "Urogenital System",
     sections: [
-      { title: "Inspection", items: ["External genitalia — general inspection for lesions, masses, discharge, developmental abnormalities", "Lower abdomen — distension, visible masses"] },
-      { title: "Palpation", items: ["Lower abdomen — bladder distension, masses, tenderness", "Kidneys — bimanual palpation where indicated", "External genitalia — masses, tenderness, consistency"] },
-      { title: "Further assessment", items: ["Pelvic/rectal examination where clinically indicated, following appropriate consent and chaperone protocol", "Costovertebral angle tenderness"] },
+      { title: "Inspection", items: ["External genitalia — general inspection for lesions, masses, discharge, developmental abnormalities", "Lower abdomen — distension, visible masses"], signs: ["External genital lesions", "Discharge", "Lower abdominal distension"] },
+      { title: "Palpation", items: ["Lower abdomen — bladder distension, masses, tenderness", "Kidneys — bimanual palpation where indicated", "External genitalia — masses, tenderness, consistency"], signs: ["Bladder distension", "Palpable kidney", "Tenderness"] },
+      { title: "Further assessment", items: ["Pelvic/rectal examination where clinically indicated, following appropriate consent and chaperone protocol", "Costovertebral angle tenderness"], signs: ["Costovertebral angle tenderness"] },
     ],
     source: { title: "Pelvic Examination", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK286/" },
   },
@@ -3534,9 +3540,9 @@ const EXAM_TEMPLATES = {
     name: "Endocrine & Metabolic",
     sections: [
       { title: "General inspection", items: ["Body habitus, weight distribution", "Skin changes, hair distribution, sweating"] },
-      { title: "Neck / thyroid", items: ["Visible swelling on inspection, swallowing test", "Palpation — size, consistency, nodularity, tenderness, mobility with swallowing", "Auscultation for bruit if enlarged"] },
-      { title: "Eyes", items: ["Lid lag, exophthalmos, periorbital changes"] },
-      { title: "Extremities", items: ["Tremor, reflexes (relaxation phase), pretibial changes"] },
+      { title: "Neck / thyroid", items: ["Visible swelling on inspection, swallowing test", "Palpation — size, consistency, nodularity, tenderness, mobility with swallowing", "Auscultation for bruit if enlarged"], signs: ["Visible thyroid swelling", "Thyroid nodularity", "Thyroid tenderness", "Thyroid bruit"] },
+      { title: "Eyes", items: ["Lid lag, exophthalmos, periorbital changes"], signs: ["Lid lag", "Exophthalmos", "Periorbital changes"] },
+      { title: "Extremities", items: ["Tremor, reflexes (relaxation phase), pretibial changes"], signs: ["Tremor", "Pretibial myxoedema"] },
     ],
     source: { title: "Neck and Thyroid Examination", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK244/" },
   },
@@ -3544,26 +3550,26 @@ const EXAM_TEMPLATES = {
     name: "Skin, Nails and Hair",
     sections: [
       { title: "General approach", items: ["Full-body examination in good lighting, not just the area of complaint", "Note site, distribution, and arrangement of any lesions"] },
-      { title: "Lesion characterisation", items: ["Primary lesion type (macule, papule, vesicle, etc.)", "Size, colour, border, surface texture", "Secondary changes (scale, crust, scarring)"] },
-      { title: "Hair and nails", items: ["Hair distribution, texture, loss patterns", "Nail shape, colour, surface changes"] },
+      { title: "Lesion characterisation", items: ["Primary lesion type (macule, papule, vesicle, etc.)", "Size, colour, border, surface texture", "Secondary changes (scale, crust, scarring)"], signs: ["Scale", "Crust", "Scarring"] },
+      { title: "Hair and nails", items: ["Hair distribution, texture, loss patterns", "Nail shape, colour, surface changes"], signs: ["Hair loss", "Nail surface changes"] },
     ],
     source: { title: "Skin", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK208/" },
   },
   eyes: {
     name: "Eyes",
     sections: [
-      { title: "External inspection", items: ["Lids, lashes, lacrimal apparatus", "Conjunctiva, sclera — injection, pallor, jaundice", "Cornea, anterior chamber", "Pupil size, shape, symmetry, reaction to light and accommodation"] },
-      { title: "Visual function", items: ["Visual acuity (each eye separately)", "Visual fields (confrontation)", "Extraocular movements, nystagmus"] },
-      { title: "Fundoscopy", items: ["Red reflex, disc, vessels, macula where equipment and training allow"] },
+      { title: "External inspection", items: ["Lids, lashes, lacrimal apparatus", "Conjunctiva, sclera — injection, pallor, jaundice", "Cornea, anterior chamber", "Pupil size, shape, symmetry, reaction to light and accommodation"], signs: ["Conjunctival injection", "Conjunctival pallor", "Scleral icterus", "Corneal opacity", "Pupillary asymmetry"] },
+      { title: "Visual function", items: ["Visual acuity (each eye separately)", "Visual fields (confrontation)", "Extraocular movements, nystagmus"], signs: ["Reduced visual acuity", "Visual field defect", "Nystagmus"] },
+      { title: "Fundoscopy", items: ["Red reflex, disc, vessels, macula where equipment and training allow"], signs: ["Abnormal red reflex", "Disc swelling/pallor"] },
     ],
     source: { title: "The External Eye Examination", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK218/" },
   },
   ent: {
     name: "Ear, Nose and Throat",
     sections: [
-      { title: "Ear", items: ["Pinna and external canal — inspection", "Otoscopic examination — canal and tympanic membrane", "Gross hearing assessment"] },
-      { title: "Nose", items: ["External inspection", "Anterior rhinoscopy — septum, turbinates, discharge"] },
-      { title: "Throat / oral cavity", items: ["Lips, teeth, gums, tongue, buccal mucosa", "Oropharynx, tonsils", "Neck — cervical lymph nodes"] },
+      { title: "Ear", items: ["Pinna and external canal — inspection", "Otoscopic examination — canal and tympanic membrane", "Gross hearing assessment"], signs: ["Abnormal otoscopy finding", "Reduced hearing"] },
+      { title: "Nose", items: ["External inspection", "Anterior rhinoscopy — septum, turbinates, discharge"], signs: ["Septal deviation", "Nasal discharge"] },
+      { title: "Throat / oral cavity", items: ["Lips, teeth, gums, tongue, buccal mucosa", "Oropharynx, tonsils", "Neck — cervical lymph nodes"], signs: ["Oral cavity lesions", "Tonsillar enlargement", "Cervical lymphadenopathy"] },
     ],
     source: { title: "Otoscopy", org: "StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK556090/" },
   },
@@ -14150,8 +14156,10 @@ function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examSpace
         const t = EXAM_TEMPLATES[entry.key];
         lines.push(`  ${t.name}`);
         t.sections.forEach((sec) => {
+          const signsText = formatExamSigns(entry.signs && entry.signs[sec.title]);
           const note = entry.notes[sec.title];
-          if (note) lines.push(`    ${sec.title}: ${note}`);
+          const combined = [signsText, note].filter(Boolean).join("; ");
+          if (combined) lines.push(`    ${sec.title}: ${combined}`);
         });
       });
     }
@@ -14269,8 +14277,10 @@ function buildIcuWardSlipText({ details, vitals, hpi, examSpace, ddxSpace, ddxSp
       const t = EXAM_TEMPLATES[entry.key];
       lines.push(`  ${t.name}`);
       t.sections.forEach((sec) => {
+        const signsText = formatExamSigns(entry.signs && entry.signs[sec.title]);
         const note = entry.notes[sec.title];
-        if (note) lines.push(`    ${sec.title}: ${note}`);
+        const combined = [signsText, note].filter(Boolean).join("; ");
+        if (combined) lines.push(`    ${sec.title}: ${combined}`);
       });
     });
   }
@@ -15330,8 +15340,61 @@ function EncounterWorkupCard({
   );
 }
 
+// Reusable Present/Absent toggle row for a list of finding labels — clicking
+// the already-active button clears it back to unset (a finding is never
+// silently defaulted either way). `values` is a plain { [label]: "present"|"absent" }
+// map; `onToggle(label, status)` is called with the status that was clicked.
+function PresentAbsentGrid({ labels, values, onToggle }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 bg-white border border-[#D8DED9] rounded-sm p-2 mb-2">
+      {labels.map((label) => {
+        const status = values && values[label];
+        return (
+          <div key={label} className="flex items-center justify-between gap-2 text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <span className="text-[#3C4A42]">{label}</span>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => onToggle(label, "present")}
+                title={`${label} — present`}
+                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
+                  status === "present" ? "text-white border-[#0F5C56]" : "border-[#D8DED9] text-[#5B6B63] hover:bg-[#F2F7F5]"
+                }`}
+                style={status === "present" ? { backgroundColor: "#0F5C56" } : {}}
+              >
+                Present
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggle(label, "absent")}
+                title={`${label} — absent`}
+                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
+                  status === "absent" ? "text-white border-[#5B6B63]" : "border-[#D8DED9] text-[#5B6B63] hover:bg-[#F2F7F5]"
+                }`}
+                style={status === "absent" ? { backgroundColor: "#5B6B63" } : {}}
+              >
+                Absent
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Renders a section's toggled signs as "Label: Present" / "Label: Absent"
+// joined by "; " — used to fold the structured Present/Absent picks into
+// the plain-text note alongside whatever the doctor typed freehand.
+function formatExamSigns(signValues) {
+  if (!signValues) return "";
+  return Object.entries(signValues)
+    .map(([label, status]) => `${label}: ${status === "present" ? "Present" : "Absent"}`)
+    .join("; ");
+}
+
 function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externalSetExamSpace } = {}) {
-  const [internalExamSpace, setInternalExamSpace] = useState([]); // [{ key, notes: { [sectionTitle]: string } }]
+  const [internalExamSpace, setInternalExamSpace] = useState([]); // [{ key, notes: { [sectionTitle]: string }, signs: { [sectionTitle]: { [label]: "present"|"absent" } } }]
   const examSpace = externalExamSpace !== undefined ? externalExamSpace : internalExamSpace;
   const setExamSpace = externalSetExamSpace !== undefined ? externalSetExamSpace : setInternalExamSpace;
   const [browserOpen, setBrowserOpen] = useState(false);
@@ -15341,13 +15404,23 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
     const t = EXAM_TEMPLATES[key];
     const notes = {};
     t.sections.forEach((sec) => { notes[sec.title] = ""; });
-    setExamSpace((prev) => [...prev, { key, notes }]);
+    setExamSpace((prev) => [...prev, { key, notes, signs: {} }]);
   };
 
   const removeSystem = (key) => setExamSpace((prev) => prev.filter((e) => e.key !== key));
   const clearAll = () => setExamSpace([]);
   const updateNote = (key, sectionTitle, value) =>
     setExamSpace((prev) => prev.map((e) => (e.key === key ? { ...e, notes: { ...e.notes, [sectionTitle]: value } } : e)));
+  // Clicking the already-active Present/Absent button clears it back to
+  // unset — a sign is never silently defaulted to either state.
+  const toggleSign = (key, sectionTitle, label, status) =>
+    setExamSpace((prev) => prev.map((e) => {
+      if (e.key !== key) return e;
+      const sectionSigns = { ...(e.signs && e.signs[sectionTitle]) };
+      if (sectionSigns[label] === status) delete sectionSigns[label];
+      else sectionSigns[label] = status;
+      return { ...e, signs: { ...e.signs, [sectionTitle]: sectionSigns } };
+    }));
 
   return (
     <div className="mt-4 pt-4 border-t-2 border-[#0F5C56]">
@@ -15434,7 +15507,7 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
                   </button>
                 </div>
                 <p className="text-[11px] text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  Reference checklist only. It does not assess findings, generate a score, or suggest a diagnosis.
+                  Reference checklist — tap Present/Absent for common findings instead of typing them, and add anything else in the notes below. This does not assess findings, generate a score, or suggest a diagnosis.
                 </p>
                 <div className="space-y-3">
                   {t.sections.map((sec) => (
@@ -15448,10 +15521,17 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
                           </li>
                         ))}
                       </ul>
+                      {sec.signs && sec.signs.length > 0 && (
+                        <PresentAbsentGrid
+                          labels={sec.signs}
+                          values={entry.signs && entry.signs[sec.title]}
+                          onToggle={(label, status) => toggleSign(entry.key, sec.title, label, status)}
+                        />
+                      )}
                       <AutoExpandingTextarea
                         value={entry.notes[sec.title] || ""}
                         onChange={(e) => updateNote(entry.key, sec.title, e.target.value)}
-                        placeholder={`Findings — ${sec.title.toLowerCase()}…`}
+                        placeholder={`Additional findings — ${sec.title.toLowerCase()}…`}
                       />
                     </div>
                   ))}
