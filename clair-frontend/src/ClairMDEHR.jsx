@@ -13435,6 +13435,34 @@ async function declinePostRequestOnBackend(backendId) {
   await apiRequest(`/feed-post-requests/${backendId}/decline`, { method: "POST" });
 }
 
+// --- Emergency profile ---------------------------------------------------
+// clairmd-backend's /api/emergency-profile never sees plaintext — same
+// opaque-blob trust model as patient_record_content. Unlike a clinical
+// record (one key per record), there's exactly one emergency profile per
+// real patient account, so it reuses the same getOrCreateRecordKey/
+// encryptRecordText/decryptRecordText helpers keyed by a fixed id rather
+// than adding a parallel set of crypto helpers just for this one blob.
+const EMERGENCY_PROFILE_KEY_ID = "my-emergency-profile";
+
+async function syncEmergencyProfileToBackend(profile) {
+  const encryptedBlob = await encryptRecordText(EMERGENCY_PROFILE_KEY_ID, JSON.stringify(profile));
+  await apiRequest("/emergency-profile", { method: "PUT", body: { encryptedBlob } });
+}
+async function loadEmergencyProfileFromBackend() {
+  const data = await apiRequest("/emergency-profile");
+  const json = await decryptRecordText(EMERGENCY_PROFILE_KEY_ID, data.profile.encrypted_blob);
+  return JSON.parse(json);
+}
+// The real design has the DEVICE (already holding the patient's cached
+// session) report this, not the bystander — so this call needs a patient
+// token already connected in this browser, same as everything else in
+// this section. `reason` matches clairmd-backend's exact 4-value
+// EMERGENCY_ACCESS_REASONS enum verbatim (the select options above were
+// already written to match it).
+async function logEmergencyAccessToBackend(reason) {
+  await apiRequest("/emergency-profile/access-log", { method: "POST", body: { reason, accessedAt: new Date().toISOString() } });
+}
+
 // Compact, reusable connect/status widget — email+password only (matches
 // the real backend's actual signup/login fields; the license-number field
 // only appears for doctor account types, since /api/auth/signup requires
@@ -18016,18 +18044,73 @@ function ForgotCredentials() {
   );
 }
 
+// This prototype's account-type keys ("soloDoctor") aren't
+// clairmd-backend's actual accountType enum values
+// ("individual_doctor") — converted only at this one call site so the
+// rest of the component keeps using its own existing vocabulary.
+const ACCOUNT_TYPE_TO_BACKEND = { hospital: "hospital", soloDoctor: "individual_doctor", affiliatedDoctor: "hospital_doctor" };
+
 function HospitalAuthPanel({ onBack, onAccountVerified }) {
   const [accountType, setAccountType] = useState("hospital");
   const [mode, setMode] = useState("signup"); // signup | login
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ hospitalName: "", email: "", phone: "", aadhaar: "", affiliatedHospital: "", specialty: "" });
+  const [form, setForm] = useState({ hospitalName: "", email: "", phone: "", aadhaar: "", affiliatedHospital: "", specialty: "", password: "", licenseNumber: "" });
   const [otpSent, setOtpSent] = useState(false);
   const [verified, setVerified] = useState(false);
   const [planChosen, setPlanChosen] = useState(null);
+  const [loginPassword, setLoginPassword] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authStatus, setAuthStatus] = useState(null); // { type: "error"|"success", text }
   const typeMeta = ACCOUNT_TYPES.find((t) => t.key === accountType);
   const isDoctorAccount = accountType === "soloDoctor" || accountType === "affiliatedDoctor";
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  // The wizard above this point (payment, OTP) stays mocked — this
+  // prototype has no real payment aggregator or SMS/email provider wired
+  // (same honest stub standard as clairmd-backend's own license-
+  // verification and Razorpay-charge stubs) — but account creation
+  // itself is a real POST /api/auth/signup call. A real failure (e.g.
+  // "email already exists") stops the wizard here rather than faking
+  // through to "Account created" regardless.
+  const createRealAccount = async () => {
+    setAuthBusy(true);
+    setAuthStatus(null);
+    try {
+      const account = await backendSignup({
+        accountType: ACCOUNT_TYPE_TO_BACKEND[accountType],
+        email: form.email,
+        password: form.password,
+        displayName: form.hospitalName,
+        licenseNumber: form.licenseNumber || undefined,
+      });
+      setVerified(true);
+      setAuthStatus({ type: "success", text: `Backend account created for ${account.email}.` });
+      if (onAccountVerified) onAccountVerified(form.specialty, null, account.display_name);
+    } catch (err) {
+      setAuthStatus({ type: "error", text: err.message });
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  // clairmd-backend's plan_tier ('free'/'basic'/'elite') isn't the same
+  // vocabulary as this prototype's doctorPlan ('free'/'premium') — 'elite'
+  // is the closest real-account match for what this app treats as
+  // "premium features unlocked," so that's the only mapping applied here.
+  const loginToRealAccount = async () => {
+    setAuthBusy(true);
+    setAuthStatus(null);
+    try {
+      const account = await backendLogin({ email: form.email, password: loginPassword });
+      setAuthStatus({ type: "success", text: `Logged in as ${account.email}.` });
+      if (onAccountVerified) onAccountVerified(account.specialty, account.plan_tier === "elite" ? "premium" : null, account.display_name);
+    } catch (err) {
+      setAuthStatus({ type: "error", text: err.message });
+    } finally {
+      setAuthBusy(false);
+    }
+  };
 
   return (
     <div className="p-5">
@@ -18076,6 +18159,11 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
             <div>
               <label className="text-xs text-[#8A958E]">Hospital you're affiliated with</label>
               <input value={form.affiliatedHospital} onChange={update("affiliatedHospital")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="e.g. ClairMD Clinic" />
+              {/* Display-only — clairmd-backend's POST /api/hospital-affiliations is
+                  hospital-initiated (the hospital adds a doctor by account ID); a
+                  doctor can't self-serve an affiliation by typing a hospital's name
+                  here, so this field doesn't create a real link. */}
+              <p className="text-[11px] text-[#8A958E] mt-1">The hospital adds you from their own account once you've both signed up — this doesn't create the link by itself.</p>
             </div>
           )}
           <div>
@@ -18086,6 +18174,10 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
             <label className="text-xs text-[#8A958E]">Phone number</label>
             <input value={form.phone} onChange={update("phone")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="+91" />
           </div>
+          <div>
+            <label className="text-xs text-[#8A958E]">Password</label>
+            <input type="password" value={form.password} onChange={update("password")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="At least 10 characters" />
+          </div>
           {isDoctorAccount && (
             <div>
               <label className="text-xs text-[#8A958E]">Your speciality</label>
@@ -18094,6 +18186,12 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
                 {Object.keys(SPECIALTY_THEMES).map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
               <p className="text-[11px] text-[#8A958E] mt-1">Your dashboard is themed to your speciality once set.</p>
+            </div>
+          )}
+          {isDoctorAccount && (
+            <div>
+              <label className="text-xs text-[#8A958E]">Medical registration / license number</label>
+              <input value={form.licenseNumber} onChange={update("licenseNumber")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="Required for doctor accounts" />
             </div>
           )}
           {accountType !== "hospital" && (
@@ -18136,13 +18234,21 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
           <div className="flex items-center gap-2 text-sm"><KeyRound size={14} className="text-[#5B6B63]" /><input placeholder="Enter phone OTP" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
           <div className="flex items-center gap-2 text-sm"><Mail size={14} className="text-[#5B6B63]" /><input placeholder="Enter email verification code" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
           {!verified ? (
-            <button
-              onClick={() => setVerified(true)}
-              className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium"
-              style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
-            >
-              Verify & create account
-            </button>
+            <>
+              <button
+                onClick={createRealAccount}
+                disabled={authBusy}
+                className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium disabled:opacity-60"
+                style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+              >
+                {authBusy ? "Creating account…" : "Verify & create account"}
+              </button>
+              {authStatus && (
+                <p className={`text-xs ${authStatus.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                  {authStatus.text}
+                </p>
+              )}
+            </>
           ) : isDoctorAccount && !planChosen ? (
             <div>
               <div className="bg-[#FBF6EC] border border-[#F0DDB0] rounded-sm p-3 text-xs text-[#7A5A19] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -18178,11 +18284,16 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
 
       {mode === "login" && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm"><Mail size={14} className="text-[#5B6B63]" /><input placeholder="Registered email" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
-          <div className="flex items-center gap-2 text-sm"><Lock size={14} className="text-[#5B6B63]" /><input type="password" placeholder="Password" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
-          <button className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-            Log in
+          <div className="flex items-center gap-2 text-sm"><Mail size={14} className="text-[#5B6B63]" /><input value={form.email} onChange={update("email")} placeholder="Registered email" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
+          <div className="flex items-center gap-2 text-sm"><Lock size={14} className="text-[#5B6B63]" /><input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Password" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
+          <button onClick={loginToRealAccount} disabled={authBusy} className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium disabled:opacity-60" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            {authBusy ? "Logging in…" : "Log in"}
           </button>
+          {authStatus && (
+            <p className={`text-xs ${authStatus.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              {authStatus.text}
+            </p>
+          )}
           <ForgotCredentials />
         </div>
       )}
@@ -18577,6 +18688,25 @@ function PatientPortalView({ patients, onBack, followups, setFollowups, feedPost
     preferredHospital: "",
     preferredHospitalPhone: "",
   });
+  const [emergencyProfileSyncMessage, setEmergencyProfileSyncMessage] = useState(null);
+
+  // Loads the real saved profile once on mount, if connected — takes
+  // priority over the "demo seeding" effect below (that one only fires
+  // when bloodGroup is still empty, so real data loaded here wins). A 404
+  // ("no profile set up yet") is the normal, expected case for a fresh
+  // account, not an error worth surfacing.
+  useEffect(() => {
+    if (!getAuthToken()) return;
+    loadEmergencyProfileFromBackend().then(setEmergencyProfile).catch(() => {});
+  }, []);
+
+  const pushEmergencyProfileToBackend = () => {
+    if (!getAuthToken()) return;
+    syncEmergencyProfileToBackend(emergencyProfile)
+      .then(() => setEmergencyProfileSyncMessage({ type: "success", text: "Saved to backend." }))
+      .catch((err) => setEmergencyProfileSyncMessage({ type: "error", text: `Backend sync skipped: ${err.message}` }));
+  };
+
   const [emergencyMode, setEmergencyMode] = useState(false);
   const [emergencyGateStep, setEmergencyGateStep] = useState(null); // null | "prompt" | "unlocked"
   const [emergencyReason, setEmergencyReason] = useState("");
@@ -18635,7 +18765,11 @@ function PatientPortalView({ patients, onBack, followups, setFollowups, feedPost
               </select>
               <button
                 disabled={!emergencyReason}
-                onClick={() => { setEmergencyGateStep("unlocked"); setEmergencySecondsLeft(90); }}
+                onClick={() => {
+                  setEmergencyGateStep("unlocked");
+                  setEmergencySecondsLeft(90);
+                  if (getAuthToken()) logEmergencyAccessToBackend(emergencyReason).catch(() => {}); // best-effort — never blocks the unlock itself, matching the offline-first design this logging already accepts as a real limitation
+                }}
                 className={`w-full text-sm py-2.5 rounded-sm font-medium mb-2 ${emergencyReason ? "bg-[#B34A3C] text-white" : "bg-[#EEF1EE] text-[#8A958E] cursor-not-allowed"}`}
                 style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
               >
@@ -19118,12 +19252,20 @@ function PatientPortalView({ patients, onBack, followups, setFollowups, feedPost
                   <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     If you're ever found unresponsive, whoever helps you can unlock a scoped emergency view using your fingerprint — showing only what's below, nothing else in your account.
                   </p>
+                  <div className="mb-3">
+                    <BackendSyncPanel accountType="patient" notConnectedLabel="Backend: not connected — emergency profile saves locally only" />
+                    {emergencyProfileSyncMessage && (
+                      <p className={`text-[11px] mt-1.5 ${emergencyProfileSyncMessage.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                        {emergencyProfileSyncMessage.text}
+                      </p>
+                    )}
+                  </div>
                   <div className="space-y-2">
-                    <input value={emergencyProfile.bloodGroup} onChange={(e) => setEmergencyProfile((v) => ({ ...v, bloodGroup: e.target.value }))} placeholder="Blood group" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-                    <input value={emergencyProfile.currentMedications} onChange={(e) => setEmergencyProfile((v) => ({ ...v, currentMedications: e.target.value }))} placeholder="Current medications" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-                    <input value={emergencyProfile.preferredHospital} onChange={(e) => setEmergencyProfile((v) => ({ ...v, preferredHospital: e.target.value }))} placeholder="Preferred hospital" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-                    <input value={emergencyProfile.preferredHospitalPhone} onChange={(e) => setEmergencyProfile((v) => ({ ...v, preferredHospitalPhone: e.target.value }))} placeholder="Preferred hospital phone" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-                    <textarea value={emergencyProfile.emergencyNote} onChange={(e) => setEmergencyProfile((v) => ({ ...v, emergencyNote: e.target.value }))} placeholder="Written note: what should whoever finds you do? (e.g. 'I have epilepsy, do not restrain me')" rows={3} className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
+                    <input value={emergencyProfile.bloodGroup} onChange={(e) => setEmergencyProfile((v) => ({ ...v, bloodGroup: e.target.value }))} onBlur={pushEmergencyProfileToBackend} placeholder="Blood group" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
+                    <input value={emergencyProfile.currentMedications} onChange={(e) => setEmergencyProfile((v) => ({ ...v, currentMedications: e.target.value }))} onBlur={pushEmergencyProfileToBackend} placeholder="Current medications" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
+                    <input value={emergencyProfile.preferredHospital} onChange={(e) => setEmergencyProfile((v) => ({ ...v, preferredHospital: e.target.value }))} onBlur={pushEmergencyProfileToBackend} placeholder="Preferred hospital" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
+                    <input value={emergencyProfile.preferredHospitalPhone} onChange={(e) => setEmergencyProfile((v) => ({ ...v, preferredHospitalPhone: e.target.value }))} onBlur={pushEmergencyProfileToBackend} placeholder="Preferred hospital phone" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
+                    <textarea value={emergencyProfile.emergencyNote} onChange={(e) => setEmergencyProfile((v) => ({ ...v, emergencyNote: e.target.value }))} onBlur={pushEmergencyProfileToBackend} placeholder="Written note: what should whoever finds you do? (e.g. 'I have epilepsy, do not restrain me')" rows={3} className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
                   </div>
                 </div>
                 <div className="bg-[#FBF6EC] border border-[#F0DDB0] rounded-sm p-4 text-xs text-[#7A5A19]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -21617,7 +21759,7 @@ export default function ClairMDEHR() {
             </div>
           ) : sidebarView === "hospitalAuth" ? (
             <div className="flex-1 overflow-y-auto">
-              <HospitalAuthPanel onBack={() => setSidebarView("patients")} onAccountVerified={(specialty, plan) => { if (specialty) setDoctorSpecialty(specialty); if (plan) setDoctorPlan(plan); }} />
+              <HospitalAuthPanel onBack={() => setSidebarView("patients")} onAccountVerified={(specialty, plan, displayName) => { if (specialty) setDoctorSpecialty(specialty); if (plan) setDoctorPlan(plan); if (displayName) setDoctorDisplayName(displayName); }} />
             </div>
           ) : sidebarView === "statistics" ? (
             <div className="flex-1 overflow-y-auto">

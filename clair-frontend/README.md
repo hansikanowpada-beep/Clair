@@ -143,6 +143,45 @@ signup now only appears for doctor account types.
   "not connected" even with a good token already in `localStorage`,
   which would have undercut the whole point of storing it there.
 
+## Real account signup/login (`HospitalAuthPanel`) and emergency profile
+
+Two more surfaces switched from fully mocked to genuinely backed:
+
+- **`HospitalAuthPanel`** ("Account access" in the hospital sidebar) — the
+  multi-step wizard (payment, OTP) stays mocked (no real payment
+  aggregator or SMS/email provider is wired, same honest-stub standard as
+  `clairmd-backend`'s own license-verification and Razorpay-charge stubs),
+  but "Verify & create account" now calls the real
+  `POST /api/auth/signup`, and "Log in" calls the real
+  `POST /api/auth/login`. Added password and medical-license-number
+  fields the mocked flow never collected, since the real backend needs
+  both. A real failure (wrong password, email already registered, license
+  rejected) stops the wizard with the actual error rather than faking
+  through to "Account created" regardless. On success, the app's
+  `doctorDisplayName` (previously hard-coded to "Dr. Priya Nair") and, on
+  login, `doctorSpecialty`/`doctorPlan` are hydrated from the real
+  account — `plan_tier: 'elite'` maps to this app's `doctorPlan:
+  'premium'` (the two systems use different tier vocabularies; that's the
+  only mapping applied).
+  - **The "hospital you're affiliated with" field stays display-only.**
+    `POST /api/hospital-affiliations` is hospital-initiated (a hospital
+    adds a doctor by account ID) — a doctor can't self-serve a link by
+    typing a hospital's name during their own signup, so this field
+    intentionally doesn't create one. Flagged inline in the code and in
+    the UI's own helper text rather than silently pretending it works.
+- **Emergency profile** (in the patient portal's Insurance tab) — the 5
+  fields (blood group, medications, preferred hospital + phone, note)
+  load the real saved profile on open and PUT to `/api/emergency-profile`
+  on blur, same opaque-encrypted-blob trust model as note content
+  (`patient_record_content`) — reuses the existing per-record AES-GCM
+  helpers keyed by a fixed id, since there's exactly one emergency
+  profile per real account rather than one per record. The "Unlock with
+  fingerprint" button also reports the access
+  (`POST /emergency-profile/access-log`) with the exact reason string
+  selected — the four options already matched
+  `clairmd-backend`'s `EMERGENCY_ACCESS_REASONS` enum verbatim, so no
+  conversion was needed.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain
