@@ -593,6 +593,20 @@ updated help text, pointing here).
   then showed, and a decline-then-re-request correctly reused the same
   request rather than erroring.
 
+## License verification banner removed (2026-08-22)
+
+`VerificationBanner` — the "License verification pending... Check status
+(demo)" banner with its fake "Check status" button — is gone, along with
+the `doctorVerified` state that drove it. It was always purely cosmetic
+(grepped for every other reference to `doctorVerified` before removing
+it — there were none; nothing actually gated on it), and now that
+`clairmd-backend`'s signup route no longer performs or claims to perform
+real license verification either (see that repo's README), showing a
+fake "verification pending" step made even less sense than before —
+product decision was to remove it entirely rather than leave a UI
+element pointing at a check the backend doesn't do. Revisit both sides
+together whenever real verification actually gets built.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain

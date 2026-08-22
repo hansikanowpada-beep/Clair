@@ -23190,16 +23190,6 @@ function FreeTierBanner() {
   );
 }
 
-function VerificationBanner({ verified, onVerify }) {
-  if (verified) return null;
-  return (
-    <div className="px-8 py-2.5 border-b border-[#D8DED9] bg-[#FBEFEC] flex items-center justify-between text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-      <span className="text-[#7A2F25] flex items-center gap-1.5"><ShieldAlert size={13} /> License verification pending — posting to the patient feed and premium tools stay locked until your registration clears against the official registry.</span>
-      <button onClick={onVerify} className="text-[#0F5C56] underline decoration-dotted shrink-0 ml-3">Check status (demo)</button>
-    </div>
-  );
-}
-
 // Founder-admin dashboard — a whole separate app mode from "clinic" and
 // "patient" (see appMode below), because a founder-admin account is a
 // different persona entirely, not a doctor or patient view. Login-only:
@@ -23582,7 +23572,6 @@ export default function ClairMDEHR() {
   const [labOrders, setLabOrders] = useState([]);
   const [doctorSpecialty, setDoctorSpecialty] = useState(null);
   const [doctorPlan, setDoctorPlan] = useState("free");
-  const [doctorVerified, setDoctorVerified] = useState(false);
   const [followups, setFollowups] = useState(FOLLOWUPS);
   const [feedPosts, setFeedPosts] = useState(DOCTOR_FEED_POSTS);
   const [postExpiryMonths, setPostExpiryMonths] = useState(6);
@@ -24193,7 +24182,6 @@ export default function ClairMDEHR() {
               </div>
 
               <FreeTierBanner />
-              <VerificationBanner verified={doctorVerified} onVerify={() => setDoctorVerified(true)} />
 
               <div className="p-8">
                 <div style={{ display: tab === "overview" ? "block" : "none" }}>

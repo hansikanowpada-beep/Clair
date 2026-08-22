@@ -6,7 +6,6 @@ const { z } = require("zod");
 const pool = require("../db/pool");
 const config = require("../config");
 const { requireAuth } = require("../middleware/auth");
-const { verifyMedicalLicense } = require("../services/licenseVerification");
 
 const router = express.Router();
 const BCRYPT_ROUNDS = 12;
@@ -57,24 +56,25 @@ router.post("/signup", signupLimiter, async (req, res) => {
     return res.status(400).json({ error: "License number is required for doctor accounts." });
   }
 
-  // License verification: dev-mode accepts any non-empty string; real
-  // deployments need a configured provider — see the researched options
-  // and provider pattern in services/licenseVerification.js.
-  if (isDoctorType) {
-    const verified = await verifyMedicalLicense(licenseNumber);
-    if (!verified) {
-      return res.status(422).json({ error: "License number could not be verified. Please check and try again." });
-    }
-  }
+  // License verification is deliberately NOT gating signup right now
+  // (2026-08-22 product decision) — see services/licenseVerification.js's
+  // own header comment for why a real check isn't buildable yet (no
+  // reachable, officially-documented registry API), and its
+  // `unconfigured` provider would otherwise throw here in any non-dev
+  // environment, blocking every doctor signup outright. license_number
+  // is still collected and stored below; license_verified_at stays NULL
+  // until real verification actually exists — revisit this gate once it
+  // does, rather than resurrecting the old dev-only accept-anything
+  // check as a stand-in for a real one.
 
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
   try {
     const result = await pool.query(
       `INSERT INTO accounts (account_type, email, phone, password_hash, display_name, specialty, license_number, license_verified_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NULL)
        RETURNING id, account_type, email, display_name, plan_tier, created_at`,
-      [accountType, email.toLowerCase(), phone || null, passwordHash, displayName, specialty || null, licenseNumber || null, isDoctorType ? new Date() : null]
+      [accountType, email.toLowerCase(), phone || null, passwordHash, displayName, specialty || null, licenseNumber || null]
     );
     const account = result.rows[0];
     const token = signToken(account.id, account.account_type);

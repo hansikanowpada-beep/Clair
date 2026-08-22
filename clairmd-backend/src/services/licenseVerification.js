@@ -1,5 +1,18 @@
 // Medical license verification — pluggable provider pattern.
 //
+// NOT CURRENTLY CALLED FROM ANYWHERE (2026-08-22 product decision) —
+// routes/auth.js's signup no longer gates on this at all. Previously,
+// any non-dev environment would hit the unconfigured provider below and
+// THROW, blocking every doctor signup outright until a real provider
+// was wired in — since no real provider exists yet (see the research
+// below) and this doesn't get revisited automatically, that meant
+// doctor signup was silently broken in any real deployment. Removed the
+// gate rather than leave that trap in place; license_number is still
+// collected and stored, license_verified_at just stays NULL until real
+// verification exists. This file's provider pattern is kept intact for
+// whenever that happens — implement `verify()` for a real provider and
+// wire the call back into routes/auth.js, nothing else needs to change.
+//
 // RE-CHECKED 2026-08-22: this is the one item from a 5-item build list
 // that genuinely could NOT be built the way the other four were (a
 // hospital payment screen, a care-team view, doctor-initiated hospital

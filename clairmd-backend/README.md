@@ -13,6 +13,25 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **License verification gate removed from signup — a real bug this
+  caught** (2026-08-22 product decision, "deal with it later"). Since
+  real verification isn't buildable yet (see the entry below this one),
+  `routes/auth.js`'s signup was still calling `verifyMedicalLicense()`,
+  which in any non-development environment hit the `unconfigured`
+  provider and THREW — meaning doctor signup was silently broken outright
+  in any real deployment, not just unverified. Removed the gate entirely
+  rather than leave that trap in place. `license_number` is still
+  collected and stored; `license_verified_at` now always stays `NULL` at
+  signup (previously it was dishonestly set to the signup timestamp, as
+  if verification had happened) until real verification exists later.
+  **Live-tested**: ran the server with `NODE_ENV=production` specifically
+  (the exact condition that used to throw) and confirmed a doctor signup
+  now succeeds cleanly, with `license_verified_at` genuinely `NULL` in
+  the database afterward — not silently marked verified.
+  `services/licenseVerification.js`'s provider pattern and research are
+  kept intact for whenever this gets revisited; nothing there was
+  deleted, just disconnected from the signup route.
+
 - **Real medical license verification — re-investigated (2026-08-22),
   still genuinely not buildable from here, and that's a different
   situation from everything else on this list.** The other four items
