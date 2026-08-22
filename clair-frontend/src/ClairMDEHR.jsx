@@ -10,6 +10,7 @@ import {
   ChevronUp, Flame, Wind, Droplets, Radio, Activity,
   Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
+  CreditCard, ShieldOff, LogIn,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
@@ -13510,6 +13511,72 @@ async function recordDriveBackupEvent(status, extra = {}) {
   return apiRequest("/drive/backup-events", { method: "POST", body: { status, ...extra } });
 }
 
+// --- Hospital Razorpay payment method — real Checkout.js integration ----
+// Loads Razorpay's real checkout script on demand (not bundled — most
+// accounts using this app are never hospitals hitting ICU/Ward overage).
+let razorpayScriptPromise = null;
+function loadRazorpayCheckoutScript() {
+  if (typeof window === "undefined") return Promise.reject(new Error("Not in a browser context."));
+  if (window.Razorpay) return Promise.resolve();
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+  razorpayScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve();
+    script.onerror = () => { razorpayScriptPromise = null; reject(new Error("Couldn't load Razorpay's checkout script — check your connection.")); };
+    document.body.appendChild(script);
+  });
+  return razorpayScriptPromise;
+}
+
+async function loadHospitalPaymentMethodStatus() {
+  const data = await apiRequest("/hospital-billing/payment-method/status");
+  return data.hasPaymentMethod;
+}
+async function loadHospitalOverageStatus() {
+  return apiRequest("/hospital-billing/overage-status");
+}
+
+// The full "add a payment method" flow: create a real order
+// (POST /hospital-billing/setup-order), open Razorpay's real Checkout
+// widget with recurring/tokenization requested, then hand the completed
+// checkout's reference to the backend for independent signature
+// verification — this never trusts the client-side success callback
+// alone (see routes/hospitalBilling.js's /setup-order/verify, which
+// re-derives the signature itself). Resolves once the backend has
+// actually saved a verified payment method, not just once Razorpay's
+// popup reports success.
+async function addHospitalPaymentMethod(hospitalEmail, hospitalDisplayName) {
+  await loadRazorpayCheckoutScript();
+  const { order, razorpayKeyId } = await apiRequest("/hospital-billing/setup-order", { method: "POST" });
+
+  const checkoutResult = await new Promise((resolve, reject) => {
+    const rzp = new window.Razorpay({
+      key: razorpayKeyId,
+      amount: order.amount,
+      currency: order.currency,
+      order_id: order.id,
+      name: "ClairMD Clinic",
+      description: "Link a payment method for hospital overage billing",
+      recurring: 1, // ask Razorpay to tokenize this method for future unattended charges
+      prefill: { email: hospitalEmail, name: hospitalDisplayName },
+      handler: (response) => resolve(response),
+      modal: { ondismiss: () => reject(new Error("Payment window closed before completing.")) },
+    });
+    rzp.on("payment.failed", (response) => reject(new Error(response.error?.description || "Payment failed.")));
+    rzp.open();
+  });
+
+  return apiRequest("/hospital-billing/setup-order/verify", {
+    method: "POST",
+    body: {
+      razorpayOrderId: checkoutResult.razorpay_order_id,
+      razorpayPaymentId: checkoutResult.razorpay_payment_id,
+      razorpaySignature: checkoutResult.razorpay_signature,
+    },
+  });
+}
+
 // Full round trip: create the pointer, encrypt the note, PUT it to the
 // backend's opaque-blob store, then GET + decrypt it straight back to
 // confirm the backend genuinely stored what was sent. Then, if this
@@ -20448,6 +20515,117 @@ function InventoryManagerPanel({ onBack, theme }) {
   );
 }
 
+// Real Razorpay Checkout integration for hospitals — the actual "add a
+// payment method" screen, not a stub. Two blocks: payment method status
+// (with the real Add button when none is on file) and overage billing
+// status (what's pending/charged/failed, and whether admin features are
+// currently restricted for unpaid overage).
+function HospitalBillingPanel({ onBack, theme }) {
+  const [account, setAccount] = useState(null); // { email, displayName } once connected
+  const [hasMethod, setHasMethod] = useState(null);
+  const [overage, setOverage] = useState(null);
+  const [addingMethod, setAddingMethod] = useState(false);
+  const [addMethodError, setAddMethodError] = useState(null);
+  const [addMethodSuccess, setAddMethodSuccess] = useState(false);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    loadHospitalPaymentMethodStatus().then(setHasMethod).catch(() => {});
+    loadHospitalOverageStatus().then(setOverage).catch(() => {});
+  };
+  useEffect(refresh, []);
+
+  const onBackendConnected = (acc) => {
+    setAccount({ email: acc.email, displayName: acc.display_name });
+    refresh();
+  };
+
+  const doAddMethod = async () => {
+    setAddingMethod(true);
+    setAddMethodError(null);
+    setAddMethodSuccess(false);
+    try {
+      await addHospitalPaymentMethod(account?.email || "", account?.displayName || "");
+      setAddMethodSuccess(true);
+      refresh();
+    } catch (err) {
+      setAddMethodError(err.message);
+    } finally {
+      setAddingMethod(false);
+    }
+  };
+
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-1">
+        <CreditCard size={18} style={{ color: theme.color }} />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Billing & payment</h2>
+      </div>
+      <p className="text-xs text-[#8A958E] mb-4 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Real Razorpay integration (clairmd-backend's routes/hospitalBilling.js). ICU/Ward notes past your included quota are tracked as overage automatically — this is where you link a payment method so the nightly billing job can actually collect it, instead of just tracking what's owed.
+      </p>
+      <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — connect to manage real billing" onConnected={onBackendConnected} />
+
+      {getAuthToken() && (
+        <>
+          <div className="mt-4 bg-white border border-[#D8DED9] rounded-md p-4">
+            <div className="text-sm font-medium mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Payment method</div>
+            {hasMethod === null ? (
+              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
+            ) : hasMethod ? (
+              <p className="text-xs text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>A payment method is on file — overage entries will be charged automatically overnight.</p>
+            ) : (
+              <>
+                <p className="text-xs text-[#8A958E] mb-2 max-w-md" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                  No payment method on file yet. Adding one opens Razorpay's real checkout — a small ₹1 verification charge links your card/UPI for future automatic billing (that amount is a placeholder pending a real product decision, not something to assume is final).
+                </p>
+                <button
+                  type="button"
+                  onClick={doAddMethod}
+                  disabled={addingMethod}
+                  className="text-xs px-3 py-1.5 rounded-sm text-white font-medium"
+                  style={{ backgroundColor: theme.color }}
+                >
+                  {addingMethod ? "Opening Razorpay…" : "Add payment method"}
+                </button>
+                {addMethodError && <p className="text-xs text-[#B34A3C] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{addMethodError}</p>}
+                {addMethodSuccess && <p className="text-xs text-[#0F5C56] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Payment method saved.</p>}
+              </>
+            )}
+          </div>
+
+          <div className="mt-4 bg-white border border-[#D8DED9] rounded-md p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Overage billing status</div>
+              <button type="button" onClick={refresh} className="text-[11px] text-[#0F5C56] underline decoration-dotted">Refresh</button>
+            </div>
+            {overage?.adminRestricted && (
+              <div className="bg-[#FBEFEC] border border-[#E3B3A8] rounded-sm p-2.5 text-xs text-[#7A2F25] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                Some administrative features are restricted — unpaid overage with no payment method on file. Add one above to clear this.
+              </div>
+            )}
+            {!overage ? (
+              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
+            ) : overage.byStatus.length === 0 ? (
+              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No overage entries on record.</p>
+            ) : (
+              <div className="space-y-1">
+                {overage.byStatus.map((row) => (
+                  <div key={row.charge_status} className="flex justify-between text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <span className="text-[#5B6B63] capitalize">{row.charge_status.replace(/_/g, " ")}</span>
+                    <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Build Hospital — guided setup checklist. Content researched directly
 // (Clinical Establishments Act 2010 + state variation, Biomedical Waste
@@ -23148,6 +23326,7 @@ export default function ClairMDEHR() {
                     { key: "statistics", label: "Statistics", icon: BarChart3 },
                     { key: "beds", label: "Bed availability", icon: BedDouble },
                     { key: "inventory", label: "Inventory manager", icon: Package },
+                    { key: "hospitalBilling", label: "Billing & payment", icon: CreditCard },
                     { key: "planner", label: "Planner", icon: CalendarDays },
                     { key: "followups", label: "Follow-ups", icon: ClipboardList },
                     { key: "virtualOpd", label: "Virtual OPD", icon: GraduationCap, premium: true },
@@ -23249,6 +23428,10 @@ export default function ClairMDEHR() {
           ) : sidebarView === "inventory" ? (
             <div className="flex-1 overflow-y-auto">
               <InventoryManagerPanel onBack={() => setSidebarView("patients")} theme={theme} />
+            </div>
+          ) : sidebarView === "hospitalBilling" ? (
+            <div className="flex-1 overflow-y-auto">
+              <HospitalBillingPanel onBack={() => setSidebarView("patients")} theme={theme} />
             </div>
           ) : sidebarView === "planner" ? (
             <div className="flex-1 overflow-y-auto">

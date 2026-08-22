@@ -465,6 +465,40 @@ the product was always meant to have, not a stand-in for it.
   real `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` values are in `.env`,
   this whole flow is ready to live-test the same way co-admin was.
 
+## Hospital billing & payment (real Razorpay Checkout)
+
+New `HospitalBillingPanel`, in the sidebar's Admin group between
+"Inventory manager" and "Planner" — reachable only as a hospital account
+(same convention as Bed availability/Inventory manager, which already use
+`accountType="hospital"`). Was a genuine gap: `clairmd-backend`'s
+`payment_methods` table and nightly overage-billing job existed, but
+nothing anywhere in this frontend could actually put a payment method on
+file.
+
+- **`loadRazorpayCheckoutScript()`** — injects Razorpay's real
+  `checkout.js` on demand, once, the first time it's needed.
+- **`addHospitalPaymentMethod(email, displayName)`** — the real flow:
+  creates a genuine order (`POST /api/hospital-billing/setup-order`),
+  opens Razorpay's actual Checkout widget with `recurring: 1` (requests
+  tokenization for future unattended charges), and on success hands the
+  result to `POST /api/hospital-billing/setup-order/verify` — which
+  independently re-derives the signature server-side rather than trusting
+  the browser's success callback. Only resolves once the backend has
+  actually saved a verified payment method.
+- **`loadHospitalPaymentMethodStatus()`** / **`loadHospitalOverageStatus()`**
+  — power the panel's two sections: whether a payment method is on file,
+  and the real breakdown of overage entries by charge status (pending/
+  charged/failed/no_payment_method), plus a restriction banner when
+  `adminRestricted` comes back true.
+- **Not independently verified**: the exact Razorpay response fields this
+  reads for the recurring-charge token — see the matching, more detailed
+  note in `clairmd-backend/README.md`. The Checkout.js integration
+  pattern itself (order → widget → signature verify) is the well-
+  established, high-confidence part.
+- The nominal ₹1 linking charge shown in the UI is explicitly labeled a
+  placeholder pending a real product decision, not presented as final
+  pricing.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain

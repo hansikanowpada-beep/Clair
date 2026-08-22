@@ -1,5 +1,100 @@
+const crypto = require("crypto");
 const pool = require("../db/pool");
 const config = require("../config");
+
+// --- Real Razorpay Checkout integration — the "add a payment method"
+// flow (distinct from attemptRazorpayCharge below, which charges an
+// ALREADY-saved method with no customer present). This is Razorpay's
+// most stable, most universally-documented API surface — the same
+// order-create + Checkout.js + signature-verify shape every Razorpay
+// integration uses, unchanged for years — so confidence here is
+// genuinely high, unlike the specific recurring-charge endpoint. The one
+// piece that ISN'T independently verified (see fetchRazorpayPaymentToken
+// below) is the exact field names Razorpay returns for the resulting
+// recurring-charge token, since this sandbox's network policy blocks
+// razorpay.com entirely, including their docs. -----------------------------
+
+const RAZORPAY_API_BASE = "https://api.razorpay.com/v1";
+
+function razorpayAuthHeader() {
+  const basic = Buffer.from(`${config.razorpayKeyId}:${config.razorpayKeySecret}`).toString("base64");
+  return `Basic ${basic}`;
+}
+
+// Nominal authorization amount to link a card/UPI mandate for future
+// recurring overage billing. The EXACT number (and whether it's ever
+// refunded) is a product/business decision, not something to invent
+// silently — Rs. 1.00 is a common industry placeholder for "verify a
+// payment method without meaningfully charging the customer," used here
+// as exactly that: a placeholder for a human to confirm or change.
+const PAYMENT_METHOD_SETUP_AMOUNT_PAISE = 100; // Rs. 1.00 — PLACEHOLDER, confirm before relying on this
+
+async function createRazorpaySetupOrder(hospitalAccountId) {
+  if (!config.razorpayKeyId || !config.razorpayKeySecret) {
+    throw new Error("Razorpay API keys aren't configured (RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET).");
+  }
+  const res = await fetch(`${RAZORPAY_API_BASE}/orders`, {
+    method: "POST",
+    headers: { Authorization: razorpayAuthHeader(), "Content-Type": "application/json" },
+    body: JSON.stringify({
+      amount: PAYMENT_METHOD_SETUP_AMOUNT_PAISE,
+      currency: "INR",
+      receipt: `clairmd-pm-setup-${hospitalAccountId}-${Date.now()}`,
+      payment_capture: 1,
+      notes: { purpose: "clairmd_payment_method_setup", hospitalAccountId },
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Razorpay order creation failed (${res.status}): ${text.slice(0, 300)}`);
+  }
+  return res.json();
+}
+
+// Same HMAC-SHA256 scheme as the webhook signature check in
+// routes/billing.js, but over a DIFFERENT string — Razorpay signs
+// "{order_id}|{payment_id}" for a checkout-completion signature, vs. the
+// raw webhook body for the webhook signature. Two genuinely different,
+// both well-documented, both stable schemes.
+function verifyRazorpayPaymentSignature(orderId, paymentId, signature) {
+  if (!orderId || !paymentId || !signature || !config.razorpayKeySecret) return false;
+  const expected = crypto.createHmac("sha256", config.razorpayKeySecret).update(`${orderId}|${paymentId}`).digest("hex");
+  const expectedBuf = Buffer.from(expected, "hex");
+  const receivedBuf = Buffer.from(signature, "hex");
+  if (expectedBuf.length !== receivedBuf.length) return false;
+  return crypto.timingSafeEqual(expectedBuf, receivedBuf);
+}
+
+// Fetches the completed payment from Razorpay and extracts the
+// recurring-charge reference for future nightly billing (see
+// attemptRazorpayCharge below, and payment_methods' razorpay_customer_id/
+// razorpay_payment_method_id columns). The field names read here
+// (customer_id, token_id) are based on training knowledge of Razorpay's
+// tokenization API, NOT independently verified against live
+// documentation — flagged explicitly rather than silently assumed
+// correct. If this throws in practice, the fix is almost certainly
+// adjusting which field this reads (check the real payment object in the
+// Razorpay dashboard), not the surrounding order-create/signature-verify/
+// save flow, which IS the stable, verified part.
+async function fetchRazorpayPaymentToken(paymentId) {
+  const res = await fetch(`${RAZORPAY_API_BASE}/payments/${paymentId}`, {
+    headers: { Authorization: razorpayAuthHeader() },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Fetching the Razorpay payment failed (${res.status}): ${text.slice(0, 300)}`);
+  }
+  const payment = await res.json();
+  if (!payment.token_id || !payment.customer_id) {
+    throw new Error(
+      "Razorpay payment succeeded, but no token_id/customer_id came back on the payment record — " +
+      "this usually means the checkout wasn't actually flagged as a recurring/tokenized transaction " +
+      "(see the frontend's Razorpay Checkout options). Check this payment in the Razorpay dashboard " +
+      "before assuming this code itself is wrong."
+    );
+  }
+  return { customerId: payment.customer_id, tokenId: payment.token_id };
+}
 
 // Per-overage-note rate, by hospital tier (2026-08-18 product decision).
 // Decreases as tier increases, deliberately — mirrors the base
@@ -174,4 +269,8 @@ module.exports = {
   runNightlyBilling,
   getOverageRatePaise,
   OVERAGE_RATE_PAISE_BY_TIER,
+  createRazorpaySetupOrder,
+  verifyRazorpayPaymentSignature,
+  fetchRazorpayPaymentToken,
+  PAYMENT_METHOD_SETUP_AMOUNT_PAISE,
 };

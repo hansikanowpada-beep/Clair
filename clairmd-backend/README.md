@@ -13,6 +13,46 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Hospital "add a payment method" screen — the real Razorpay Checkout
+  flow, not just the stub raw-store endpoint** (2026-08-22). Two new
+  routes on `routes/hospitalBilling.js`, backed by new
+  `services/hospitalBilling.js` helpers:
+  - `POST /setup-order` — creates a genuine Razorpay order (Orders API —
+    Razorpay's most stable, most universally-documented endpoint, high
+    confidence in this shape specifically).
+  - `POST /setup-order/verify` — independently verifies the completed
+    checkout's signature (same HMAC-SHA256 style as the webhook
+    verification, but over `{order_id}|{payment_id}` instead of the raw
+    body — a different, also well-documented Razorpay signature scheme),
+    then fetches the payment from Razorpay directly and saves the
+    resulting token via the existing `savePaymentMethod()`.
+  - The existing `POST /payment-method` (raw ID store, no verification)
+    is kept for flexibility but the frontend now uses the verified flow
+    above instead.
+  - **Honesty note on confidence**: the order-create + Checkout.js +
+    signature-verify shape is genuinely well-established — every
+    Razorpay integration uses it, unchanged for years. The ONE piece
+    that ISN'T independently verified is the exact field names Razorpay
+    returns for the resulting recurring-charge token
+    (`fetchRazorpayPaymentToken`'s `customer_id`/`token_id` read) — this
+    sandbox's network policy blocks razorpay.com entirely, including
+    their docs, so this is based on training knowledge, not a live
+    check. Flagged explicitly in the code rather than presented as
+    equally certain as the rest.
+  - The nominal ₹1 authorization amount (`PAYMENT_METHOD_SETUP_AMOUNT_
+    PAISE`) is a clearly-labeled placeholder — how much to charge to link
+    a card, and whether it's refunded, is a product decision for a human
+    to confirm, not something invented here.
+  - **Live-tested what's testable without reaching razorpay.com**:
+    account-type gating (only `hospital` accounts can call either
+    route), the signature verification's negative space (garbage/missing
+    signatures always rejected), AND the positive space (a genuinely
+    correct HMAC-SHA256 signature, computed independently, passes
+    verification and reaches the next step — proven by getting a 502
+    "network blocked" response instead of a 400 "bad signature" one).
+    `/setup-order` itself was confirmed to fail gracefully (502, real
+    error message, no crash) rather than silently succeed or 500.
+
 - **Firebase push notifications — live-tested with a real service account,
   and a real scheduled entry point now exists** (2026-08-22). Unlike
   Razorpay, this sandbox's network policy does NOT block Google's
