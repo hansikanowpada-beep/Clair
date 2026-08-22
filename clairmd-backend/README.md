@@ -13,6 +13,29 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Real medical license verification — re-investigated (2026-08-22),
+  still genuinely not buildable from here, and that's a different
+  situation from everything else on this list.** The other four items
+  built in this same round (hospital payment screen, care-team view,
+  doctor-initiated hospital affiliation, co-admin revocation/backup) were
+  all buildable AND independently testable from this sandbox. This one
+  isn't, confirmed directly: both `nmc.org.in` and `www.nmc.org.in` are
+  blocked by the network egress policy (a real connection attempt and a
+  `WebFetch` both came back as explicit policy denials), the same way
+  `api.razorpay.com` was for the Razorpay charge call. The difference
+  from Razorpay: there, the base Checkout.js flow is a stable, universal,
+  well-documented pattern confident enough to implement from training
+  knowledge even without live verification. NMC's actual registry search
+  has never been an officially documented public API to begin with (see
+  `services/licenseVerification.js`'s existing research), and India has
+  no single national license-number format to even sanity-check against
+  — each of ~30 state medical councils sets its own. Real options from
+  here: get genuine internet access to observe NMC's endpoint before
+  coding against it, or sign with a commercial verification vendor (a
+  business decision — cost, contract, credentials — not something to set
+  up unilaterally). Left as the same honest, clearly-labeled stub,
+  updated with this finding rather than silently re-confirmed.
+
 - **Co-admin revocation** (2026-08-22) — the second of two limitations
   explicitly flagged when co-admin key-wrap crypto first shipped ("no
   revocation... needs key rotation, which is separate, larger work"). New

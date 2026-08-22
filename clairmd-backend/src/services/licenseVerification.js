@@ -1,5 +1,29 @@
 // Medical license verification — pluggable provider pattern.
 //
+// RE-CHECKED 2026-08-22: this is the one item from a 5-item build list
+// that genuinely could NOT be built the way the other four were (a
+// hospital payment screen, a care-team view, doctor-initiated hospital
+// affiliation, co-admin revocation/backup) — those were all buildable
+// and independently testable from right here. This one isn't, for a
+// reason specific to it: both nmc.org.in and www.nmc.org.in are blocked
+// by this sandbox's network egress policy (confirmed directly — a real
+// connection attempt and a WebFetch both came back as explicit policy
+// denials, not transient failures), the same way api.razorpay.com was.
+// Unlike Razorpay, though, there's no well-documented, stable base layer
+// underneath this (like Razorpay's Orders/Checkout.js API) that's stable
+// enough across the industry to implement with real confidence from
+// training knowledge alone — NMC's actual search endpoint has never been
+// an officially documented public API in the first place (see point 1
+// below), and license-number FORMAT itself isn't standardized nationally
+// (each of India's ~30 state medical councils sets its own), so even a
+// format-only sanity check would be guessing. Implementing this for real
+// needs either genuine internet access to NMC's endpoint (to observe its
+// actual request/response shape before coding against it) or a signed
+// relationship with a commercial verification vendor (a business
+// decision — cost, contract, real account credentials — not something
+// to set up unilaterally). Left as the honest, clearly-labeled stub
+// below, same as it was after the original research.
+//
 // RESEARCHED OPTIONS (checked 2026-08-18, verify currency before relying
 // on this — NMC's setup has been actively changing):
 //
