@@ -10,7 +10,7 @@ import {
   ChevronUp, Flame, Wind, Droplets, Radio, Activity,
   Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
-  CreditCard, ShieldOff, LogIn,
+  CreditCard, ShieldOff, LogIn, Maximize2, Minimize2,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
@@ -21846,6 +21846,59 @@ const LIBRARY_MODAL_CONFIG = {
   },
 };
 
+// Shared drag + maximize behavior for the app's popup windows (Library,
+// Patients, sidebar panels, Write post). Minimize stays each modal's own
+// concern (it's just "unmount and show a floating pill," already wired
+// per-modal by its parent) — this hook only owns what's common: dragging
+// by the header, and toggling between the modal's normal size and a
+// near-fullscreen size.
+function useWindowChrome() {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [maximized, setMaximized] = useState(false);
+  const dragRef = useRef(null);
+
+  const onHeaderMouseDown = (e) => {
+    if (maximized || e.button !== 0) return;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
+    const onMove = (ev) => {
+      if (!dragRef.current) return;
+      setPos({ x: dragRef.current.origX + (ev.clientX - dragRef.current.startX), y: dragRef.current.origY + (ev.clientY - dragRef.current.startY) });
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  const toggleMaximize = () => { setMaximized((v) => !v); setPos({ x: 0, y: 0 }); };
+
+  const windowStyle = maximized
+    ? { transform: "none", width: "95vw", height: "90vh", maxWidth: "none", maxHeight: "none" }
+    : { transform: `translate(${pos.x}px, ${pos.y}px)` };
+
+  return { maximized, onHeaderMouseDown, toggleMaximize, windowStyle, headerCursor: maximized ? "default" : "move" };
+}
+
+// A window-chrome button (maximize/minimize/close) sits inside the
+// draggable header — stopping propagation keeps a click on it from also
+// being read as "start dragging the window."
+function ChromeButton({ onClick, title, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseDown={(e) => e.stopPropagation()}
+      title={title}
+      className="w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] bg-white hover:bg-[#F2F7F5] border border-[#D8DED9]"
+    >
+      {children}
+    </button>
+  );
+}
+
 function LibraryModal({ configKey, onClose, onMinimize, theme }) {
   const config = LIBRARY_MODAL_CONFIG[configKey];
   const [query, setQuery] = useState("");
@@ -21854,6 +21907,7 @@ function LibraryModal({ configKey, onClose, onMinimize, theme }) {
   const items = config.getItems();
   const filtered = q ? items.filter((item) => config.filterItem(item, q)) : items;
   const Icon = config.icon;
+  const chrome = useWindowChrome();
 
   useEffect(() => {
     // Lock background page scroll while this modal is open — on iOS especially,
@@ -21878,11 +21932,12 @@ function LibraryModal({ configKey, onClose, onMinimize, theme }) {
       `}</style>
       <div
         className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl"
-        style={{ borderColor: theme.color, maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        style={{ borderColor: theme.color, maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden", ...chrome.windowStyle }}
       >
         <div
           className="flex items-center gap-3 px-5 py-4 shrink-0"
-          style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}`, flexShrink: 0 }}
+          style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}`, flexShrink: 0, cursor: chrome.headerCursor }}
+          onMouseDown={chrome.onHeaderMouseDown}
         >
           <div className="flex items-center gap-2 shrink-0" style={{ minWidth: 140 }}>
             <Icon size={18} style={{ color: theme.color }} />
@@ -21891,7 +21946,7 @@ function LibraryModal({ configKey, onClose, onMinimize, theme }) {
 
           <div className="flex-1 flex justify-center">
             {!selectedItem && (
-              <div className="relative w-full max-w-xs">
+              <div className="relative w-full max-w-xs" onMouseDown={(e) => e.stopPropagation()}>
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8C0BC] pointer-events-none" />
                 <input
                   value={query}
@@ -21905,12 +21960,11 @@ function LibraryModal({ configKey, onClose, onMinimize, theme }) {
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <button type="button" onClick={onMinimize} title="Minimize" className="w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] bg-white hover:bg-[#F2F7F5] border border-[#D8DED9]">
-              <Minus size={16} />
-            </button>
-            <button type="button" onClick={onClose} title="Close" className="w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] bg-white hover:bg-[#F2F7F5] border border-[#D8DED9]">
-              <X size={16} />
-            </button>
+            <ChromeButton onClick={chrome.toggleMaximize} title={chrome.maximized ? "Restore" : "Maximize"}>
+              {chrome.maximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </ChromeButton>
+            <ChromeButton onClick={onMinimize} title="Minimize"><Minus size={16} /></ChromeButton>
+            <ChromeButton onClick={onClose} title="Close"><X size={16} /></ChromeButton>
           </div>
         </div>
 
@@ -21977,9 +22031,10 @@ const SIDEBAR_VIEW_META = {
   feed: { label: "Specialty feed", icon: Rss },
 };
 
-function SidebarViewModal({ viewKey, onClose, theme, children }) {
+function SidebarViewModal({ viewKey, onClose, onMinimize, theme, children }) {
   const meta = SIDEBAR_VIEW_META[viewKey];
   const Icon = meta.icon;
+  const chrome = useWindowChrome();
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -21991,19 +22046,24 @@ function SidebarViewModal({ viewKey, onClose, theme, children }) {
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-6" style={{ overflowY: "auto" }}>
       <div
         className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl"
-        style={{ borderColor: theme.color, maxHeight: "85vh" }}
+        style={{ borderColor: theme.color, maxHeight: "85vh", ...chrome.windowStyle }}
       >
         <div
           className="flex items-center justify-between gap-3 px-5 py-4 shrink-0"
-          style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}` }}
+          style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}`, cursor: chrome.headerCursor }}
+          onMouseDown={chrome.onHeaderMouseDown}
         >
           <div className="flex items-center gap-2">
             <Icon size={18} style={{ color: theme.color }} />
             <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{meta.label}</h2>
           </div>
-          <button type="button" onClick={onClose} title="Close" className="w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] bg-white hover:bg-[#F2F7F5] border border-[#D8DED9]">
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <ChromeButton onClick={chrome.toggleMaximize} title={chrome.maximized ? "Restore" : "Maximize"}>
+              {chrome.maximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </ChromeButton>
+            <ChromeButton onClick={onMinimize} title="Minimize"><Minus size={16} /></ChromeButton>
+            <ChromeButton onClick={onClose} title="Close"><X size={16} /></ChromeButton>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto">
           {children}
@@ -22018,6 +22078,7 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
   const [previewPatient, setPreviewPatient] = useState(null);
   const q = query.trim().toLowerCase();
   const filtered = q ? patients.filter((p) => p.name.toLowerCase().includes(q) || p.localId.toLowerCase().includes(q)) : patients;
+  const chrome = useWindowChrome();
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -22033,8 +22094,12 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
         .patients-modal-scroll::-webkit-scrollbar-thumb { background-color: ${theme.color}; border-radius: 999px; border: 2px solid #F2F7F5; }
         .patients-modal-scroll { scrollbar-width: thin; scrollbar-color: ${theme.color} #F2F7F5; }
       `}</style>
-      <div className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl" style={{ borderColor: theme.color }}>
-        <div className="flex items-center gap-3 px-5 py-4 shrink-0" style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}` }}>
+      <div className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl" style={{ borderColor: theme.color, ...chrome.windowStyle }}>
+        <div
+          className="flex items-center gap-3 px-5 py-4 shrink-0"
+          style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}`, cursor: chrome.headerCursor }}
+          onMouseDown={chrome.onHeaderMouseDown}
+        >
           <div className="flex items-center gap-2 shrink-0" style={{ minWidth: 100 }}>
             <Users size={18} style={{ color: theme.color }} />
             <h2 className="text-lg whitespace-nowrap" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Patients</h2>
@@ -22042,7 +22107,7 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
 
           <div className="flex-1 flex justify-center">
             {!previewPatient && (
-              <div className="relative w-full max-w-xs">
+              <div className="relative w-full max-w-xs" onMouseDown={(e) => e.stopPropagation()}>
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#B8C0BC] pointer-events-none" />
                 <input
                   value={query}
@@ -22056,12 +22121,11 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <button type="button" onClick={onMinimize} title="Minimize" className="w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] bg-white hover:bg-[#F2F7F5] border border-[#D8DED9]">
-              <Minus size={16} />
-            </button>
-            <button type="button" onClick={onClose} title="Cancel" className="w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] bg-white hover:bg-[#F2F7F5] border border-[#D8DED9]">
-              <X size={16} />
-            </button>
+            <ChromeButton onClick={chrome.toggleMaximize} title={chrome.maximized ? "Restore" : "Maximize"}>
+              {chrome.maximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </ChromeButton>
+            <ChromeButton onClick={onMinimize} title="Minimize"><Minus size={16} /></ChromeButton>
+            <ChromeButton onClick={onClose} title="Cancel"><X size={16} /></ChromeButton>
           </div>
         </div>
 
@@ -23642,6 +23706,8 @@ export default function ClairMDEHR() {
   const [libraryModalMinimized, setLibraryModalMinimized] = useState(false);
   const [patientsModalOpen, setPatientsModalOpen] = useState(false);
   const [patientsModalMinimized, setPatientsModalMinimized] = useState(false);
+  const [sidebarViewMinimized, setSidebarViewMinimized] = useState(false);
+  useEffect(() => { setSidebarViewMinimized(false); }, [sidebarView]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const filteredPatients = PATIENTS;
   const theme = doctorSpecialty && SPECIALTY_THEMES[doctorSpecialty] ? SPECIALTY_THEMES[doctorSpecialty] : SPECIALTY_THEMES["General Medicine"];
@@ -23852,6 +23918,16 @@ export default function ClairMDEHR() {
         >
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.color }} />
           <span className="text-sm text-[#3C4A42]">{LIBRARY_MODAL_CONFIG[libraryModalKey].title}</span>
+        </button>
+      )}
+      {sidebarView !== "patients" && SIDEBAR_VIEW_META[sidebarView] && sidebarViewMinimized && (
+        <button
+          onClick={() => setSidebarViewMinimized(false)}
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-2 bg-white border border-[#D8DED9] rounded-full shadow-lg px-4 py-2.5 hover:bg-[#F7F9F7]"
+          style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: theme.color }} />
+          <span className="text-sm text-[#3C4A42]">{SIDEBAR_VIEW_META[sidebarView].label}</span>
         </button>
       )}
       <div className="flex h-screen overflow-hidden">
@@ -24066,8 +24142,8 @@ export default function ClairMDEHR() {
           )}
         </aside>
 
-        {sidebarView !== "patients" && SIDEBAR_VIEW_META[sidebarView] && (
-          <SidebarViewModal viewKey={sidebarView} theme={theme} onClose={() => setSidebarView("patients")}>
+        {sidebarView !== "patients" && SIDEBAR_VIEW_META[sidebarView] && !sidebarViewMinimized && (
+          <SidebarViewModal viewKey={sidebarView} theme={theme} onClose={() => setSidebarView("patients")} onMinimize={() => setSidebarViewMinimized(true)}>
             {sidebarView === "buildHospital" ? (
               <BuildHospitalPanel onBack={() => setSidebarView("patients")} theme={theme} />
             ) : sidebarView === "campMode" ? (
