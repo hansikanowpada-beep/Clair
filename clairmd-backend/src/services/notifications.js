@@ -17,10 +17,17 @@ const config = require("../config");
 // Nothing was actually delivered to a real phone (no real device token
 // exists to test with), but every piece up to that last mile is proven.
 //
-// The email/SMTP half is still unproven the old way: no SMTP credentials
-// have been provided yet, so getEmailTransporter() has never actually
-// run. Same honest standard either way — don't assume it works until it
-// has been.
+// The email/SMTP half has real Gmail credentials configured (SMTP_HOST=
+// smtp.gmail.com + an app password), but is STILL unproven — for a
+// different reason than Razorpay. Razorpay was reachable-but-policy-
+// blocked (an explicit 403). Gmail's SMTP port (587) is a raw TCP
+// connection with a STARTTLS upgrade, not an HTTPS request — the sandbox
+// this was attempted from only proxies HTTPS (port 443) traffic; a real
+// connection attempt to smtp.gmail.com:587 just hung with no response at
+// all, matching the agent proxy's own documented "non-443 ports, raw-TCP"
+// unsupported list. So this is an environment limitation, not a sign the
+// credentials are wrong. Try it again from an environment with normal
+// outbound network access before trusting it.
 //
 // Until 2026-08-22, nothing ever actually CALLED deliverPending() —
 // enqueue() always worked, but no scheduled job existed to attempt

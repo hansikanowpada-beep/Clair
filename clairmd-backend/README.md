@@ -36,10 +36,16 @@ text anywhere in this codebase, stop and re-read that comment.
     called it. Mirrors `runNightlyOverageBilling.js`'s shape (a script
     entry point; wiring an actual schedule/cron is still a deployment
     decision, not made here).
-  - The SMTP/email fallback half of `services/notifications.js` is
-    **not** live-tested — no SMTP credentials have been provided, so
-    `getEmailTransporter()` has never actually run. Don't assume it works
-    just because the push half does.
+  - The SMTP/email fallback half now has real Gmail credentials
+    configured (`smtp.gmail.com` + an app password) but is **still not
+    live-tested — for a different reason than Razorpay**. A real
+    connection attempt to `smtp.gmail.com:587` (SMTP's STARTTLS port, a
+    raw TCP connection, not an HTTPS request) just hung with no response
+    at all — this sandbox's network proxy only handles HTTPS (port 443)
+    traffic; port 587 isn't in scope for it at all, matching the proxy's
+    own documented "non-443 ports, raw-TCP" unsupported list. This is an
+    environment limitation, not a sign the Gmail credentials are wrong —
+    try again from an environment with normal outbound network access.
 
 - **Razorpay — real test-mode API keys configured; webhook signature
   verification live-tested; the actual charge call still isn't built, and
