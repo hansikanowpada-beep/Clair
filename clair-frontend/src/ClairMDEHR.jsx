@@ -13164,8 +13164,21 @@ function printSummary(text, title) {
 //   downloadEncryptedBlobFromDrive below.
 // ---------------------------------------------------------------------------
 
+// Resolution order: an explicit localStorage override (useful for
+// pointing a deployed frontend at a different backend temporarily,
+// without a rebuild) — then VITE_API_BASE, baked in at build time by
+// Vite (see vite.config.js; this is undefined in the esbuild --bundle=
+// false parse check this file is also validated with, which is fine,
+// import.meta.env just isn't populated outside an actual Vite build) —
+// then the localhost default this file has always used for local dev.
 function getApiBase() {
-  return (typeof localStorage !== "undefined" && localStorage.getItem("clair_api_base")) || "http://localhost:4000/api";
+  if (typeof localStorage !== "undefined" && localStorage.getItem("clair_api_base")) {
+    return localStorage.getItem("clair_api_base");
+  }
+  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_BASE) {
+    return import.meta.env.VITE_API_BASE;
+  }
+  return "http://localhost:4000/api";
 }
 
 function getAuthToken() {

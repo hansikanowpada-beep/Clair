@@ -5,6 +5,38 @@ app, merged from three uploaded prototype exports (two were byte-identical;
 the third was a strict superset adding the features below) and rebranded
 from "Arogya" to "ClairMD" to match this product's name.
 
+## Running / deploying this
+
+This had no build tooling of its own until 2026-08-22 — it was a loose
+`.jsx` file with no `package.json`. Now a real, deployable Vite project:
+
+```
+npm install
+npm run dev      # local dev server
+npm run build    # real production build → dist/
+npm run preview  # serve that build locally to sanity-check it
+```
+
+Tailwind is wired via `@tailwindcss/vite` (v4) — no separate
+`tailwind.config.js`/`postcss.config.js` needed, it auto-detects utility
+classes across the project, including the arbitrary-value classes this
+file uses heavily (`bg-[#F7F9F7]` etc.).
+
+`getApiBase()` (in `ClairMDEHR.jsx`) resolves the backend URL in this
+order: a `localStorage.clair_api_base` override (useful for pointing a
+deployed frontend at a different backend without a rebuild) → the
+build-time `VITE_API_BASE` env var (see `.env.example`; set this in your
+hosting provider's project settings for a real deployment) →
+`http://localhost:4000/api` as the local-dev default, unchanged from
+before.
+
+**Live-tested (2026-08-22)**: ran a real `npm run build`, served the
+output with `npm run preview`, and loaded it in a real headless
+browser — zero page errors, fully Tailwind-styled, all of this session's
+newly-added sidebar items (Billing & payment, Affiliated doctors, Founder
+admin, Care team login) rendering correctly. This is the actual
+production build artifact, not a dev-mode approximation of it.
+
 ## Features merged in from the newer prototype
 
 - **Rich OPD note editor** — a contentEditable free-text note area with a
