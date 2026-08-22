@@ -13956,6 +13956,116 @@ async function loadMyCoAdminWraps() {
   return data.wraps;
 }
 
+// Revokes the current co-admin assignment. Rotates the AES key for every
+// record this browser holds a real key for BEFORE calling the backend —
+// generates a fresh key, re-encrypts the current content with it, and
+// re-syncs — so even if the former co-admin still has an OLD cached key
+// from before revocation, it no longer decrypts the CURRENT content.
+// This can't erase a copy they already fetched and decrypted before now
+// (no E2EE system can reach into someone else's device), but it does
+// stop them reading anything from this point forward — the backend call
+// (POST /coadmin/revoke) additionally deletes their key-wrap rows, so a
+// fresh fetch attempt gets a plain 404 rather than even trying.
+async function revokeCoAdminAccess() {
+  const { records } = await apiRequest("/records");
+  const rotated = [];
+  const skipped = [];
+  for (const record of records) {
+    if (!hasLocalRecordKey(record.id)) continue; // nothing this browser can rotate — not a record it actually holds the key for
+    try {
+      const existing = await apiRequest(`/record-content/${record.id}`).catch(() => null);
+      if (!existing) continue; // no content synced for this record yet — nothing to rotate
+      const plaintext = await decryptRecordText(record.id, existing.content.encrypted_blob);
+      localStorage.removeItem(`clair_record_key_${record.id}`); // forces a genuinely fresh key on the next encrypt below
+      const freshEncryptedBlob = await encryptRecordText(record.id, plaintext);
+      await apiRequest(`/record-content/${record.id}`, { method: "PUT", body: { encryptedBlob: freshEncryptedBlob } });
+      rotated.push(record.id);
+    } catch (err) {
+      skipped.push({ recordId: record.id, reason: err.message });
+    }
+  }
+  await apiRequest("/coadmin/revoke", { method: "POST" });
+  return { rotatedCount: rotated.length, skipped };
+}
+
+// --- Co-admin private-key backup/recovery (password-protected export) ---
+// The one real limitation flagged when co-admin crypto was first built:
+// no way to move the private key to a second device, and no recovery if
+// this browser's storage is ever cleared. This closes that — a real,
+// fully local, fully testable (no network needed) password-protected
+// export/import of the raw private key, using PBKDF2 (210,000 rounds —
+// OWASP's current baseline for PBKDF2-SHA256) to derive an AES-GCM key
+// from the chosen password, which wraps the private key bytes. The
+// backup file is meaningless without that password; ClairMD's backend
+// never sees the password OR the key either way — this never leaves the
+// browser.
+const KEY_BACKUP_FORMAT = "clairmd-key-backup-v1";
+const KEY_BACKUP_PBKDF2_ITERATIONS = 210000;
+
+async function exportPrivateKeyBackup(password) {
+  const storedPrivate = typeof localStorage !== "undefined" ? localStorage.getItem("clair_private_key") : null;
+  if (!storedPrivate) throw new Error("No private key to back up on this device yet — visit Co-admin access once first to generate one.");
+  if (!password || password.length < 8) throw new Error("Choose a backup password at least 8 characters long.");
+
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+  const wrappingKey = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: KEY_BACKUP_PBKDF2_ITERATIONS, hash: "SHA-256" },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt"]
+  );
+  const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, wrappingKey, base64ToBytes(storedPrivate)));
+  return JSON.stringify({
+    format: KEY_BACKUP_FORMAT,
+    salt: bytesToBase64(salt),
+    iv: bytesToBase64(iv),
+    ciphertext: bytesToBase64(ciphertext),
+  });
+}
+
+// Restores a private key from a backup produced by exportPrivateKeyBackup
+// above, onto THIS browser. Deliberately does not check whether a
+// different key is already present here — see getOrCreateKeyPair's own
+// refusal logic for why overwriting an unrelated existing key would be
+// dangerous; restoring a backup is a deliberate user action that should
+// go through regardless, unlike getOrCreateKeyPair's silent-generation
+// path.
+async function importPrivateKeyBackup(backupJsonText, password) {
+  let backup;
+  try {
+    backup = JSON.parse(backupJsonText);
+  } catch {
+    throw new Error("That doesn't look like a valid backup file.");
+  }
+  if (backup.format !== KEY_BACKUP_FORMAT) throw new Error("Unrecognized backup file format.");
+
+  const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+  const wrappingKey = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: base64ToBytes(backup.salt), iterations: KEY_BACKUP_PBKDF2_ITERATIONS, hash: "SHA-256" },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["decrypt"]
+  );
+
+  let rawPrivateKeyBytes;
+  try {
+    rawPrivateKeyBytes = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: base64ToBytes(backup.iv) }, wrappingKey, base64ToBytes(backup.ciphertext)));
+  } catch {
+    throw new Error("Wrong password, or a corrupted backup file.");
+  }
+  // Confirm it's a genuinely importable PKCS8 RSA-OAEP key before
+  // committing it — catches a malformed-but-decryptable blob rather than
+  // silently storing garbage that would only fail later, confusingly,
+  // the next time a wrap needs unwrapping.
+  await crypto.subtle.importKey("pkcs8", rawPrivateKeyBytes, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["unwrapKey"]);
+
+  localStorage.setItem("clair_private_key", bytesToBase64(rawPrivateKeyBytes));
+}
+
 // --- Doctor's own ClairMD subscription (distinct from DoctorProfilePanel's
 // "In-app billing" toggle, which is the clinic's own patient-billing
 // feature, a different concept entirely) -----------------------------------
@@ -22261,6 +22371,17 @@ function CoAdminPanel({ theme }) {
   const [openRecordError, setOpenRecordError] = useState(null);
   const [openRecordLoading, setOpenRecordLoading] = useState(false);
   const [keyPairError, setKeyPairError] = useState(null);
+  const [revoking, setRevoking] = useState(false);
+  const [revokeError, setRevokeError] = useState(null);
+  const [revokeResult, setRevokeResult] = useState(null);
+  const [backupPassword, setBackupPassword] = useState("");
+  const [backupError, setBackupError] = useState(null);
+  const [backupSuccess, setBackupSuccess] = useState(false);
+  const [restorePassword, setRestorePassword] = useState("");
+  const [restoreFile, setRestoreFile] = useState(null);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreError, setRestoreError] = useState(null);
+  const [restoreSuccess, setRestoreSuccess] = useState(false);
 
   const refresh = () => {
     if (!getAuthToken()) return;
@@ -22322,6 +22443,52 @@ function CoAdminPanel({ theme }) {
     }
   };
 
+  const doRevoke = async () => {
+    setRevoking(true);
+    setRevokeError(null);
+    setRevokeResult(null);
+    try {
+      const result = await revokeCoAdminAccess();
+      setRevokeResult(result);
+      refresh();
+    } catch (err) {
+      setRevokeError(err.message);
+    } finally {
+      setRevoking(false);
+    }
+  };
+
+  const doExportBackup = async () => {
+    setBackupError(null);
+    setBackupSuccess(false);
+    try {
+      const backupJson = await exportPrivateKeyBackup(backupPassword);
+      downloadText("clairmd-coadmin-key-backup.json", backupJson);
+      setBackupSuccess(true);
+      setBackupPassword("");
+    } catch (err) {
+      setBackupError(err.message);
+    }
+  };
+
+  const doImportBackup = async () => {
+    if (!restoreFile) return;
+    setRestoring(true);
+    setRestoreError(null);
+    setRestoreSuccess(false);
+    try {
+      const text = await restoreFile.text();
+      await importPrivateKeyBackup(text, restorePassword);
+      setRestoreSuccess(true);
+      setRestorePassword("");
+      setRestoreFile(null);
+    } catch (err) {
+      setRestoreError(err.message);
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   const failedResults = assignResults ? assignResults.filter((r) => !r.ok) : [];
 
   return (
@@ -22344,8 +22511,28 @@ function CoAdminPanel({ theme }) {
             <div className="text-xs font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your co-admin</div>
             {assignment ? (
               <div className="text-xs px-3 py-2 border border-[#D8DED9] rounded-sm mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                Currently assigned: <span className="font-medium">{assignment.co_admin_doctor_name}</span>
-                <span className="text-[#8A958E]"> since {new Date(assignment.assigned_at).toLocaleDateString()}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span>
+                    Currently assigned: <span className="font-medium">{assignment.co_admin_doctor_name}</span>
+                    <span className="text-[#8A958E]"> since {new Date(assignment.assigned_at).toLocaleDateString()}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={doRevoke}
+                    disabled={revoking}
+                    className="text-[#B34A3C] underline decoration-dotted shrink-0"
+                  >
+                    {revoking ? "Revoking…" : "Revoke access"}
+                  </button>
+                </div>
+                {revokeError && <p className="text-[#B34A3C] mt-1.5">{revokeError}</p>}
+                {revokeResult && (
+                  <p className="text-[#8A958E] mt-1.5">
+                    Revoked. {revokeResult.rotatedCount} record key(s) rotated so old access no longer decrypts current content
+                    {revokeResult.skipped.length > 0 ? ` (${revokeResult.skipped.length} skipped — no local key in this browser for those).` : "."}
+                    {" "}This can't erase anything already fetched before now — see this panel's own note on that limitation.
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-xs text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No co-admin assigned yet.</p>
@@ -22410,6 +22597,63 @@ function CoAdminPanel({ theme }) {
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="mt-5">
+            <div className="text-xs font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Key backup & recovery</div>
+            <p className="text-[11px] text-[#8A958E] mb-2 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              Your co-admin private key lives only in this browser — there's no copy anywhere else, including on ClairMD's own servers. Download a password-protected backup so a lost or cleared browser doesn't mean losing co-admin access permanently. The file is meaningless without your password; ClairMD never sees either one.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="border border-[#D8DED9] rounded-sm p-2.5">
+                <div className="text-[11px] font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Download backup</div>
+                <input
+                  type="password"
+                  value={backupPassword}
+                  onChange={(e) => { setBackupPassword(e.target.value); setBackupSuccess(false); }}
+                  placeholder="Choose a backup password (8+ chars)"
+                  className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-xs mb-1.5"
+                />
+                <button
+                  type="button"
+                  onClick={doExportBackup}
+                  disabled={!backupPassword}
+                  className="text-[11px] px-2.5 py-1 rounded-sm text-white font-medium"
+                  style={{ backgroundColor: theme.color }}
+                >
+                  Download
+                </button>
+                {backupError && <p className="text-[10px] text-[#B34A3C] mt-1">{backupError}</p>}
+                {backupSuccess && <p className="text-[10px] text-[#0F5C56] mt-1">Downloaded. Store this file and password somewhere safe — losing both means losing co-admin access on a new device.</p>}
+              </div>
+              <div className="border border-[#D8DED9] rounded-sm p-2.5">
+                <div className="text-[11px] font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Restore on this device</div>
+                <input
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={(e) => { setRestoreFile(e.target.files?.[0] || null); setRestoreSuccess(false); }}
+                  className="w-full text-[11px] mb-1.5"
+                />
+                <input
+                  type="password"
+                  value={restorePassword}
+                  onChange={(e) => { setRestorePassword(e.target.value); setRestoreSuccess(false); }}
+                  placeholder="Backup password"
+                  className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-xs mb-1.5"
+                />
+                <button
+                  type="button"
+                  onClick={doImportBackup}
+                  disabled={!restoreFile || !restorePassword || restoring}
+                  className="text-[11px] px-2.5 py-1 rounded-sm text-white font-medium"
+                  style={{ backgroundColor: theme.color }}
+                >
+                  {restoring ? "Restoring…" : "Restore"}
+                </button>
+                {restoreError && <p className="text-[10px] text-[#B34A3C] mt-1">{restoreError}</p>}
+                {restoreSuccess && <p className="text-[10px] text-[#0F5C56] mt-1">Restored — this browser can now unwrap records shared with the account that made this backup.</p>}
+              </div>
+            </div>
           </div>
         </>
       )}

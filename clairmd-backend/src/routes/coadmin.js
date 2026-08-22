@@ -27,6 +27,49 @@ router.post("/assign", requireAuth, requireAccountType("individual_doctor", "hos
   res.status(201).json({ assigned: true });
 });
 
+// Revokes the calling doctor's current co-admin assignment. Deletes the
+// co-admin's existing key-wrap rows for this doctor's records, so
+// GET /key-wraps/:id (which requires a wrap row to exist at all) no
+// longer returns anything for them — a re-fetch attempt gets a plain 404,
+// same as any account that was never granted access. This does NOT
+// retroactively un-decrypt anything the co-admin already fetched and
+// cached locally before revocation — no E2EE system can reach into
+// someone else's device and erase that. The real mitigation for "stop
+// them reading anything NEW" is the frontend's revokeCoAdminAccess,
+// which rotates each record's actual AES key (re-encrypts with a fresh
+// key) before calling this — so even a still-cached OLD key from before
+// revocation no longer decrypts the current content.
+router.post("/revoke", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const assignment = await client.query(
+      `UPDATE co_admin_assignments SET revoked_at = now()
+       WHERE primary_doctor_id = $1 AND revoked_at IS NULL
+       RETURNING co_admin_doctor_id`,
+      [req.account.id]
+    );
+    if (assignment.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "No active co-admin assignment to revoke." });
+    }
+    const coAdminId = assignment.rows[0].co_admin_doctor_id;
+    await client.query(
+      `DELETE FROM record_key_wraps
+       WHERE holder_account_id = $1 AND holder_role = 'co_admin_doctor'
+         AND patient_record_id IN (SELECT id FROM patient_record_index WHERE primary_doctor_id = $2)`,
+      [coAdminId, req.account.id]
+    );
+    await client.query("COMMIT");
+    res.json({ revoked: true });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+});
+
 // Called once, at the moment a co-admin is assigned: the client wraps each
 // existing patient record's key for the new co-admin and submits the
 // wrapped blobs here. This is a one-time setup event, not something

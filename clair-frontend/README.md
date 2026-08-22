@@ -346,11 +346,9 @@ shortcut around it.
   patient consent", matching the backend's access gate precisely rather
   than showing a button that would just 403). A manual "Refresh" link
   re-fetches both halves.
-- **Not built, by deliberate scope decision** (same ones explained to the
-  user before starting this): key backup/recovery across devices, and
-  revocation (removing an assignment doesn't stop a co-admin from
-  decrypting a copy of the key they already fetched — real revocation
-  needs key rotation, which is separate, larger work).
+- **Both of the deliberately-out-of-scope limitations from launch — key
+  backup/recovery and revocation — are now built.** See "Co-admin
+  polish" below (2026-08-22) for both.
 
 ### Live-tested end to end (2026-08-21) — one real bug found and fixed
 
@@ -390,6 +388,49 @@ now wires its key-publish + refresh into that callback instead of a
 mount-only effect. Backward compatible: every other `BackendSyncPanel`
 usage in this file (there are around ten) doesn't pass the new prop, so
 none of them changed behavior.
+
+## Co-admin polish: revocation and key backup/recovery (2026-08-22)
+
+The two limitations explicitly flagged as deliberately out of scope when
+co-admin crypto first shipped. Both are real, working features now, not
+stand-ins.
+
+- **`revokeCoAdminAccess()`** — rotates the AES key for every record this
+  browser holds a real key for (decrypt with the old key, generate a
+  genuinely fresh one, re-encrypt, re-sync) *before* calling
+  `POST /api/coadmin/revoke`, which deletes the former co-admin's wrap
+  rows server-side. The result: a fresh fetch attempt gets a plain 404
+  (no wrap exists), and even a still-cached OLD key from before
+  revocation no longer decrypts the CURRENT content. What this
+  deliberately does NOT do — and no key-wrap system can — is erase a
+  copy the former co-admin already fetched and decrypted before
+  revocation happened. Wired into `CoAdminPanel` as a "Revoke access"
+  link next to the current assignment, reporting exactly how many
+  records were rotated and how many were skipped (no local key in this
+  browser for those).
+- **`exportPrivateKeyBackup(password)`** / **`importPrivateKeyBackup(json,
+  password)`** — a real, fully local, fully testable (no network
+  involved at all) password-protected export/import of the raw RSA
+  private key. PBKDF2-SHA256 at 210,000 iterations (OWASP's current
+  baseline) derives an AES-GCM key from the chosen password, which wraps
+  the private key bytes into a downloadable JSON file. The file is
+  meaningless without the password; ClairMD's backend never sees either
+  one — this never leaves the browser in either direction. Wired into
+  `CoAdminPanel`'s new "Key backup & recovery" section: a password field
+  + "Download" button on one side, a file picker + password field +
+  "Restore" button on the other.
+- **Live-tested, thoroughly, since this is genuinely testable without any
+  external dependency**: a real RSA keypair backed up and restored comes
+  back byte-for-byte identical; a wrong password is rejected with a clear
+  error rather than silently returning garbage; a corrupted backup file
+  is rejected; and — the strongest check — the RESTORED key was used to
+  genuinely unwrap a fresh AES key and decrypt real content, proving the
+  restored key isn't just byte-identical but functionally usable. The
+  revocation flow was live-tested end to end against a real running
+  backend: assign → wrap → consent → fetch (succeeds) → revoke → fetch
+  again (now 404s) → confirm `my-wraps`/`my-assignment` reflect the
+  revocation → confirm re-revoking with nothing active fails cleanly
+  rather than crashing.
 
 ## Google Drive encrypt-upload / download-decrypt (real, end to end)
 

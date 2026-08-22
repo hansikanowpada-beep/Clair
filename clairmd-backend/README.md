@@ -13,6 +13,29 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Co-admin revocation** (2026-08-22) — the second of two limitations
+  explicitly flagged when co-admin key-wrap crypto first shipped ("no
+  revocation... needs key rotation, which is separate, larger work"). New
+  `POST /coadmin/revoke` on `routes/coadmin.js`: marks the calling
+  doctor's `co_admin_assignments` row revoked and deletes the former
+  co-admin's `record_key_wraps` rows for that doctor's records, inside a
+  single transaction so the two can't diverge. A fresh fetch attempt
+  after revocation gets a plain 404, same as an account that was never
+  granted access — no special-cased error path. The real "stop them
+  reading anything new" mitigation (rotating each record's actual AES
+  key) happens client-side, in `revokeCoAdminAccess`, before this route
+  is even called — see `clair-frontend/README.md`'s matching entry.
+  Deliberately does NOT and cannot retroactively un-decrypt content the
+  former co-admin already fetched before revocation — no key-wrap system
+  can reach into someone else's device, and this doesn't pretend
+  otherwise.
+  - **Live-tested end to end**: set up a full assign → wrap → consent →
+    fetch cycle exactly like the original co-admin proof, confirmed the
+    co-admin could fetch the wrap, revoked, confirmed the SAME fetch now
+    404s, confirmed `my-wraps` is empty and `my-assignment` is null, and
+    confirmed re-revoking with nothing active correctly 404s rather than
+    crashing.
+
 - **Doctor-initiated hospital affiliation requests** (2026-08-22) — until
   now, `hospital_affiliations` only supported the hospital adding a
   doctor directly and instantly (trusted, no approval step). There was no
