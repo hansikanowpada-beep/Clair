@@ -21846,26 +21846,47 @@ const LIBRARY_MODAL_CONFIG = {
   },
 };
 
-// Shared drag + maximize behavior for the app's popup windows (Library,
-// Patients, sidebar panels, Write post). Minimize stays each modal's own
+// Shared drag + resize + maximize behavior for the app's popup windows
+// (Library, Patients, sidebar panels). Minimize stays each modal's own
 // concern (it's just "unmount and show a floating pill," already wired
-// per-modal by its parent) — this hook only owns what's common: dragging
-// by the header, and toggling between the modal's normal size and a
-// near-fullscreen size.
+// per-modal by its parent) — this hook owns what's common: dragging by
+// the header, resizing from any edge/corner, and toggling a near-
+// fullscreen size.
+//
+// Both drag and resize operate on the same `rect` ({top,left,width,
+// height} in px, position:fixed) so they never fight each other. Until
+// the user first drags or resizes, rect stays null and the window keeps
+// its original flex-centered, content-sized layout — `ensureRect()`
+// captures the live bounding box (via windowRef) as the starting point
+// the very first time either interaction begins, so there's no jump.
 function useWindowChrome() {
-  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const windowRef = useRef(null);
+  const [rect, setRect] = useState(null);
   const [maximized, setMaximized] = useState(false);
-  const dragRef = useRef(null);
+  const interactionRef = useRef(null);
+
+  const MIN_WIDTH = 360;
+  const MIN_HEIGHT = 260;
+
+  const ensureRect = () => {
+    if (rect) return rect;
+    const r = windowRef.current.getBoundingClientRect();
+    const captured = { top: r.top, left: r.left, width: r.width, height: r.height };
+    setRect(captured);
+    return captured;
+  };
 
   const onHeaderMouseDown = (e) => {
     if (maximized || e.button !== 0) return;
-    dragRef.current = { startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
+    const start = ensureRect();
+    interactionRef.current = { startX: e.clientX, startY: e.clientY, origTop: start.top, origLeft: start.left };
     const onMove = (ev) => {
-      if (!dragRef.current) return;
-      setPos({ x: dragRef.current.origX + (ev.clientX - dragRef.current.startX), y: dragRef.current.origY + (ev.clientY - dragRef.current.startY) });
+      const d = interactionRef.current;
+      if (!d) return;
+      setRect((prev) => ({ ...prev, top: d.origTop + (ev.clientY - d.startY), left: d.origLeft + (ev.clientX - d.startX) }));
     };
     const onUp = () => {
-      dragRef.current = null;
+      interactionRef.current = null;
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
@@ -21873,13 +21894,54 @@ function useWindowChrome() {
     window.addEventListener("mouseup", onUp);
   };
 
-  const toggleMaximize = () => { setMaximized((v) => !v); setPos({ x: 0, y: 0 }); };
+  const startResize = (edge) => (e) => {
+    if (maximized || e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const start = ensureRect();
+    const base = { startX: e.clientX, startY: e.clientY, ...start };
+    const onMove = (ev) => {
+      const dx = ev.clientX - base.startX;
+      const dy = ev.clientY - base.startY;
+      let { top, left, width, height } = base;
+      if (edge.includes("e")) width = Math.max(MIN_WIDTH, base.width + dx);
+      if (edge.includes("s")) height = Math.max(MIN_HEIGHT, base.height + dy);
+      if (edge.includes("w")) {
+        width = Math.max(MIN_WIDTH, base.width - dx);
+        left = base.left + (base.width - width);
+      }
+      if (edge.includes("n")) {
+        height = Math.max(MIN_HEIGHT, base.height - dy);
+        top = base.top + (base.height - height);
+      }
+      setRect({ top, left, width, height });
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  const toggleMaximize = () => setMaximized((v) => !v);
 
   const windowStyle = maximized
-    ? { transform: "none", width: "95vw", height: "90vh", maxWidth: "none", maxHeight: "none" }
-    : { transform: `translate(${pos.x}px, ${pos.y}px)` };
+    ? { position: "fixed", top: "5vh", left: "2.5vw", width: "95vw", height: "90vh", maxWidth: "none", maxHeight: "none", margin: 0 }
+    : rect
+    ? { position: "fixed", top: rect.top, left: rect.left, width: rect.width, height: rect.height, maxWidth: "none", maxHeight: "none", margin: 0 }
+    : { position: "relative" };
 
-  return { maximized, onHeaderMouseDown, toggleMaximize, windowStyle, headerCursor: maximized ? "default" : "move" };
+  return {
+    maximized,
+    onHeaderMouseDown,
+    toggleMaximize,
+    startResize,
+    resizable: !maximized,
+    windowStyle,
+    windowRef,
+    headerCursor: maximized ? "default" : "move",
+  };
 }
 
 // A window-chrome button (maximize/minimize/close) sits inside the
@@ -21896,6 +21958,33 @@ function ChromeButton({ onClick, title, children }) {
     >
       {children}
     </button>
+  );
+}
+
+// Invisible strips along each edge/corner of a popup window, each wired to
+// useWindowChrome's startResize(edge) — hidden while maximized, since a
+// near-fullscreen window has no room to grow into anyway.
+// Positioned just inside each edge (not hanging outside it) since the
+// window's own box clips its content with overflow:hidden — a handle
+// placed outside that box would be invisible to the mouse.
+const RESIZE_HANDLES = [
+  { edge: "n", style: { top: 0, left: 14, right: 14, height: 7, cursor: "ns-resize" } },
+  { edge: "s", style: { bottom: 0, left: 14, right: 14, height: 7, cursor: "ns-resize" } },
+  { edge: "w", style: { left: 0, top: 14, bottom: 14, width: 7, cursor: "ew-resize" } },
+  { edge: "e", style: { right: 0, top: 14, bottom: 14, width: 7, cursor: "ew-resize" } },
+  { edge: "nw", style: { top: 0, left: 0, width: 14, height: 14, cursor: "nwse-resize" } },
+  { edge: "se", style: { bottom: 0, right: 0, width: 14, height: 14, cursor: "nwse-resize" } },
+  { edge: "ne", style: { top: 0, right: 0, width: 14, height: 14, cursor: "nesw-resize" } },
+  { edge: "sw", style: { bottom: 0, left: 0, width: 14, height: 14, cursor: "nesw-resize" } },
+];
+function ResizeHandles({ chrome }) {
+  if (!chrome.resizable) return null;
+  return (
+    <>
+      {RESIZE_HANDLES.map(({ edge, style }) => (
+        <div key={edge} onMouseDown={chrome.startResize(edge)} style={{ position: "absolute", zIndex: 10, ...style }} />
+      ))}
+    </>
   );
 }
 
@@ -21931,9 +22020,11 @@ function LibraryModal({ configKey, onClose, onMinimize, theme }) {
         .library-modal-scroll { scrollbar-width: thin; scrollbar-color: #D8DED9 transparent; }
       `}</style>
       <div
+        ref={chrome.windowRef}
         className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl"
         style={{ borderColor: theme.color, maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden", ...chrome.windowStyle }}
       >
+        <ResizeHandles chrome={chrome} />
         <div
           className="flex items-center gap-3 px-5 py-4 shrink-0"
           style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}`, flexShrink: 0, cursor: chrome.headerCursor }}
@@ -22045,9 +22136,11 @@ function SidebarViewModal({ viewKey, onClose, onMinimize, theme, children }) {
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-6" style={{ overflowY: "auto" }}>
       <div
+        ref={chrome.windowRef}
         className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl"
         style={{ borderColor: theme.color, maxHeight: "85vh", ...chrome.windowStyle }}
       >
+        <ResizeHandles chrome={chrome} />
         <div
           className="flex items-center justify-between gap-3 px-5 py-4 shrink-0"
           style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}`, cursor: chrome.headerCursor }}
@@ -22094,7 +22187,8 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
         .patients-modal-scroll::-webkit-scrollbar-thumb { background-color: ${theme.color}; border-radius: 999px; border: 2px solid #F2F7F5; }
         .patients-modal-scroll { scrollbar-width: thin; scrollbar-color: ${theme.color} #F2F7F5; }
       `}</style>
-      <div className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl" style={{ borderColor: theme.color, ...chrome.windowStyle }}>
+      <div ref={chrome.windowRef} className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl" style={{ borderColor: theme.color, ...chrome.windowStyle }}>
+        <ResizeHandles chrome={chrome} />
         <div
           className="flex items-center gap-3 px-5 py-4 shrink-0"
           style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}`, cursor: chrome.headerCursor }}
