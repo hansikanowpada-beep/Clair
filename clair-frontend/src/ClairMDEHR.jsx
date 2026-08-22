@@ -13577,6 +13577,39 @@ async function addHospitalPaymentMethod(hospitalEmail, hospitalDisplayName) {
   });
 }
 
+// --- Hospital affiliations — doctor-initiated request + hospital
+// approve/decline (clairmd-backend's routes/hospitalAffiliations.js). The
+// hospital's own direct-add flow already existed backend-side but was
+// never wired to any frontend UI at all — not even a read-only "your
+// affiliated doctors" list — so this covers both sides. -------------------
+async function requestHospitalAffiliation(hospitalAccountId) {
+  const data = await apiRequest("/hospital-affiliations/requests", { method: "POST", body: { hospitalAccountId } });
+  return data.request;
+}
+async function loadMyAffiliationRequests() {
+  const data = await apiRequest("/hospital-affiliations/requests/mine");
+  return data.requests;
+}
+async function loadMyHospitalAffiliations() {
+  const data = await apiRequest("/hospital-affiliations/mine");
+  return data.affiliations;
+}
+async function loadPendingAffiliationRequestsForHospital() {
+  const data = await apiRequest("/hospital-affiliations/requests/pending");
+  return data.requests;
+}
+async function approveAffiliationRequestOnBackend(id) {
+  const data = await apiRequest(`/hospital-affiliations/requests/${id}/approve`, { method: "POST" });
+  return data.affiliation;
+}
+async function declineAffiliationRequestOnBackend(id) {
+  await apiRequest(`/hospital-affiliations/requests/${id}/decline`, { method: "POST" });
+}
+async function loadHospitalAffiliatedDoctors() {
+  const data = await apiRequest("/hospital-affiliations");
+  return data.affiliations;
+}
+
 // Full round trip: create the pointer, encrypt the note, PUT it to the
 // backend's opaque-blob store, then GET + decrypt it straight back to
 // confirm the backend genuinely stored what was sent. Then, if this
@@ -18964,11 +18997,12 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
             <div>
               <label className="text-xs text-[#8A958E]">Hospital you're affiliated with</label>
               <input value={form.affiliatedHospital} onChange={update("affiliatedHospital")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="e.g. ClairMD Clinic" />
-              {/* Display-only — clairmd-backend's POST /api/hospital-affiliations is
-                  hospital-initiated (the hospital adds a doctor by account ID); a
-                  doctor can't self-serve an affiliation by typing a hospital's name
-                  here, so this field doesn't create a real link. */}
-              <p className="text-[11px] text-[#8A958E] mt-1">The hospital adds you from their own account once you've both signed up — this doesn't create the link by itself.</p>
+              {/* Display-only — typing a name here doesn't create a real link (this
+                  step runs before signup even completes). The real, doctor-
+                  initiated request flow (clairmd-backend's POST /api/
+                  hospital-affiliations/requests) lives in HospitalAffiliationPanel,
+                  reachable from Doctor profile once signed up — see that panel. */}
+              <p className="text-[11px] text-[#8A958E] mt-1">This doesn't create the link by itself — once you're signed up, request a real affiliation from Doctor profile → Hospital affiliations, and the hospital approves it from their own account.</p>
             </div>
           )}
           <div>
@@ -20626,6 +20660,107 @@ function HospitalBillingPanel({ onBack, theme }) {
   );
 }
 
+// Hospital side of doctor-initiated affiliation requests
+// (clairmd-backend's routes/hospitalAffiliations.js) — was a genuine gap
+// before this: the hospital's own direct-add flow existed backend-side,
+// but nothing in the frontend ever showed a hospital ITS affiliated
+// doctors, let alone let one approve or decline an incoming request.
+function HospitalAffiliatedDoctorsPanel({ onBack, theme }) {
+  const [doctors, setDoctors] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [actioningId, setActioningId] = useState(null);
+  const [actionError, setActionError] = useState(null);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    loadHospitalAffiliatedDoctors().then(setDoctors).catch(() => {});
+    loadPendingAffiliationRequestsForHospital().then(setPendingRequests).catch(() => {});
+  };
+  useEffect(refresh, []);
+
+  const doApprove = async (id) => {
+    setActioningId(id);
+    setActionError(null);
+    try {
+      await approveAffiliationRequestOnBackend(id);
+      refresh();
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setActioningId(null);
+    }
+  };
+  const doDecline = async (id) => {
+    setActioningId(id);
+    setActionError(null);
+    try {
+      await declineAffiliationRequestOnBackend(id);
+      refresh();
+    } catch (err) {
+      setActionError(err.message);
+    } finally {
+      setActioningId(null);
+    }
+  };
+
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-1">
+        <Users2 size={18} style={{ color: theme.color }} />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Affiliated doctors</h2>
+      </div>
+      <p className="text-xs text-[#8A958E] mb-4 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Real affiliation requests and links (clairmd-backend's routes/hospitalAffiliations.js). A doctor requests from their own account; approving here is what actually lets their ICU/Ward notes bill against your hospital's plan instead of the doctor's own.
+      </p>
+      <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — connect to manage affiliations" onConnected={refresh} />
+
+      {getAuthToken() && (
+        <>
+          <div className="mt-4 bg-white border border-[#D8DED9] rounded-md p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Pending requests</div>
+              <button type="button" onClick={refresh} className="text-[11px] text-[#0F5C56] underline decoration-dotted">Refresh</button>
+            </div>
+            {actionError && <p className="text-xs text-[#B34A3C] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{actionError}</p>}
+            {pendingRequests.length === 0 ? (
+              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No pending requests.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {pendingRequests.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-xs px-3 py-2 border border-[#D8DED9] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <span>{r.doctor_name}{r.doctor_specialty ? ` — ${r.doctor_specialty}` : ""}</span>
+                    <div className="flex gap-1.5 shrink-0 ml-2">
+                      <button type="button" onClick={() => doApprove(r.id)} disabled={actioningId === r.id} className="text-xs px-2 py-1 rounded-sm text-white" style={{ backgroundColor: theme.color }}>Approve</button>
+                      <button type="button" onClick={() => doDecline(r.id)} disabled={actioningId === r.id} className="text-xs px-2 py-1 rounded-sm border border-[#D8DED9] text-[#B34A3C]">Decline</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 bg-white border border-[#D8DED9] rounded-md p-4">
+            <div className="text-sm font-medium mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Currently affiliated</div>
+            {doctors.length === 0 ? (
+              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No affiliated doctors yet.</p>
+            ) : (
+              <div className="space-y-1">
+                {doctors.map((d) => (
+                  <div key={d.id} className="flex items-center justify-between text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <span>{d.display_name}{d.specialty ? ` — ${d.specialty}` : ""}</span>
+                    <span className="text-[#8A958E]">since {new Date(d.joined_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Build Hospital — guided setup checklist. Content researched directly
 // (Clinical Establishments Act 2010 + state variation, Biomedical Waste
@@ -21927,8 +22062,106 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
 
       <MyPlanAndBilling theme={theme} />
       <DriveConnectionPanel theme={theme} />
+      <HospitalAffiliationPanel theme={theme} />
       <DataRightsPanel theme={theme} />
       <CoAdminPanel theme={theme} />
+    </div>
+  );
+}
+
+// Doctor side of hospital affiliation requests — the doctor-initiated
+// counterpart to the hospital's own direct-add flow. A doctor can't
+// unilaterally create a real affiliation (that would let them bill notes
+// against a hospital's plan without consent — see clairmd-backend's
+// 025_hospital_affiliation_requests.sql for the full reasoning); this
+// sends a request instead, which HospitalAffiliatedDoctorsPanel on the
+// hospital side approves or declines.
+function HospitalAffiliationPanel({ theme }) {
+  const [affiliations, setAffiliations] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [picked, setPicked] = useState(null);
+  const [requesting, setRequesting] = useState(false);
+  const [requestError, setRequestError] = useState(null);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    loadMyHospitalAffiliations().then(setAffiliations).catch(() => {});
+    loadMyAffiliationRequests().then(setRequests).catch(() => {});
+  };
+  useEffect(refresh, []);
+
+  const doRequest = async () => {
+    if (!picked) return;
+    setRequesting(true);
+    setRequestError(null);
+    try {
+      await requestHospitalAffiliation(picked.id);
+      setPicked(null);
+      refresh();
+    } catch (err) {
+      setRequestError(err.message);
+    } finally {
+      setRequesting(false);
+    }
+  };
+
+  return (
+    <div className="mt-5 pt-5 border-t border-[#D8DED9]">
+      <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Hospital affiliations</div>
+      <p className="text-xs text-[#8A958E] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Real, hospital-approved links (clairmd-backend's routes/hospitalAffiliations.js) — request one below; the hospital sees it in their own account and approves or declines it. Once approved, ICU/Ward notes can bill against that hospital's plan instead of your own.
+      </p>
+      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — connect to request a real affiliation" onConnected={refresh} />
+
+      {getAuthToken() && (
+        <>
+          {affiliations.length > 0 && (
+            <div className="mt-3 mb-3 space-y-1">
+              {affiliations.map((a) => (
+                <div key={a.id} className="text-xs px-3 py-2 border border-[#D8DED9] rounded-sm flex items-center justify-between" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                  <span className="font-medium">{a.hospital_name}</span>
+                  <span className="text-[#8A958E]">since {new Date(a.joined_at).toLocaleDateString()}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="mt-3">
+            <AccountPicker
+              types={["hospital"]}
+              placeholder="Search a hospital to request affiliation with…"
+              selected={picked}
+              onSelect={setPicked}
+              onClear={() => { setPicked(null); setRequestError(null); }}
+            />
+            {picked && (
+              <button
+                type="button"
+                onClick={doRequest}
+                disabled={requesting}
+                className="mt-2 text-xs px-3 py-1.5 rounded-sm text-white font-medium"
+                style={{ backgroundColor: theme.color }}
+              >
+                {requesting ? "Sending…" : `Request affiliation with ${picked.display_name}`}
+              </button>
+            )}
+            {requestError && <p className="text-xs text-[#B34A3C] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{requestError}</p>}
+          </div>
+
+          {requests.length > 0 && (
+            <div className="mt-3">
+              <div className="text-xs font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Sent requests</div>
+              <div className="space-y-1">
+                {requests.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between text-xs px-3 py-2 border border-[#D8DED9] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <span>{r.hospital_name}</span>
+                    <span className={r.status === "approved" ? "text-[#0F5C56]" : r.status === "declined" ? "text-[#B34A3C]" : "text-[#8A958E]"}>{r.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -23438,6 +23671,7 @@ export default function ClairMDEHR() {
                     { key: "beds", label: "Bed availability", icon: BedDouble },
                     { key: "inventory", label: "Inventory manager", icon: Package },
                     { key: "hospitalBilling", label: "Billing & payment", icon: CreditCard },
+                    { key: "affiliatedDoctors", label: "Affiliated doctors", icon: Users2 },
                     { key: "planner", label: "Planner", icon: CalendarDays },
                     { key: "followups", label: "Follow-ups", icon: ClipboardList },
                     { key: "virtualOpd", label: "Virtual OPD", icon: GraduationCap, premium: true },
@@ -23543,6 +23777,10 @@ export default function ClairMDEHR() {
           ) : sidebarView === "hospitalBilling" ? (
             <div className="flex-1 overflow-y-auto">
               <HospitalBillingPanel onBack={() => setSidebarView("patients")} theme={theme} />
+            </div>
+          ) : sidebarView === "affiliatedDoctors" ? (
+            <div className="flex-1 overflow-y-auto">
+              <HospitalAffiliatedDoctorsPanel onBack={() => setSidebarView("patients")} theme={theme} />
             </div>
           ) : sidebarView === "planner" ? (
             <div className="flex-1 overflow-y-auto">

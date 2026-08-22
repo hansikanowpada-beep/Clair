@@ -13,6 +13,34 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Doctor-initiated hospital affiliation requests** (2026-08-22) — until
+  now, `hospital_affiliations` only supported the hospital adding a
+  doctor directly and instantly (trusted, no approval step). There was no
+  doctor-initiated path, and one couldn't just be added symmetrically: a
+  doctor unilaterally inserting into that table would let them bill notes
+  against a hospital's plan without that hospital's consent. New
+  `025_hospital_affiliation_requests.sql` adds a real pending/approved/
+  declined request table instead — only the hospital's own approval ever
+  creates a `hospital_affiliations` row. New routes on
+  `routes/hospitalAffiliations.js`: `POST /requests` (doctor creates one),
+  `GET /requests/pending` (hospital's inbox), `GET /requests/mine`
+  (doctor's own status history), `POST /requests/:id/approve` (creates
+  the real affiliation transactionally alongside marking the request
+  approved), `POST /requests/:id/decline`. A fresh request after a
+  decline reuses the same row (upsert) rather than erroring or piling up
+  duplicates — same pattern `hospital_affiliations` itself already used
+  for re-adding after a revoke.
+  - **Live-tested end to end**: a real doctor requested affiliation with a
+    real hospital; confirmed no affiliation existed yet; the hospital saw
+    the pending request with the real doctor name/specialty; a different
+    doctor account was confirmed unable to approve/decline it (403) or
+    see it in their own view; the hospital approved it, which genuinely
+    created the affiliation (visible on the doctor's own `/mine`) and
+    updated the request's status to `approved`; re-approving the same
+    request correctly 404'd; a decline on a second hospital created no
+    affiliation; and re-requesting after that decline correctly reused
+    the same row instead of erroring or duplicating.
+
 - **Care team member persona now has a real frontend caller** (2026-08-22)
   — no backend code changed; `routes/careTeam.js`'s `GET /pending` and
   `POST /:id/acknowledge` were already fully built, but nothing in

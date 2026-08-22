@@ -406,6 +406,28 @@ CREATE TABLE hospital_affiliations (
 CREATE INDEX idx_hospital_affiliations_doctor ON hospital_affiliations (doctor_account_id) WHERE revoked_at IS NULL;
 CREATE INDEX idx_hospital_affiliations_hospital ON hospital_affiliations (hospital_account_id) WHERE revoked_at IS NULL;
 
+-- Doctor-initiated affiliation requests (025_hospital_affiliation_
+-- requests.sql) — the table above only ever supported the hospital
+-- adding a doctor directly (trusted, no approval needed); a doctor
+-- unilaterally inserting into hospital_affiliations would let them bill
+-- against a hospital's plan without consent, so this is a real
+-- pending/approved/declined request instead, only becoming a row in
+-- hospital_affiliations above once the hospital approves it.
+CREATE TYPE affiliation_request_status AS ENUM ('pending', 'approved', 'declined');
+
+CREATE TABLE hospital_affiliation_requests (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    doctor_account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    hospital_account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    status              affiliation_request_status NOT NULL DEFAULT 'pending',
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    responded_at        TIMESTAMPTZ,
+    UNIQUE (doctor_account_id, hospital_account_id)
+);
+
+CREATE INDEX idx_hospital_affiliation_requests_hospital_pending ON hospital_affiliation_requests (hospital_account_id) WHERE status = 'pending';
+CREATE INDEX idx_hospital_affiliation_requests_doctor ON hospital_affiliation_requests (doctor_account_id);
+
 -- ---------------------------------------------------------------------------
 -- Hospital bed availability — one row per hospital account, self-managed.
 -- Pure operational status, no clinical content.

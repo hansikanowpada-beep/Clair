@@ -527,6 +527,31 @@ view.
   view; a doctor account was confirmed unable to call either
   care-team-only route.
 
+## Hospital affiliations (doctor request + hospital approve/decline)
+
+Was a bigger gap than it first looked: nothing in the frontend was wired
+to `hospital_affiliations` at all before this — not even a read-only
+"your affiliated doctors" list for a hospital, or "which hospitals am I
+affiliated with" for a doctor. `HospitalAuthPanel`'s signup-time
+"Hospital you're affiliated with" field was always display-only (see its
+updated help text, pointing here).
+
+- **`HospitalAffiliationPanel`** — new, in `DoctorProfilePanel` between
+  `DriveConnectionPanel` and `DataRightsPanel`. Shows current real
+  affiliations, an `AccountPicker` (types: `["hospital"]`) to find a real
+  hospital and send a request, and a status list of sent requests
+  (pending/approved/declined).
+- **`HospitalAffiliatedDoctorsPanel`** — new, in the sidebar's Admin group
+  ("Affiliated doctors", hospital accounts only) between "Billing &
+  payment" and "Planner". Shows pending requests with Approve/Decline
+  buttons and the real list of currently-affiliated doctors.
+- **Live-tested end to end**: a real doctor requested affiliation with a
+  real hospital, the hospital's panel showed it with the real doctor
+  name, a different doctor was confirmed unable to act on someone else's
+  request, approving created a real affiliation the doctor's own panel
+  then showed, and a decline-then-re-request correctly reused the same
+  request rather than erroring.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain
