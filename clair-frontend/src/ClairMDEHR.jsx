@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Users, FileText, Stethoscope, HandHeart, ChevronRight, ChevronDown, AlertTriangle,
   Pill, ShieldCheck, Stamp, Clock, Phone, MapPin, FlaskConical, Sparkles,
-  Globe2, Video, ListChecks, Building2, KeyRound, Mail, Lock, CheckCircle2,
+  Globe2, Video, ListChecks, Building2, Mail, Lock, CheckCircle2,
   MessagesSquare, Rss, Beaker, UserCircle2, CalendarDays,
   BarChart3, BedDouble, ClipboardList, Download, Printer, Send, X, Search,
   Users2, FileSignature, Mic, GraduationCap, ShieldAlert,
@@ -19016,7 +19016,6 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
   const [mode, setMode] = useState("signup"); // signup | login
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({ hospitalName: "", email: "", phone: "", aadhaar: "", affiliatedHospital: "", specialty: "", password: "", licenseNumber: "" });
-  const [otpSent, setOtpSent] = useState(false);
   const [verified, setVerified] = useState(false);
   const [planChosen, setPlanChosen] = useState(null);
   const [loginPassword, setLoginPassword] = useState("");
@@ -19101,7 +19100,7 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
         {["signup", "login"].map((m) => (
           <button
             key={m}
-            onClick={() => { setMode(m); setStep(1); setOtpSent(false); setVerified(false); }}
+            onClick={() => { setMode(m); setStep(1); setVerified(false); }}
             className={`flex-1 text-xs py-2 rounded-sm ${mode === m ? "bg-white shadow-sm text-[#0F5C56] font-medium" : "text-[#5B6B63]"}`}
             style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
           >
@@ -19177,24 +19176,17 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
             Payment step (mocked) — a real build wires this to a licensed payment aggregator here.
           </div>
           <button
-            onClick={() => { setStep(3); setOtpSent(true); }}
+            onClick={() => setStep(3)}
             className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium"
             style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
           >
-            Confirm payment & send verification codes
+            Confirm payment
           </button>
         </div>
       )}
 
       {mode === "signup" && step === 3 && (
         <div className="space-y-3">
-          {otpSent && !verified && (
-            <div className="bg-[#FBF6EC] border border-[#F0DDB0] rounded-sm p-3 text-xs text-[#7A5A19]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-              (Mocked) OTP sent to {form.phone || "your phone"} and a verification link sent to {form.email || "your email"}.
-            </div>
-          )}
-          <div className="flex items-center gap-2 text-sm"><KeyRound size={14} className="text-[#5B6B63]" /><input placeholder="Enter phone OTP" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
-          <div className="flex items-center gap-2 text-sm"><Mail size={14} className="text-[#5B6B63]" /><input placeholder="Enter email verification code" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
           {!verified ? (
             <>
               <button
@@ -19203,7 +19195,7 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
                 className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium disabled:opacity-60"
                 style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
               >
-                {authBusy ? "Creating account…" : "Verify & create account"}
+                {authBusy ? "Creating account…" : "Create account"}
               </button>
               {authStatus && (
                 <p className={`text-xs ${authStatus.type === "error" ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
