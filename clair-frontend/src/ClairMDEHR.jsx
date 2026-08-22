@@ -23849,6 +23849,17 @@ export default function ClairMDEHR() {
             >
               Care team login →
             </button>
+            {getAuthToken() && (
+              <button
+                type="button"
+                onClick={() => { backendLogout(); window.location.reload(); }}
+                title="Log out of this account on this device"
+                className="text-[10px] text-[#B34A3C] hover:text-[#8A3226] underline decoration-dotted mt-1 block"
+                style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+              >
+                Log out →
+              </button>
+            )}
           </div>
 
           <style>{`
