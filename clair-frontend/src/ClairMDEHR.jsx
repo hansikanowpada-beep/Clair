@@ -21957,6 +21957,62 @@ function LibraryModal({ configKey, onClose, onMinimize, theme }) {
   );
 }
 
+// Sidebar buttons (Statistics, Doctor profile, Account access, etc.) open
+// their panel in this centered popup instead of squeezing it into the
+// narrow sidebar column itself — that in-column layout was uncomfortable
+// to read and scroll (see commit history / user feedback).
+const SIDEBAR_VIEW_META = {
+  buildHospital: { label: "Build a hospital", icon: Hammer },
+  campMode: { label: "Camp / medical aid mode", icon: Tent },
+  hospitalAuth: { label: "Account access", icon: Building2 },
+  statistics: { label: "Statistics", icon: BarChart3 },
+  beds: { label: "Bed availability", icon: BedDouble },
+  inventory: { label: "Inventory manager", icon: Package },
+  hospitalBilling: { label: "Billing & payment", icon: CreditCard },
+  affiliatedDoctors: { label: "Affiliated doctors", icon: Users2 },
+  planner: { label: "Planner", icon: CalendarDays },
+  followups: { label: "Follow-ups", icon: ClipboardList },
+  virtualOpd: { label: "Virtual OPD", icon: GraduationCap },
+  doctorProfile: { label: "Doctor profile", icon: UserCircle2 },
+  feed: { label: "Specialty feed", icon: Rss },
+};
+
+function SidebarViewModal({ viewKey, onClose, theme, children }) {
+  const meta = SIDEBAR_VIEW_META[viewKey];
+  const Icon = meta.icon;
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-6" style={{ overflowY: "auto" }}>
+      <div
+        className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl"
+        style={{ borderColor: theme.color, maxHeight: "85vh" }}
+      >
+        <div
+          className="flex items-center justify-between gap-3 px-5 py-4 shrink-0"
+          style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}` }}
+        >
+          <div className="flex items-center gap-2">
+            <Icon size={18} style={{ color: theme.color }} />
+            <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{meta.label}</h2>
+          </div>
+          <button type="button" onClick={onClose} title="Close" className="w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] bg-white hover:bg-[#F2F7F5] border border-[#D8DED9]">
+            <X size={16} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, onClose, onMinimize, theme }) {
   const [query, setQuery] = useState("");
   const [previewPatient, setPreviewPatient] = useState(null);
@@ -23999,72 +24055,48 @@ export default function ClairMDEHR() {
             })}
           </nav>
 
-          {sidebarView === "buildHospital" ? (
-            <div className="flex-1 overflow-y-auto">
-              <BuildHospitalPanel onBack={() => setSidebarView("patients")} theme={theme} />
-            </div>
-          ) : sidebarView === "campMode" ? (
-            <div className="flex-1 overflow-y-auto">
-              <CampModePanel onBack={() => setSidebarView("patients")} theme={theme} />
-            </div>
-          ) : sidebarView === "hospitalAuth" ? (
-            <div className="flex-1 overflow-y-auto">
-              <HospitalAuthPanel onBack={() => setSidebarView("patients")} onAccountVerified={(specialty, plan, displayName) => { if (specialty) setDoctorSpecialty(specialty); if (plan) setDoctorPlan(plan); if (displayName) setDoctorDisplayName(displayName); }} />
-            </div>
-          ) : sidebarView === "statistics" ? (
-            <div className="flex-1 overflow-y-auto">
-              <StatisticsPanel onBack={() => setSidebarView("patients")} />
-            </div>
-          ) : sidebarView === "beds" ? (
-            <div className="flex-1 overflow-y-auto">
-              <BedAvailabilityPanel onBack={() => setSidebarView("patients")} />
-            </div>
-          ) : sidebarView === "inventory" ? (
-            <div className="flex-1 overflow-y-auto">
-              <InventoryManagerPanel onBack={() => setSidebarView("patients")} theme={theme} />
-            </div>
-          ) : sidebarView === "hospitalBilling" ? (
-            <div className="flex-1 overflow-y-auto">
-              <HospitalBillingPanel onBack={() => setSidebarView("patients")} theme={theme} />
-            </div>
-          ) : sidebarView === "affiliatedDoctors" ? (
-            <div className="flex-1 overflow-y-auto">
-              <HospitalAffiliatedDoctorsPanel onBack={() => setSidebarView("patients")} theme={theme} />
-            </div>
-          ) : sidebarView === "planner" ? (
-            <div className="flex-1 overflow-y-auto">
-              <PlannerPanel onBack={() => setSidebarView("patients")} />
-            </div>
-          ) : sidebarView === "followups" ? (
-            <div className="flex-1 overflow-y-auto">
-              <FollowUpsPanel onBack={() => setSidebarView("patients")} followups={followups} setFollowups={setFollowups} />
-            </div>
-          ) : sidebarView === "virtualOpd" ? (
-            <div className="flex-1 overflow-y-auto">
-              <VirtualOpdPanel onBack={() => setSidebarView("patients")} theme={theme} />
-            </div>
-          ) : sidebarView === "doctorProfile" ? (
-            <div className="flex-1 overflow-y-auto">
-              <DoctorProfilePanel onBack={() => setSidebarView("patients")} doctorSpecialty={doctorSpecialty} theme={theme} />
-            </div>
-          ) : sidebarView === "feed" ? (
-            <div className="flex-1 overflow-y-auto">
-              <CmeFeedPanel onBack={() => setSidebarView("patients")} />
-            </div>
-          ) : (
-            <>
-              <div
-                className="shrink-0 px-5 py-4 border-t border-[#D8DED9] flex items-center gap-2 text-[11px] text-[#8A958E]"
-                style={{ fontFamily: "'IBM Plex Sans', sans-serif", flexShrink: 0 }}
-              >
-                <ShieldCheck size={14} /> Encrypted · audit-logged
-              </div>
-              <DoctorAdRail />
-            </>
-          )}
+          <div
+            className="shrink-0 px-5 py-4 border-t border-[#D8DED9] flex items-center gap-2 text-[11px] text-[#8A958E]"
+            style={{ fontFamily: "'IBM Plex Sans', sans-serif", flexShrink: 0 }}
+          >
+            <ShieldCheck size={14} /> Encrypted · audit-logged
+          </div>
+          <DoctorAdRail />
           </>
           )}
         </aside>
+
+        {sidebarView !== "patients" && SIDEBAR_VIEW_META[sidebarView] && (
+          <SidebarViewModal viewKey={sidebarView} theme={theme} onClose={() => setSidebarView("patients")}>
+            {sidebarView === "buildHospital" ? (
+              <BuildHospitalPanel onBack={() => setSidebarView("patients")} theme={theme} />
+            ) : sidebarView === "campMode" ? (
+              <CampModePanel onBack={() => setSidebarView("patients")} theme={theme} />
+            ) : sidebarView === "hospitalAuth" ? (
+              <HospitalAuthPanel onBack={() => setSidebarView("patients")} onAccountVerified={(specialty, plan, displayName) => { if (specialty) setDoctorSpecialty(specialty); if (plan) setDoctorPlan(plan); if (displayName) setDoctorDisplayName(displayName); }} />
+            ) : sidebarView === "statistics" ? (
+              <StatisticsPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "beds" ? (
+              <BedAvailabilityPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "inventory" ? (
+              <InventoryManagerPanel onBack={() => setSidebarView("patients")} theme={theme} />
+            ) : sidebarView === "hospitalBilling" ? (
+              <HospitalBillingPanel onBack={() => setSidebarView("patients")} theme={theme} />
+            ) : sidebarView === "affiliatedDoctors" ? (
+              <HospitalAffiliatedDoctorsPanel onBack={() => setSidebarView("patients")} theme={theme} />
+            ) : sidebarView === "planner" ? (
+              <PlannerPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "followups" ? (
+              <FollowUpsPanel onBack={() => setSidebarView("patients")} followups={followups} setFollowups={setFollowups} />
+            ) : sidebarView === "virtualOpd" ? (
+              <VirtualOpdPanel onBack={() => setSidebarView("patients")} theme={theme} />
+            ) : sidebarView === "doctorProfile" ? (
+              <DoctorProfilePanel onBack={() => setSidebarView("patients")} doctorSpecialty={doctorSpecialty} theme={theme} />
+            ) : sidebarView === "feed" ? (
+              <CmeFeedPanel onBack={() => setSidebarView("patients")} />
+            ) : null}
+          </SidebarViewModal>
+        )}
 
         <main className="flex-1 overflow-y-auto">
           {!patient ? (
