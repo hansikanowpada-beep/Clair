@@ -13,6 +13,19 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Care team member persona now has a real frontend caller** (2026-08-22)
+  — no backend code changed; `routes/careTeam.js`'s `GET /pending` and
+  `POST /:id/acknowledge` were already fully built, but nothing in
+  `ClairMDEHR.jsx` ever called them — only the doctor-sending side had a
+  view. **Live-tested end to end**: a real doctor account sent an
+  instruction to a real `care_team_member` account, the recipient's `GET
+  /pending` returned it with every real field intact (patient name, bed
+  number, instruction text, sending doctor's name/specialty),
+  acknowledging it via `POST /:id/acknowledge` removed it from `pending`
+  and set `acknowledged_at` on the doctor's own `/sent` view, and a
+  doctor account was confirmed unable to call either care-team-member-
+  only route (403).
+
 - **Hospital "add a payment method" screen — the real Razorpay Checkout
   flow, not just the stub raw-store endpoint** (2026-08-22). Two new
   routes on `routes/hospitalBilling.js`, backed by new

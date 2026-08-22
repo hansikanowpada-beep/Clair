@@ -499,6 +499,34 @@ file.
   placeholder pending a real product decision, not presented as final
   pricing.
 
+## Care team member portal
+
+New `CareTeamPortalView`, a whole missing persona until now — a fourth
+top-level app mode (`appMode === "careTeam"`, alongside "clinic",
+"patient", "admin"), entered via a small "Care team login →" link under
+the sidebar logo, next to "Founder admin →". Backend support
+(`routes/careTeam.js`'s `GET /pending`/`POST /:id/acknowledge`) and even
+the frontend helper functions (`loadPendingCareTeamInstructions`,
+`acknowledgeCareTeamInstructionOnBackend`) already existed — nothing ever
+called them, since only the doctor-sending side (`CareTeamTab`) had a
+view.
+
+- Login/signup via the existing `BackendSyncPanel` with
+  `accountType="care_team_member"` — this account type has real public
+  signup (`routes/auth.js`'s schema already includes it).
+- Shows every pending instruction with its real patient display name, bed
+  number, diagnosis summary, instruction text, and sending doctor's
+  name/specialty — never chart or key access, matching the backend's own
+  scoped-queue design.
+- "Acknowledge" clears it from the list immediately (the backend call
+  already succeeded by then) and, server-side, notifies the sending
+  doctor and sets `acknowledged_at` on their own `/sent` view.
+- **Live-tested end to end**: a real doctor sent a real instruction to a
+  real care-team-member account; the recipient's queue showed every field
+  correctly; acknowledging it cleared it and updated the doctor's sent
+  view; a doctor account was confirmed unable to call either
+  care-team-only route.
+
 ## Renaming
 
 All in-app branding was updated from "Arogya" to "ClairMD" (not plain

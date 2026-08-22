@@ -22971,8 +22971,106 @@ function AdminNotificationHealthCard({ notif }) {
   );
 }
 
+// Care team member persona — a whole missing view until now. Backend
+// support (routes/careTeam.js's GET /pending and POST /:id/acknowledge)
+// and even the frontend helpers (loadPendingCareTeamInstructions,
+// acknowledgeCareTeamInstructionOnBackend) already existed; nothing ever
+// called them because no UI existed for anyone to log in AS a care team
+// member and see their own queue — only the doctor-sending side
+// (CareTeamTab) had a view. A care team account gets a scoped instruction
+// queue ONLY — never chart or key access, matching the backend's own
+// design (see schema.sql's care_team_instructions comment).
+function CareTeamPortalView({ onBack }) {
+  const [pending, setPending] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [acknowledgingId, setAcknowledgingId] = useState(null);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    setLoading(true);
+    setError(null);
+    loadPendingCareTeamInstructions()
+      .then(setPending)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  };
+  useEffect(refresh, []);
+
+  const doAcknowledge = async (id) => {
+    setAcknowledgingId(id);
+    setError(null);
+    try {
+      await acknowledgeCareTeamInstructionOnBackend(id);
+      // Local-first-style removal — the instruction is genuinely cleared
+      // server-side (see the POST above); dropping it from this list
+      // immediately avoids waiting on a full refresh to reflect that.
+      setPending((prev) => prev.filter((i) => i.id !== id));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAcknowledgingId(null);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F7F9F7] p-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to clinic view</button>
+        <div className="flex items-center gap-2 mb-1">
+          <LogIn size={18} className="text-[#0F5C56]" />
+          <h1 className="text-xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD — Care team</h1>
+        </div>
+        <p className="text-xs text-[#8A958E] mb-5 max-w-lg">
+          Your instruction queue — task-scoped notes from a doctor, never chart or key access. Tap Acknowledge once a task is done; the doctor who sent it is notified.
+        </p>
+
+        <BackendSyncPanel accountType="care_team_member" notConnectedLabel="Backend: not connected — log in or sign up to see your tasks" onConnected={refresh} />
+
+        {getAuthToken() && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Pending instructions</div>
+              <button type="button" onClick={refresh} disabled={loading} className="text-[11px] text-[#0F5C56] underline decoration-dotted">{loading ? "Refreshing…" : "Refresh"}</button>
+            </div>
+            {error && <p className="text-xs text-[#B34A3C] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{error}</p>}
+            {pending.length === 0 && !loading ? (
+              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No pending instructions right now.</p>
+            ) : (
+              <div className="space-y-2">
+                {pending.map((i) => (
+                  <div key={i.id} className="bg-white border border-[#D8DED9] rounded-md p-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium">{i.patient_display_name}</span>
+                      {i.bed_number && <span className="text-[11px] text-[#8A958E]">Bed {i.bed_number}</span>}
+                    </div>
+                    {i.diagnosis_summary && <p className="text-xs text-[#5B6B63] mb-1">{i.diagnosis_summary}</p>}
+                    <p className="text-xs mb-2">{i.instruction_text}</p>
+                    <div className="flex items-center justify-between text-[11px] text-[#8A958E]">
+                      <span>From {i.from_doctor_name}{i.from_doctor_specialty ? ` — ${i.from_doctor_specialty}` : ""} · {new Date(i.created_at).toLocaleString()}</span>
+                      <button
+                        type="button"
+                        onClick={() => doAcknowledge(i.id)}
+                        disabled={acknowledgingId === i.id}
+                        className="text-xs px-2.5 py-1 rounded-sm text-white font-medium shrink-0 ml-2"
+                        style={{ backgroundColor: "#0F5C56" }}
+                      >
+                        {acknowledgingId === i.id ? "…" : "Acknowledge"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ClairMDEHR() {
-  const [appMode, setAppMode] = useState("clinic"); // clinic | patient | admin
+  const [appMode, setAppMode] = useState("clinic"); // clinic | patient | admin | careTeam
   const [selectedId, setSelectedId] = useState(null);
   const [newEntryMode, setNewEntryMode] = useState(null); // null | "opd" | "icuward"
   const [backConfirm, setBackConfirm] = useState(null); // null | "opd" | "icuward"
@@ -23030,6 +23128,10 @@ export default function ClairMDEHR() {
 
   if (appMode === "admin") {
     return <AdminDashboardView onBack={() => setAppMode("clinic")} />;
+  }
+
+  if (appMode === "careTeam") {
+    return <CareTeamPortalView onBack={() => setAppMode("clinic")} />;
   }
 
   const tabs = [
@@ -23258,6 +23360,15 @@ export default function ClairMDEHR() {
               style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
             >
               Founder admin →
+            </button>
+            <button
+              type="button"
+              onClick={() => setAppMode("careTeam")}
+              title="Care team member login — for nurses/assistants receiving task-scoped instructions, not doctor accounts"
+              className="text-[10px] text-[#8A958E] hover:text-[#5B6B63] underline decoration-dotted mt-1 block"
+              style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+            >
+              Care team login →
             </button>
           </div>
 
