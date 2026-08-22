@@ -5,16 +5,27 @@ const config = require("../config");
 // credentials needed). deliverPending() below is the REAL push/email
 // integration — not a stub — built against Firebase Cloud Messaging's
 // well-documented HTTP v1 API (via firebase-admin) and standard SMTP (via
-// nodemailer). Both are stable, publicly documented APIs, unlike the
-// license-verification situation — the code here should be genuinely
-// correct once real credentials are supplied.
+// nodemailer).
 //
-// What ISN'T proven: this sandbox has no network access to install
-// firebase-admin/nodemailer or run this against real credentials, so it's
-// been reviewed carefully but not executed. Treat it as "correctly
-// written, not yet run" — the same honest standard as the rest of this
-// backend — and do a real send in a test environment before trusting it
-// for production notifications.
+// The push half is now genuinely LIVE-TESTED (2026-08-22), against a real
+// Firebase service account: firebase-admin actually obtained a real
+// Google OAuth2 access token from this credential (proving the key
+// itself is valid), and a send() to a deliberately fake FCM token came
+// back as `messaging/invalid-argument` — a TOKEN-shaped rejection, not an
+// authentication one — proving the whole path (credential -> Google auth
+// -> FCM API call) works and would deliver to any real device token.
+// Nothing was actually delivered to a real phone (no real device token
+// exists to test with), but every piece up to that last mile is proven.
+//
+// The email/SMTP half is still unproven the old way: no SMTP credentials
+// have been provided yet, so getEmailTransporter() has never actually
+// run. Same honest standard either way — don't assume it works until it
+// has been.
+//
+// Until 2026-08-22, nothing ever actually CALLED deliverPending() —
+// enqueue() always worked, but no scheduled job existed to attempt
+// delivery for what it queued. See db/deliverNotifications.js, the
+// missing entry point (mirrors db/runNightlyOverageBilling.js's shape).
 //
 // Deliberately graceful when unconfigured: if FIREBASE_SERVICE_ACCOUNT_
 // JSON or SMTP_* aren't set, deliverPending() logs why and skips rather

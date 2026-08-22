@@ -13,6 +13,34 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Firebase push notifications — live-tested with a real service account,
+  and a real scheduled entry point now exists** (2026-08-22). Unlike
+  Razorpay, this sandbox's network policy does NOT block Google's
+  Firebase/FCM endpoints — confirmed reachable before asking for
+  credentials, so this one really could be verified, not just wired
+  blind.
+  - `FIREBASE_SERVICE_ACCOUNT_JSON` now holds a real Firebase service
+    account key (project `clairmd-1c678`).
+  - **Live-tested, genuinely**: `firebase-admin`'s credential object
+    obtained a real OAuth2 access token from Google using this key
+    (proves the key itself is valid), and a `send()` call through the
+    real FCM API to a deliberately fake device token came back
+    `messaging/invalid-argument` — a rejection of the TOKEN, not of the
+    credential — meaning the entire path (this key -> Google auth -> the
+    FCM API) is real and correct. The only thing not proven is delivery
+    to an actual phone, since no real device has registered a token yet;
+    everything up to that last mile is confirmed working.
+  - New `db/deliverNotifications.js` (+ `npm run deliver-notifications`)
+    — a genuine gap this closed: `services/notifications.js`'s
+    `deliverPending()` existed and worked, but nothing ever actually
+    called it. Mirrors `runNightlyOverageBilling.js`'s shape (a script
+    entry point; wiring an actual schedule/cron is still a deployment
+    decision, not made here).
+  - The SMTP/email fallback half of `services/notifications.js` is
+    **not** live-tested — no SMTP credentials have been provided, so
+    `getEmailTransporter()` has never actually run. Don't assume it works
+    just because the push half does.
+
 - **Razorpay — real test-mode API keys configured; webhook signature
   verification live-tested; the actual charge call still isn't built, and
   here's exactly why** (2026-08-22). `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET`
