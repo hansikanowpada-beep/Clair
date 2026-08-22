@@ -13,6 +13,42 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **Razorpay — real test-mode API keys configured; webhook signature
+  verification live-tested; the actual charge call still isn't built, and
+  here's exactly why** (2026-08-22). `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET`
+  (new config, `config/index.js`) now hold real Razorpay test-mode keys —
+  these authenticate OUTBOUND calls this server would make TO Razorpay,
+  separate from `RAZORPAY_WEBHOOK_SECRET` which verifies INBOUND calls
+  Razorpay makes to us.
+  - **Live-tested for real**: `routes/billing.js`'s `/webhook` signature
+    verification (`verifyRazorpaySignature`, pre-existing code, never
+    actually run before now) was fired at with genuine HMAC-SHA256
+    payloads against a running server — a correctly-signed webhook is
+    accepted, a wrong-secret signature is rejected, a tampered body with
+    the original signature is rejected, and a missing signature header
+    is rejected. All four passed. This needed no outbound network access
+    at all (it's local HMAC math), which is exactly why it was possible
+    to verify here when the piece below wasn't.
+  - **`services/hospitalBilling.js`'s `attemptRazorpayCharge()` is still a
+    stub, deliberately** — not because the keys are missing anymore, but
+    because this sandbox's network policy blocks `api.razorpay.com` AND
+    `razorpay.com` entirely (confirmed both via a direct API call and via
+    `WebFetch` against their docs — both came back as policy denials, not
+    bugs to route around). There is no way from here to check the
+    current, exact request/response shape of Razorpay's recurring/token
+    charge endpoint against their real documentation. Writing that from
+    memory alone, unverified, for code that moves real money, is exactly
+    what this backend's honesty standard (license verification,
+    notification delivery) exists to prevent — a confidently-wrong
+    implementation that *looks* finished is worse than an honest stub.
+    There's also a bigger structural gap underneath either way: nothing
+    in this app yet lets a hospital actually save a payment method
+    (`savePaymentMethod()` exists but nothing calls it) — that needs a
+    real Razorpay Checkout flow that doesn't exist anywhere in the
+    frontend. Whoever implements this needs an environment with normal
+    internet access to Razorpay's docs; the keys and the webhook side are
+    ready and waiting for it.
+
 - **Google Drive upload/download — the actual file transfer, not just the
   OAuth handshake** (2026-08-21). Until now, `routes/drive.js` could
   connect a doctor's Drive account (OAuth exchange, app folder creation,

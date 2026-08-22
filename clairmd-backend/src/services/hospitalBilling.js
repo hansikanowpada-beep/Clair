@@ -77,24 +77,36 @@ async function clearRestriction(hospitalAccountId) {
   await pool.query(`UPDATE accounts SET admin_restricted_at = NULL WHERE id = $1`, [hospitalAccountId]);
 }
 
-// Real Razorpay charge call — NOT built. This is a clearly-labeled stub,
-// same honest standard as license verification and notification
-// delivery elsewhere in this backend: the actual HTTP call to Razorpay's
-// charge API needs a real account, real customer/payment-method tokens,
-// and live testing this sandbox cannot do. Wire this up before actually
-// relying on the nightly job to collect real money.
+// Real Razorpay charge call — still NOT built, but the reason changed
+// (2026-08-22). Real test-mode RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET are
+// now configured (see config/index.js) — that part is genuinely ready.
+// What's blocking the actual implementation: this sandbox's network
+// policy blocks api.razorpay.com AND razorpay.com entirely (confirmed via
+// the agent proxy's own status endpoint — a "policy denial," not a bug to
+// route around), so there's no way to check the current, exact request/
+// response shape of Razorpay's recurring/token charge endpoint against
+// their real docs from here. Writing this from memory alone, unverified,
+// for something that moves real money, is exactly the kind of guess this
+// backend's honesty standard (see license verification, notification
+// delivery) exists to avoid — a subtly wrong implementation that LOOKS
+// finished is worse than an honest stub. There is also a bigger
+// structural gap underneath this either way: nothing in this app yet
+// lets a hospital actually save a payment method in the first place (see
+// savePaymentMethod() above — it exists but nothing calls it), which
+// itself needs a real Razorpay Checkout flow. Implement this once
+// something with normal internet access can reach Razorpay's docs.
 async function attemptRazorpayCharge(razorpayCustomerId, razorpayPaymentMethodId, amountPaise) {
-  if (!config.razorpayWebhookSecret) {
-    // Reuses the existing "is Razorpay configured at all" signal rather
-    // than adding a second one — if the webhook secret isn't set, no
-    // real Razorpay integration exists yet either way.
+  if (!config.razorpayKeyId || !config.razorpayKeySecret) {
     throw new Error(
-      "attemptRazorpayCharge() is not wired to a real Razorpay charge call yet. " +
-      "Overage entries are tracked correctly (see recordOverageEntry()) but nothing " +
-      "actually charges a card until this is implemented against Razorpay's real API."
+      "attemptRazorpayCharge() is not wired to a real Razorpay charge call yet, and RAZORPAY_KEY_ID/" +
+      "RAZORPAY_KEY_SECRET aren't configured either. Overage entries are tracked correctly " +
+      "(see recordOverageEntry()) but nothing actually charges a card until this is implemented."
     );
   }
-  throw new Error("attemptRazorpayCharge() still needs implementing even with Razorpay configured — this is a placeholder.");
+  throw new Error(
+    "attemptRazorpayCharge() still needs implementing even with real Razorpay keys configured — see the " +
+    "comment above this function for exactly why it wasn't done yet."
+  );
 }
 
 // Nightly job entry point (see db/runNightlyOverageBilling.js for the

@@ -29,6 +29,14 @@ function loadConfig() {
     corsOrigin: process.env.CORS_ORIGIN || null,
     licenseVerificationProvider: process.env.LICENSE_VERIFICATION_PROVIDER || "unconfigured",
     razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || null,
+    // Separate from the webhook secret above — these authenticate OUTBOUND
+    // calls this server makes TO Razorpay's API (create an order, attempt a
+    // charge), whereas the webhook secret verifies INBOUND calls Razorpay
+    // makes to us. Both are needed for the nightly overage billing job to
+    // do anything real; either can be configured independently of the
+    // other. See services/hospitalBilling.js's attemptRazorpayCharge.
+    razorpayKeyId: process.env.RAZORPAY_KEY_ID || null,
+    razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || null,
     firebase: {
       serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || null, // the whole service account JSON, as a single-line string
     },
