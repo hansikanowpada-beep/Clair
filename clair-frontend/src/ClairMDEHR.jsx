@@ -13,7 +13,7 @@ import {
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
+import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
 
 // ---------------------------------------------------------------------------
 // Design tokens
@@ -21789,13 +21789,29 @@ const LIBRARY_MODAL_CONFIG = {
     title: "Medical Condition",
     icon: BookOpen,
     searchPlaceholder: "Search medical conditions…",
-    getItems: () =>
-      Object.keys(DIAGNOSIS_META)
-        .map((k) => ({ key: k, name: DIAGNOSIS_LABEL[k], meta: DIAGNOSIS_META[k] }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
+    // Combines two independently-built libraries into one browsable,
+    // alphabetical list: general-medicine conditions (DIAGNOSIS_META) and
+    // the surgical diagnostic workflow library (WORKFLOWS, Das Ch. 3–40).
+    // Kept as one list rather than two separate tabs because the doctor
+    // searching here doesn't know or care which library a condition came
+    // from — only that ClairMD covers it.
+    getItems: () => {
+      const general = Object.keys(DIAGNOSIS_META).map((k) => ({ key: k, name: DIAGNOSIS_LABEL[k], meta: DIAGNOSIS_META[k], kind: "diagnosisMeta" }));
+      const surgical = WORKFLOWS.map((w) => ({ key: w.id, name: w.condition, workflow: w, kind: "surgicalWorkflow" }));
+      return [...general, ...surgical].sort((a, b) => a.name.localeCompare(b.name));
+    },
     filterItem: (item, q) => item.name.toLowerCase().includes(q),
-    renderListItem: (item, theme, onClick) => <ListRow key={item.key} name={item.name} onClick={onClick} />,
-    renderDetail: (item) => <MedicalConditionDetailBody item={item} />,
+    renderListItem: (item, theme, onClick) => (
+      <ListRow key={item.key} name={item.name} subtitle={item.kind === "surgicalWorkflow" ? item.workflow.dasChapter : undefined} onClick={onClick} />
+    ),
+    renderDetail: (item) => item.kind === "surgicalWorkflow" ? (
+      <div>
+        <div className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.workflow.dasChapter}</div>
+        <WorkflowDetailBody workflow={item.workflow} idPrefix={`lib-node-${item.key}`} />
+      </div>
+    ) : (
+      <MedicalConditionDetailBody item={item} />
+    ),
   },
   symptoms: {
     title: "Symptoms",
@@ -22134,66 +22150,88 @@ function DiagnosticWorkflowModal({ workflowId, onClose }) {
             </p>
           </div>
 
-          {workflow.redFlags && workflow.redFlags.length > 0 && (
-            <div className="mb-4 p-3 rounded-sm border" style={{ borderColor: "#EFC9C1", backgroundColor: "#FBEFEC" }}>
-              <div className="flex items-center gap-1.5 text-xs font-semibold mb-1.5" style={{ color: "#B34A3C", fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                <AlertTriangle size={14} /> Red flags
-              </div>
-              <ul className="space-y-1">
-                {workflow.redFlags.map((f, i) => (
-                  <li key={i} className="text-xs text-[#7A2F25] flex gap-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                    <span>•</span><span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          <div className="space-y-3 mb-5">
-            {(workflow.algorithm || []).map((node) => (
-              <div key={node.id} id={`dx-node-${currentId}-${node.id}`} className="border border-[#D8DED9] rounded-sm p-3">
-                <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-0.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{node.stage}</div>
-                <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{node.title}</div>
-                {node.detail && (
-                  <p className="text-xs text-[#5B6B63] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{node.detail}</p>
-                )}
-                {node.branches && node.branches.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {node.branches.map((b, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => handleBranchClick(b.to)}
-                        className="text-[11px] px-2 py-1 rounded-full border hover:bg-[#F2F7F5]"
-                        style={{ borderColor: DX_ACCENT, color: DX_ACCENT, fontFamily: "'IBM Plex Sans', sans-serif" }}
-                      >
-                        {b.label} →
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {workflow.citations && workflow.citations.length > 0 && (
-            <div className="pt-3 border-t border-[#D8DED9]">
-              <div className="text-[11px] uppercase tracking-wide text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Sources</div>
-              <ul className="space-y-1.5">
-                {workflow.citations.map((c, i) => (
-                  <li key={i} className="text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                    <a href={c.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline" style={{ color: DX_ACCENT }}>
-                      {c.title} <ExternalLink size={11} />
-                    </a>
-                    <span className="text-[#8A958E]"> — {c.publisher}{c.licence ? ` (${c.licence})` : ""}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <WorkflowDetailBody workflow={workflow} idPrefix={`dx-node-${currentId}`} onBranchClick={handleBranchClick} />
         </div>
       </div>
     </div>
+  );
+}
+
+// The middle of a workflow's display — red flags, algorithm nodes, citations
+// — shared between the right-click lookup modal (interactive: branches
+// navigate) and the Library's browsable Medical Condition list (read-only:
+// branches show as plain tags, since that list has no "current workflow"
+// state to navigate between — same pattern the Symptoms tab already uses
+// for its own cross-references).
+function WorkflowDetailBody({ workflow, idPrefix, onBranchClick }) {
+  return (
+    <>
+      {workflow.redFlags && workflow.redFlags.length > 0 && (
+        <div className="mb-4 p-3 rounded-sm border" style={{ borderColor: "#EFC9C1", backgroundColor: "#FBEFEC" }}>
+          <div className="flex items-center gap-1.5 text-xs font-semibold mb-1.5" style={{ color: "#B34A3C", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <AlertTriangle size={14} /> Red flags
+          </div>
+          <ul className="space-y-1">
+            {workflow.redFlags.map((f, i) => (
+              <li key={i} className="text-xs text-[#7A2F25] flex gap-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <span>•</span><span>{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="space-y-3 mb-5">
+        {(workflow.algorithm || []).map((node) => (
+          <div key={node.id} id={`${idPrefix}-${node.id}`} className="border border-[#D8DED9] rounded-sm p-3">
+            <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-0.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{node.stage}</div>
+            <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{node.title}</div>
+            {node.detail && (
+              <p className="text-xs text-[#5B6B63] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{node.detail}</p>
+            )}
+            {node.branches && node.branches.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {node.branches.map((b, i) => onBranchClick ? (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => onBranchClick(b.to)}
+                    className="text-[11px] px-2 py-1 rounded-full border hover:bg-[#F2F7F5]"
+                    style={{ borderColor: DX_ACCENT, color: DX_ACCENT, fontFamily: "'IBM Plex Sans', sans-serif" }}
+                  >
+                    {b.label} →
+                  </button>
+                ) : (
+                  <span
+                    key={i}
+                    className="text-[11px] px-2 py-1 rounded-full border"
+                    style={{ borderColor: "#D8DED9", color: "#8A958E", fontFamily: "'IBM Plex Sans', sans-serif" }}
+                  >
+                    {b.label}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {workflow.citations && workflow.citations.length > 0 && (
+        <div className="pt-3 border-t border-[#D8DED9]">
+          <div className="text-[11px] uppercase tracking-wide text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Sources</div>
+          <ul className="space-y-1.5">
+            {workflow.citations.map((c, i) => (
+              <li key={i} className="text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <a href={c.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline" style={{ color: DX_ACCENT }}>
+                  {c.title} <ExternalLink size={11} />
+                </a>
+                <span className="text-[#8A958E]"> — {c.publisher}{c.licence ? ` (${c.licence})` : ""}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
   );
 }
 
