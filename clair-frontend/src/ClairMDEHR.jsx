@@ -15111,37 +15111,13 @@ function TestGroup({ label, category, items, patientId, orders, onOrder }) {
 // browser textarea, so the blinking text cursor is native — no extra work.
 function AutoExpandingTextarea({ value, onChange, placeholder }) {
   const ref = React.useRef(null);
-  const [dxMenu, setDxMenu] = useState(null); // { x, y, matches } — only shown when the selection matches a known condition
-  const [openWorkflowId, setOpenWorkflowId] = useState(null);
+  const { handleContextMenu, portal } = useDiagnosticLookup();
   useEffect(() => {
     if (ref.current) {
       ref.current.style.height = "auto";
       ref.current.style.height = ref.current.scrollHeight + "px";
     }
   }, [value]);
-
-  useEffect(() => {
-    if (!dxMenu) return;
-    const close = () => setDxMenu(null);
-    window.addEventListener("mousedown", close);
-    window.addEventListener("scroll", close, true);
-    return () => { window.removeEventListener("mousedown", close); window.removeEventListener("scroll", close, true); };
-  }, [dxMenu]);
-
-  // Selecting a phrase and right-clicking is the library's intended lookup
-  // gesture (findWorkflowsForText's own doc comment: "Match a phrase
-  // selected in the HPI"). No selection, or a selection that matches
-  // nothing, falls through to the textarea's normal context menu.
-  const handleContextMenu = (e) => {
-    const el = ref.current;
-    if (!el) return;
-    const selected = el.value.substring(el.selectionStart, el.selectionEnd).trim();
-    if (!selected) return;
-    const matches = findWorkflowsForText(selected);
-    if (!matches.length) return;
-    e.preventDefault();
-    setDxMenu({ x: e.clientX, y: e.clientY, matches: matches.slice(0, 4) });
-  };
 
   return (
     <>
@@ -15155,15 +15131,7 @@ function AutoExpandingTextarea({ value, onChange, placeholder }) {
         className="w-full text-sm px-3 py-2 border border-[#D8DED9] rounded-sm resize-none overflow-hidden focus:outline-none focus:border-[#0F5C56]"
         style={{ fontFamily: "'IBM Plex Sans', sans-serif", lineHeight: 1.5 }}
       />
-      {dxMenu && (
-        <DiagnosticLookupMenu
-          x={dxMenu.x}
-          y={dxMenu.y}
-          matches={dxMenu.matches}
-          onPick={(id) => { setOpenWorkflowId(id); setDxMenu(null); }}
-        />
-      )}
-      {openWorkflowId && <DiagnosticWorkflowModal workflowId={openWorkflowId} onClose={() => setOpenWorkflowId(null)} />}
+      {portal}
     </>
   );
 }
@@ -17511,6 +17479,7 @@ function DisasterManagementPicker({ disasterValues: externalDisasterValues, setD
 }
 
 function PoisoningField({ field, value, onChange }) {
+  const { handleContextMenu, portal } = useDiagnosticLookup();
   if (field.type === "checklist") {
     const checked = value || {};
     return (
@@ -17543,10 +17512,11 @@ function PoisoningField({ field, value, onChange }) {
           {field.options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
         </select>
       ) : field.type === "textarea" ? (
-        <textarea {...commonProps} className={commonProps.className + " min-h-[52px]"} />
+        <textarea {...commonProps} onContextMenu={handleContextMenu} className={commonProps.className + " min-h-[52px]"} />
       ) : (
-        <input type="text" {...commonProps} />
+        <input type="text" {...commonProps} onContextMenu={handleContextMenu} />
       )}
+      {portal}
     </div>
   );
 }
@@ -17706,6 +17676,7 @@ function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisonin
 }
 
 function EnvField({ field, value, onChange }) {
+  const { handleContextMenu, portal } = useDiagnosticLookup();
   const commonProps = {
     value: value || "",
     onChange: (e) => onChange(field.id, e.target.value),
@@ -17717,10 +17688,11 @@ function EnvField({ field, value, onChange }) {
     <div className="mb-2.5">
       <label className="block text-[10px] font-medium text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
       {field.type === "textarea" ? (
-        <textarea {...commonProps} className={commonProps.className + " min-h-[52px]"} />
+        <textarea {...commonProps} onContextMenu={handleContextMenu} className={commonProps.className + " min-h-[52px]"} />
       ) : (
-        <input type="text" {...commonProps} />
+        <input type="text" {...commonProps} onContextMenu={handleContextMenu} />
       )}
+      {portal}
     </div>
   );
 }
@@ -22229,6 +22201,54 @@ function DiagnosticLookupMenu({ x, y, matches, onPick }) {
       ))}
     </div>
   );
+}
+
+// Shared by every plain <input>/<textarea> that wants "select a phrase,
+// right-click, open its diagnostic workflow" — AutoExpandingTextarea and
+// the ICU/Ward topic-card field renderers (PoisoningField, EnvField) all
+// use this instead of duplicating the same detection/menu/modal wiring.
+function useDiagnosticLookup() {
+  const [dxMenu, setDxMenu] = useState(null); // { x, y, matches }
+  const [openWorkflowId, setOpenWorkflowId] = useState(null);
+
+  useEffect(() => {
+    if (!dxMenu) return;
+    const close = () => setDxMenu(null);
+    window.addEventListener("mousedown", close);
+    window.addEventListener("scroll", close, true);
+    return () => { window.removeEventListener("mousedown", close); window.removeEventListener("scroll", close, true); };
+  }, [dxMenu]);
+
+  // Selecting a phrase and right-clicking is the library's intended lookup
+  // gesture (findWorkflowsForText's own doc comment: "Match a phrase
+  // selected in the HPI"). No selection, or a selection matching nothing,
+  // falls through to the field's normal (browser) context menu.
+  const handleContextMenu = (e) => {
+    const el = e.currentTarget;
+    if (typeof el.selectionStart !== "number") return;
+    const selected = el.value.substring(el.selectionStart, el.selectionEnd).trim();
+    if (!selected) return;
+    const matches = findWorkflowsForText(selected);
+    if (!matches.length) return;
+    e.preventDefault();
+    setDxMenu({ x: e.clientX, y: e.clientY, matches: matches.slice(0, 4) });
+  };
+
+  const portal = (
+    <>
+      {dxMenu && (
+        <DiagnosticLookupMenu
+          x={dxMenu.x}
+          y={dxMenu.y}
+          matches={dxMenu.matches}
+          onPick={(id) => { setOpenWorkflowId(id); setDxMenu(null); }}
+        />
+      )}
+      {openWorkflowId && <DiagnosticWorkflowModal workflowId={openWorkflowId} onClose={() => setOpenWorkflowId(null)} />}
+    </>
+  );
+
+  return { handleContextMenu, portal };
 }
 
 function LibraryModal({ configKey, onClose, onMinimize, theme }) {
