@@ -17301,6 +17301,7 @@ function TraumaPicker() {
 }
 
 function DisasterField({ field, value, onChange }) {
+  const { handleContextMenu, portal } = useDiagnosticLookup();
   const commonProps = {
     value: value || "",
     onChange: (e) => onChange(field.id, e.target.value),
@@ -17317,10 +17318,11 @@ function DisasterField({ field, value, onChange }) {
           {field.options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
         </select>
       ) : field.type === "textarea" ? (
-        <textarea {...commonProps} className={commonProps.className + " min-h-[52px]"} />
+        <textarea {...commonProps} onContextMenu={handleContextMenu} className={commonProps.className + " min-h-[52px]"} />
       ) : (
-        <input type="text" {...commonProps} />
+        <input type="text" {...commonProps} onContextMenu={handleContextMenu} />
       )}
+      {portal}
     </div>
   );
 }
@@ -17862,6 +17864,7 @@ function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValue
 }
 
 function SSField({ field, value, onChange }) {
+  const { handleContextMenu, portal } = useDiagnosticLookup();
   if (field.type === "checklist") {
     const current = value || [];
     const toggle = (opt) => onChange(current.includes(opt) ? current.filter((o) => o !== opt) : [...current, opt]);
@@ -17899,10 +17902,11 @@ function SSField({ field, value, onChange }) {
           {field.options.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
         </select>
       ) : field.type === "textarea" ? (
-        <textarea {...commonProps} className={commonProps.className + " min-h-[52px]"} />
+        <textarea {...commonProps} onContextMenu={handleContextMenu} className={commonProps.className + " min-h-[52px]"} />
       ) : (
-        <input type="text" {...commonProps} />
+        <input type="text" {...commonProps} onContextMenu={handleContextMenu} />
       )}
+      {portal}
     </div>
   );
 }

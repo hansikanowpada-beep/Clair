@@ -695,11 +695,18 @@ diagnosis; branches only navigate between reference pages.
   Environmental Injuries → Cold Injuries' "Type / mechanism of
   environmental exposure" field with "gangrene." Both via a real browser
   (Playwright), not just a build check.
-- **Not yet done**: the Disaster Management and Special Situations topic
-  cards (`DisasterField`, `SSField`) use their own separate field
-  renderers and aren't wired yet — same mechanical change as Poisoning/Env
-  if wanted. The 234 `PENDING` conditions are index-only, same as the
-  library ships them — no workflow content exists for those yet. Bundle
-  size grew by roughly 1MB (the library is bundled directly, not lazily
-  loaded) — worth revisiting with code-splitting if load time becomes a
+- **Also wired in (2026-08-23, same day)**: `DisasterField` and `SSField`
+  — Disaster Management and Special Situations topic cards, same
+  `useDiagnosticLookup()` hook, same pattern. Every ICU/Ward topic-card
+  field renderer now supports the lookup. Live-tested: turned Disaster
+  Management on, opened "Disaster / Mass-Casualty Event," typed into
+  "Mechanism/exposure, in the patient's own words," selected "testicular
+  torsion," opened the real Torsion of the testis workflow. Separately
+  confirmed Special Situations → Sexual Assault's "Time elapsed since
+  reported incident" field with "priapism." Both via a real browser
+  (Playwright).
+- **Not covered**: the 234 `PENDING` conditions are index-only, same as
+  the library ships them — no workflow content exists for those yet.
+  Bundle size grew by roughly 1MB (the library is bundled directly, not
+  lazily loaded) — worth revisiting with code-splitting if load time becomes a
   concern.
