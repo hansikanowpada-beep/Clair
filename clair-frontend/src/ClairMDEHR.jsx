@@ -29,6 +29,17 @@ const FONT_LINK =
 // --- Clinical reference data (diagnosis-linked) ----------------------------
 // This is illustrative reference content for the prototype only — not a
 // substitute for clinical guidelines. Figures/contacts are indicative.
+// Provenance (added retroactively, confirmed against chat history from the
+// session that built this — 2026-08-23): the API Textbook of Medicine
+// (Association of Physicians of India) table of contents (~300 conditions
+// across 22 sections) was used only to decide which conditions to index
+// here — 244 written so far, partial. No text was extracted or reproduced
+// from that textbook; each condition's content below was independently
+// written and cited to a free source, preferring US-government
+// public-domain sources (NIH/NCI/NIDDK/CDC/MedlinePlus), then StatPearls
+// (CC BY-NC-ND, link-and-credit only) as fallback, in a stated preference
+// order of USA > UK > Europe > Australia/NZ (South Africa's NICD for
+// malaria/TB specifically).
 
 const DIAGNOSIS_META = {
   hypertension: {
@@ -3457,7 +3468,17 @@ const DIAGNOSIS_META = {
 
 // Physical examination templates by body system. Original checklists written
 // for this app — not reproduced from any textbook. Each is paired with one
-// free, open-access citation for further reading. Informational reference
+// free, open-access citation for further reading.
+// Provenance (added retroactively, confirmed against chat history from the
+// session that built this — 2026-08-23): Hutchison's Clinical Methods
+// supplied only the 11-system organisational scheme (General,
+// Cardiovascular, Respiratory, Gastrointestinal, Musculoskeletal, Nervous,
+// Urogenital, Endocrine, Skin, Eyes, ENT) — standard clinical-examination
+// taxonomy, not unique expression. No sentence, table, or definition from
+// that book was extracted or paraphrased; every checklist below is
+// independent wording, cited instead to NCBI Bookshelf's own open-access
+// "Clinical Methods" text and StatPearls (both free, NIH/NLM-hosted).
+// Informational reference
 // only: presents what to examine, not a diagnosis, score, or recommendation
 // (kept deliberately outside CDSCO Class A boundaries in that respect).
 // `signs` on a section (where present) lists the discrete positive/negative
