@@ -18499,7 +18499,7 @@ export const WORKFLOWS = [
       {
         "id": "p2",
         "stage": "Examination",
-        "title": "Pallor, smooth pale tongue devoid of papillae, angular stomatitis, brittle nails",
+        "title": "Pallor, a bald and pale-looking tongue that has lost its normal texture, cracked mouth corners, brittle nails",
         "detail": "The tongue findings are striking once seen and are what tie the anaemia to the swallowing complaint.",
         "next": [
           "p3"
