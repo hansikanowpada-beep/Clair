@@ -26961,7 +26961,7 @@ export const WORKFLOWS = [
         "id": "e7",
         "stage": "Assess reducibility, gently",
         "title": "Taxis — squeezing the fundus of the sac while guiding the contents through the ring, with the thigh flexed and internally rotated to relax the surrounding muscles",
-        "detail": "Gurgling on reduction suggests bowel content (enterocele); an enterocele's first part is often stiffer to reduce while the last part slips in easily, and an omentocele behaves the opposite way. Rough handling is never acceptable — forceful taxis can itself cause serious harm.",
+        "detail": "A gurgling sensation on the way in points to bowel rather than omentum. The two also reduce in opposite patterns — bowel resists more at the start and then goes in smoothly toward the end, while omentum does the reverse, going in easily at first and then sticking as the last of it is coaxed through. Rough handling is never acceptable — forceful taxis can itself cause serious harm.",
         "next": [
           "e8"
         ]
@@ -28759,7 +28759,7 @@ export const WORKFLOWS = [
       {
         "id": "t1",
         "stage": "Age is the single most useful piece of history",
-        "title": "Sudden, severe pain between about 10 and 25 years, most often between 12 and 18",
+        "title": "Sudden, severe testicular pain in a child or young adult — the peak years are the early-to-mid teens",
         "detail": "This condition is extremely rare after 25. The pain is agonising and is often referred to the groin and lower abdomen rather than staying confined to the scrotum, which is exactly why it can be mistaken for an abdominal emergency.",
         "next": [
           "t2"
@@ -28787,7 +28787,7 @@ export const WORKFLOWS = [
         "id": "t4",
         "stage": "Examine",
         "title": "The affected testis hangs higher than its fellow; a fully developed, normally anchored testis does not usually undergo torsion",
-        "detail": "In the first few hours the scrotal skin looks normal; after about six hours it becomes red, hot and oedematous. The testis is exquisitely tender, swollen, and the patient will not tolerate it being touched. The contour of the epididymis becomes very difficult to distinguish from the body of the testis.",
+        "detail": "The overlying skin can look entirely unremarkable at first, so a normal-looking scrotum early on does not rule this out; inflammation of the skin itself is a later development, typically not until several hours in. The testis is extremely tender and swollen enough that touching it is barely tolerated, and by this stage the epididymis can no longer be felt as a separate structure from the testis.",
         "next": [
           "t5"
         ]
@@ -28805,7 +28805,7 @@ export const WORKFLOWS = [
         "id": "t6",
         "stage": "The harder problem is distinguishing this from acute epididymo-orchitis",
         "title": "Feeling a twisted cord settles it; short of that, several bedside features help",
-        "detail": "In epididymo-orchitis, the epididymis is initially the site of maximum swelling and tenderness while the testis itself remains comparatively normal; in torsion, the testis itself occupies an elevated position and is tender throughout. Onset in epididymo-orchitis is generally less acute and may come with urinary symptoms such as frequency and dysuria. Elevating the scrotum eases pain in epididymo-orchitis but worsens it in torsion.",
+        "detail": "Epididymo-orchitis tends to announce itself in the epididymis first — that's where the swelling and pain are worst, with the testis itself feeling comparatively unaffected — whereas in torsion the testis is high-riding and diffusely tender. Epididymo-orchitis usually builds up rather than striking suddenly, and urinary symptoms like frequency or a burning sensation often go with it. A simple bedside check also helps: lifting the scrotum tends to settle the pain of epididymo-orchitis but makes torsion pain worse.",
         "next": [
           "t7"
         ]
