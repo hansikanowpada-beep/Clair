@@ -13,6 +13,7 @@ import {
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
 
 // ---------------------------------------------------------------------------
 // Design tokens
@@ -15110,22 +15111,60 @@ function TestGroup({ label, category, items, patientId, orders, onOrder }) {
 // browser textarea, so the blinking text cursor is native — no extra work.
 function AutoExpandingTextarea({ value, onChange, placeholder }) {
   const ref = React.useRef(null);
+  const [dxMenu, setDxMenu] = useState(null); // { x, y, matches } — only shown when the selection matches a known condition
+  const [openWorkflowId, setOpenWorkflowId] = useState(null);
   useEffect(() => {
     if (ref.current) {
       ref.current.style.height = "auto";
       ref.current.style.height = ref.current.scrollHeight + "px";
     }
   }, [value]);
+
+  useEffect(() => {
+    if (!dxMenu) return;
+    const close = () => setDxMenu(null);
+    window.addEventListener("mousedown", close);
+    window.addEventListener("scroll", close, true);
+    return () => { window.removeEventListener("mousedown", close); window.removeEventListener("scroll", close, true); };
+  }, [dxMenu]);
+
+  // Selecting a phrase and right-clicking is the library's intended lookup
+  // gesture (findWorkflowsForText's own doc comment: "Match a phrase
+  // selected in the HPI"). No selection, or a selection that matches
+  // nothing, falls through to the textarea's normal context menu.
+  const handleContextMenu = (e) => {
+    const el = ref.current;
+    if (!el) return;
+    const selected = el.value.substring(el.selectionStart, el.selectionEnd).trim();
+    if (!selected) return;
+    const matches = findWorkflowsForText(selected);
+    if (!matches.length) return;
+    e.preventDefault();
+    setDxMenu({ x: e.clientX, y: e.clientY, matches: matches.slice(0, 4) });
+  };
+
   return (
-    <textarea
-      ref={ref}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      rows={1}
-      className="w-full text-sm px-3 py-2 border border-[#D8DED9] rounded-sm resize-none overflow-hidden focus:outline-none focus:border-[#0F5C56]"
-      style={{ fontFamily: "'IBM Plex Sans', sans-serif", lineHeight: 1.5 }}
-    />
+    <>
+      <textarea
+        ref={ref}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        rows={1}
+        onContextMenu={handleContextMenu}
+        className="w-full text-sm px-3 py-2 border border-[#D8DED9] rounded-sm resize-none overflow-hidden focus:outline-none focus:border-[#0F5C56]"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif", lineHeight: 1.5 }}
+      />
+      {dxMenu && (
+        <DiagnosticLookupMenu
+          x={dxMenu.x}
+          y={dxMenu.y}
+          matches={dxMenu.matches}
+          onPick={(id) => { setOpenWorkflowId(id); setDxMenu(null); }}
+        />
+      )}
+      {openWorkflowId && <DiagnosticWorkflowModal workflowId={openWorkflowId} onClose={() => setOpenWorkflowId(null)} />}
+    </>
   );
 }
 
@@ -15983,6 +16022,8 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
   const freeNoteRef = useRef(null);
   const noteMenuRef = useRef(null);
   const [noteCtxMenu, setNoteCtxMenu] = useState(null); // { x, y } while the formatting menu is open
+  const [noteDxMatches, setNoteDxMatches] = useState([]); // workflow matches for whatever was selected when the menu opened
+  const [openWorkflowId, setOpenWorkflowId] = useState(null);
   const [showTemplates, setShowTemplates] = useState(false); // Insert → Templates flyout
   const [hpi, setHpi] = useState("");
   const [vitals, setVitals] = useState({ hr: "", bp: "", t: "", spo2: "", spo2On: "", pain: "" });
@@ -16033,6 +16074,8 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
     e.preventDefault();
     const menuWidth = 200, menuHeight = 230;
     setShowTemplates(false);
+    const selected = window.getSelection().toString().trim();
+    setNoteDxMatches(selected ? findWorkflowsForText(selected).slice(0, 4) : []);
     setNoteCtxMenu({
       x: Math.max(8, Math.min(e.clientX, window.innerWidth - menuWidth - 8)),
       y: Math.max(8, Math.min(e.clientY, window.innerHeight - menuHeight - 8)),
@@ -16228,7 +16271,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
           onContextMenu={handleNoteContextMenu}
         />
         <p className="text-[10px] text-[#8A958E] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          Select text and right-click for formatting (bold, italic, underline, strikethrough).
+          Select text and right-click for formatting (bold, italic, underline, strikethrough) — or, if it names a condition ClairMD recognises, to open its diagnostic workflow.
         </p>
 
         {noteCtxMenu && (
@@ -16238,6 +16281,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
             style={{ top: noteCtxMenu.y, left: noteCtxMenu.x, minWidth: 190, zIndex: 70 }}
           >
             {[
+              ...(noteDxMatches.length > 0 ? [{ layout: "dxworkflow", items: noteDxMatches }] : []),
               { layout: "list", items: [
                 { cmd: "undo", label: "Undo", icon: Undo2, shortcut: "Ctrl+Z" },
               ] },
@@ -16259,7 +16303,26 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
             ].map((group, gi) => (
               <React.Fragment key={gi}>
                 {gi > 0 && <div className="my-1 border-t border-[#D8DED9]" />}
-                {group.layout === "row" ? (
+                {group.layout === "dxworkflow" ? (
+                  <div>
+                    <div className="px-3 py-1 text-[10px] uppercase tracking-wide text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                      Diagnostic workflow
+                    </div>
+                    {group.items.map((w) => (
+                      <button
+                        key={w.id}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => { setOpenWorkflowId(w.id); setNoteCtxMenu(null); }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left text-[#3C4A42] hover:bg-[#F7F9F7]"
+                        style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+                      >
+                        <Stethoscope size={14} className="shrink-0" style={{ color: "#0F5C56" }} />
+                        <span className="truncate">{w.condition}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : group.layout === "row" ? (
                   <div className="flex items-center justify-center gap-1 px-2 py-1">
                     {group.items.map((opt) => (
                       <button
@@ -16334,6 +16397,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
           </div>
         )}
       </div>
+      {openWorkflowId && <DiagnosticWorkflowModal workflowId={openWorkflowId} onClose={() => setOpenWorkflowId(null)} />}
 
       {addedTools.length === 0 ? (
         <p className="text-sm text-[#8A958E] mb-6" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -21985,6 +22049,185 @@ function ResizeHandles({ chrome }) {
         <div key={edge} onMouseDown={chrome.startResize(edge)} style={{ position: "absolute", zIndex: 10, ...style }} />
       ))}
     </>
+  );
+}
+
+// Displays one workflow from clair-frontend/src/data/surgicalWorkflows.js —
+// opened when a doctor selects text matching a known condition (in the OPD
+// note, HPI, or other prescription-space text fields) and picks "Diagnostic
+// workflow" from the right-click menu. A branch whose `to` matches another
+// workflow's id navigates there (with a Back trail); a branch whose `to`
+// matches a node id within the same workflow just scrolls to it — this is
+// reference navigation only, never a computed decision (see the library's
+// own CDSCO Class A note at the top of that file).
+const DX_ACCENT = "#0F5C56";
+function DiagnosticWorkflowModal({ workflowId, onClose }) {
+  const [currentId, setCurrentId] = useState(workflowId);
+  const [history, setHistory] = useState([]);
+  const chrome = useWindowChrome();
+  const workflow = WORKFLOWS_BY_ID[currentId];
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, []);
+
+  const goToWorkflow = (id) => {
+    setHistory((h) => [...h, currentId]);
+    setCurrentId(id);
+  };
+  const goBack = () => {
+    setHistory((h) => {
+      if (!h.length) return h;
+      setCurrentId(h[h.length - 1]);
+      return h.slice(0, -1);
+    });
+  };
+  const handleBranchClick = (to) => {
+    if (WORKFLOWS_BY_ID[to]) { goToWorkflow(to); return; }
+    const el = document.getElementById(`dx-node-${currentId}-${to}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  if (!workflow) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-6" style={{ overflowY: "auto" }}>
+      <div
+        ref={chrome.windowRef}
+        className="bg-white rounded-md w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden border-2 shadow-xl"
+        style={{ borderColor: DX_ACCENT, maxHeight: "85vh", ...chrome.windowStyle }}
+      >
+        <ResizeHandles chrome={chrome} />
+        <div
+          className="flex items-center justify-between gap-3 px-5 py-4 shrink-0"
+          style={{ backgroundColor: `${DX_ACCENT}14`, borderBottom: `2px solid ${DX_ACCENT}`, cursor: chrome.headerCursor }}
+          onMouseDown={chrome.onHeaderMouseDown}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Stethoscope size={18} style={{ color: DX_ACCENT }} className="shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-lg truncate" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{workflow.condition}</h2>
+              <div className="text-[11px] text-[#8A958E] truncate" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{workflow.dasChapter}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <ChromeButton onClick={chrome.toggleMaximize} title={chrome.maximized ? "Restore" : "Maximize"}>
+              {chrome.maximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </ChromeButton>
+            <ChromeButton onClick={onClose} title="Close"><X size={16} /></ChromeButton>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5" style={{ WebkitOverflowScrolling: "touch" }}>
+          <div className="flex items-center gap-2 mb-4">
+            {history.length > 0 && (
+              <button
+                type="button"
+                onClick={goBack}
+                className="flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-sm border hover:bg-[#F7F9F7]"
+                style={{ color: DX_ACCENT, borderColor: DX_ACCENT, fontFamily: "'IBM Plex Sans', sans-serif" }}
+              >
+                <ChevronLeft size={14} /> Back
+              </button>
+            )}
+            <p className="text-[11px] text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              Reference material only — supports diagnostic reasoning, not a substitute for clinical judgement or a computed decision.
+            </p>
+          </div>
+
+          {workflow.redFlags && workflow.redFlags.length > 0 && (
+            <div className="mb-4 p-3 rounded-sm border" style={{ borderColor: "#EFC9C1", backgroundColor: "#FBEFEC" }}>
+              <div className="flex items-center gap-1.5 text-xs font-semibold mb-1.5" style={{ color: "#B34A3C", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <AlertTriangle size={14} /> Red flags
+              </div>
+              <ul className="space-y-1">
+                {workflow.redFlags.map((f, i) => (
+                  <li key={i} className="text-xs text-[#7A2F25] flex gap-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <span>•</span><span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="space-y-3 mb-5">
+            {(workflow.algorithm || []).map((node) => (
+              <div key={node.id} id={`dx-node-${currentId}-${node.id}`} className="border border-[#D8DED9] rounded-sm p-3">
+                <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-0.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{node.stage}</div>
+                <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{node.title}</div>
+                {node.detail && (
+                  <p className="text-xs text-[#5B6B63] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{node.detail}</p>
+                )}
+                {node.branches && node.branches.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {node.branches.map((b, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleBranchClick(b.to)}
+                        className="text-[11px] px-2 py-1 rounded-full border hover:bg-[#F2F7F5]"
+                        style={{ borderColor: DX_ACCENT, color: DX_ACCENT, fontFamily: "'IBM Plex Sans', sans-serif" }}
+                      >
+                        {b.label} →
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {workflow.citations && workflow.citations.length > 0 && (
+            <div className="pt-3 border-t border-[#D8DED9]">
+              <div className="text-[11px] uppercase tracking-wide text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Sources</div>
+              <ul className="space-y-1.5">
+                {workflow.citations.map((c, i) => (
+                  <li key={i} className="text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <a href={c.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline" style={{ color: DX_ACCENT }}>
+                      {c.title} <ExternalLink size={11} />
+                    </a>
+                    <span className="text-[#8A958E]"> — {c.publisher}{c.licence ? ` (${c.licence})` : ""}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Small right-click menu shared by every text field that supports
+// "select a phrase, right-click, open its diagnostic workflow" — appears
+// only when the current selection actually matches something in
+// surgicalWorkflows.js; otherwise the field's normal context menu (or, for
+// a plain textarea, the browser's own) is left alone.
+function DiagnosticLookupMenu({ x, y, matches, onPick }) {
+  return (
+    <div
+      className="fixed bg-white border border-[#D8DED9] rounded-sm shadow-xl py-1"
+      style={{ top: y, left: x, minWidth: 220, zIndex: 70 }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <div className="px-3 py-1 text-[10px] uppercase tracking-wide text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+        Diagnostic workflow
+      </div>
+      {matches.map((w) => (
+        <button
+          key={w.id}
+          type="button"
+          onClick={() => onPick(w.id)}
+          className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left text-[#3C4A42] hover:bg-[#F7F9F7]"
+          style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+        >
+          <Stethoscope size={14} className="shrink-0" style={{ color: DX_ACCENT }} />
+          <span className="truncate">{w.condition}</span>
+        </button>
+      ))}
+    </div>
   );
 }
 

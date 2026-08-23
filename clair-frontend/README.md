@@ -650,3 +650,43 @@ All in-app branding was updated from "Arogya" to "ClairMD" (not plain
 - `arogyaclinic.app` feedback links → `clairmd.net`
 - The exported component `ArogyaEHR` → `ClairMDEHR` (file renamed
   `ClairEHR.jsx` → `ClairMDEHR.jsx` to match)
+
+## Surgical diagnostic workflow library (2026-08-23)
+
+`src/data/surgicalWorkflows.js` is a 306-condition reference library (Das,
+*A Manual on Clinical Surgery*, 13th ed., Ch. 3–40), built across separate
+chat sessions and delivered as a finished ESM module. It's wired in
+read-only, exactly as designed — nothing here computes a score or makes a
+diagnosis; branches only navigate between reference pages.
+
+- `WORKFLOWS_BY_ID` and `findWorkflowsForText()` are imported directly into
+  `ClairMDEHR.jsx`. Confirmed before wiring: `validateWorkflows()` returns
+  `[]` (0 problems) against all 306 entries, and 306/234 (workflows/pending)
+  match the accompanying manifest exactly.
+- **Where it shows up**: select a phrase naming a known condition and
+  right-click, in (a) the OPD note's free-text editor (contentEditable —
+  extends its existing formatting menu with a new "Diagnostic workflow"
+  group) or (b) any `AutoExpandingTextarea` field, which covers History of
+  present illness and the other free-text fields built on that shared
+  component. A match opens `DiagnosticWorkflowModal`: red flags, the full
+  algorithm (named scoring systems like Alvarado/Tokyo/TNM shown as names
+  only, per the library's own CDSCO Class A rule — never computed), and
+  citations as links. Branches navigate cross-workflow (with a Back trail)
+  or scroll to another node in the same workflow, matching the library's
+  "reference navigation, not a decision tree" design.
+- **Live-tested end to end**: typed a phrase into the HPI field, selected
+  it, right-clicked, picked the matched condition, confirmed the full
+  workflow rendered (red flags/algorithm/citations), clicked a
+  cross-workflow branch (confirmed the header and content actually
+  changed), clicked Back (confirmed it returned to the prior workflow), and
+  separately confirmed an internal same-workflow branch scrolls to the
+  right node instead of navigating away. All via a real browser
+  (Playwright), not just a build check.
+- **Not yet done**: only `AutoExpandingTextarea`-based fields and the OPD
+  free-text note are covered — the ICU/Ward builder's per-topic HPI fields
+  that use plain `<input>`/inline textareas outside that shared component
+  (poisoning/environmental/disaster topics) aren't wired yet. The 234
+  `PENDING` conditions are index-only, same as the library ships them — no
+  workflow content exists for those yet. Bundle size grew by roughly 1MB
+  (the library is bundled directly, not lazily loaded) — worth revisiting
+  with code-splitting if load time becomes a concern.
