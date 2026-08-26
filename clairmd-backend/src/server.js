@@ -55,10 +55,27 @@ const logger = pinoHttp({
   },
 });
 
+// Matches this project's own Vercel deployment URLs — Vercel gives every
+// deployment its own hostname (a branch alias, a deployment-hash alias),
+// which changes on every deploy and can't be pinned down as one fixed
+// CORS_ORIGIN value without breaking again next deploy. Confirmed live
+// examples this pattern covers: clair-ph20d5r8w-clair-md.vercel.app,
+// clair-git-claude-readme-setup-i74cus-clair-md.vercel.app. Real custom
+// domains (e.g. clairmd.net) go in CORS_ORIGIN instead, once pointed.
+const VERCEL_PROJECT_ORIGIN = /^https:\/\/clair(-[a-z0-9]+)*-clair-md\.vercel\.app$/;
+
+function corsOriginCheck(origin, callback) {
+  if (!origin) return callback(null, true); // non-browser clients (curl, server-to-server)
+  if (config.corsOrigins.includes(origin) || VERCEL_PROJECT_ORIGIN.test(origin)) {
+    return callback(null, true);
+  }
+  callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+}
+
 app.use(logger);
 app.use(helmet());
 app.use(cors({
-  origin: config.nodeEnv === "production" ? config.corsOrigin : true,
+  origin: config.nodeEnv === "production" ? corsOriginCheck : true,
   credentials: true,
 }));
 // The `verify` callback stashes the raw bytes onto req.rawBody before
