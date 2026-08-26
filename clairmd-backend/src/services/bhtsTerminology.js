@@ -56,7 +56,7 @@
 
 const config = require("../config");
 
-const DEFAULT_BASE_URL = "https://www.nrces.in/bhtsapi/v1/csnoserv";
+const DEFAULT_BASE_URL = "https://www.nrces.in/bhts/api/v1/csnoserv";
 
 function baseUrl() {
   return (config.bhtsBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
