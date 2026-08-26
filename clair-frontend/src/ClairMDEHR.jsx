@@ -15304,6 +15304,12 @@ function SnomedCodeSearch({ initialTerm, onSelect, onClose }) {
   const [results, setResults] = useState([]);
   const [status, setStatus] = useState("idle"); // idle | loading | error | done
   const [errorMsg, setErrorMsg] = useState("");
+  // Guards against an earlier, slower request's response landing AFTER a
+  // later one and overwriting the correct result with a stale one — the
+  // debounce timer alone only stops a new timer queuing while one is
+  // already pending, it doesn't cancel an in-flight fetch. Bumped on every
+  // request; a response is only applied if it's still the latest.
+  const requestSeq = useRef(0);
 
   useEffect(() => {
     if (term.trim().length < 3) {
@@ -15313,9 +15319,10 @@ function SnomedCodeSearch({ initialTerm, onSelect, onClose }) {
     }
     setStatus("loading");
     const handle = setTimeout(() => {
+      const seq = ++requestSeq.current;
       snomedSearchApi(term.trim())
-        .then((r) => { setResults(r); setStatus("done"); })
-        .catch((err) => { setErrorMsg(err.message); setStatus("error"); });
+        .then((r) => { if (seq === requestSeq.current) { setResults(r); setStatus("done"); } })
+        .catch((err) => { if (seq === requestSeq.current) { setErrorMsg(err.message); setStatus("error"); } });
     }, 400);
     return () => clearTimeout(handle);
   }, [term]);
@@ -17139,6 +17146,9 @@ function LoincCodeSearch({ initialTerm, onSelect, onClose }) {
   const [results, setResults] = useState([]);
   const [status, setStatus] = useState("idle"); // idle | loading | error | done
   const [errorMsg, setErrorMsg] = useState("");
+  // See SnomedCodeSearch's identical guard above — stops a slower, older
+  // request's response from landing after a newer one and overwriting it.
+  const requestSeq = useRef(0);
 
   useEffect(() => {
     if (text.trim().length < 3) {
@@ -17148,9 +17158,10 @@ function LoincCodeSearch({ initialTerm, onSelect, onClose }) {
     }
     setStatus("loading");
     const handle = setTimeout(() => {
+      const seq = ++requestSeq.current;
       loincSearchApi(text.trim())
-        .then((r) => { setResults(r); setStatus("done"); })
-        .catch((err) => { setErrorMsg(err.message); setStatus("error"); });
+        .then((r) => { if (seq === requestSeq.current) { setResults(r); setStatus("done"); } })
+        .catch((err) => { if (seq === requestSeq.current) { setErrorMsg(err.message); setStatus("error"); } });
     }, 400);
     return () => clearTimeout(handle);
   }, [text]);
