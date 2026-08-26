@@ -73,6 +73,10 @@ function loadConfig() {
     // services/bhtsTerminology.js's header comment) — only set this to
     // override, e.g. pointing at a self-hosted instance instead.
     bhtsBaseUrl: process.env.BHTS_BASE_URL || null,
+    // Same idea, for LOINCServ (BHTS's LOINC service) — a separate
+    // deployment from CSNOServ above, confirmed 26 August 2026 from its
+    // own published Swagger/OpenAPI docs.
+    loincBaseUrl: process.env.LOINC_BASE_URL || null,
   };
 }
 

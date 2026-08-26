@@ -15522,7 +15522,7 @@ function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examSpace
     if (workupSpace.length === 0) {
       lines.push("(none added)");
     } else {
-      workupSpace.forEach((w) => lines.push(`  - ${w.test}`));
+      workupSpace.forEach((w) => lines.push(`  - ${w.test}${w.loinc ? ` [LOINC ${w.loinc.code}: ${w.loinc.term}]` : ""}`));
       if (workupNotes) lines.push(`  Notes: ${workupNotes}`);
     }
     lines.push("");
@@ -15641,7 +15641,7 @@ function buildIcuWardSlipText({ details, vitals, hpi, examSpace, ddxSpace, ddxSp
   if (workupSpace.length === 0) {
     lines.push("(none added)");
   } else {
-    workupSpace.forEach((w) => lines.push(`  - ${w.test}`));
+    workupSpace.forEach((w) => lines.push(`  - ${w.test}${w.loinc ? ` [LOINC ${w.loinc.code}: ${w.loinc.term}]` : ""}`));
     if (workupNotes) lines.push(`  Notes: ${workupNotes}`);
   }
   lines.push("");
@@ -17113,6 +17113,92 @@ function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis,
 // monitoring test" mappings — building that link would mean inventing an
 // unsourced test-to-drug association this app hasn't verified anywhere
 // else. Flagged here rather than fabricated.
+// LOINCServ's response schema is confirmed (from its own published
+// Swagger docs), unlike CSNOServ's — no defensive field-name guessing
+// needed here. DisplayName is preferred; LONG_COMMON_NAME is the
+// documented fallback when DisplayName isn't set for a given entry.
+function normalizeLoincResults(raw) {
+  const list = Array.isArray(raw) ? raw : [];
+  return list
+    .map((item) => ({
+      code: item.LOINC_NUMBER || null,
+      term: item.DisplayName || item.LONG_COMMON_NAME || item.ShortName || null,
+    }))
+    .filter((c) => c.code && c.term);
+}
+
+async function loincSearchApi(text) {
+  const raw = await apiRequest(`/terminology/loinc/search?text=${encodeURIComponent(text)}`);
+  return normalizeLoincResults(raw);
+}
+
+// Debounced LOINC search popover — same pattern as SnomedCodeSearch
+// above, for attaching a real lab-test code to a workup entry.
+function LoincCodeSearch({ initialTerm, onSelect, onClose }) {
+  const [text, setText] = useState(initialTerm || "");
+  const [results, setResults] = useState([]);
+  const [status, setStatus] = useState("idle"); // idle | loading | error | done
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (text.trim().length < 3) {
+      setResults([]);
+      setStatus("idle");
+      return;
+    }
+    setStatus("loading");
+    const handle = setTimeout(() => {
+      loincSearchApi(text.trim())
+        .then((r) => { setResults(r); setStatus("done"); })
+        .catch((err) => { setErrorMsg(err.message); setStatus("error"); });
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [text]);
+
+  return (
+    <div className="absolute z-20 mt-1 w-80 bg-white border border-[#D8DED9] rounded-md shadow-lg p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-[#5B6B63] uppercase tracking-wide">Find LOINC code</span>
+        <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={14} /></button>
+      </div>
+      <div className="relative">
+        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8A958E]" />
+        <input
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Type at least 3 characters…"
+          className="w-full pl-7 pr-2 py-1.5 text-sm border border-[#D8DED9] rounded-sm"
+        />
+      </div>
+      <div className="mt-2 max-h-52 overflow-y-auto">
+        {status === "loading" && (
+          <div className="flex items-center gap-2 text-xs text-[#8A958E] py-3 justify-center">
+            <Loader2 size={13} className="animate-spin" /> Searching BHTS…
+          </div>
+        )}
+        {status === "error" && (
+          <p className="text-xs text-[#B34A3C] py-2">{errorMsg}</p>
+        )}
+        {status === "done" && results.length === 0 && (
+          <p className="text-xs text-[#8A958E] py-2">No matches found.</p>
+        )}
+        {status === "done" && results.map((r) => (
+          <button
+            key={r.code}
+            type="button"
+            onClick={() => onSelect(r)}
+            className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-[#F2F7F5] flex items-center justify-between gap-2"
+          >
+            <span className="truncate">{r.term}</span>
+            <span className="text-[10px] text-[#8A958E] shrink-0">{r.code}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, setWorkupSpace: externalSetWorkupSpace, workupNotes: externalWorkupNotes, setWorkupNotes: externalSetWorkupNotes }) {
   const [collapsibleOpen, setCollapsibleOpen] = useState(false);
   const [testQuery, setTestQuery] = useState("");
@@ -17125,9 +17211,11 @@ function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, set
 
   const pushTest = (test) => {
     if (workupSpace.some((w) => w.test === test)) return;
-    setWorkupSpace((prev) => [...prev, { test }]);
+    setWorkupSpace((prev) => [...prev, { test, loinc: null }]);
   };
   const removeTest = (test) => setWorkupSpace((prev) => prev.filter((w) => w.test !== test));
+  const setLoincForTest = (test, loinc) => setWorkupSpace((prev) => prev.map((w) => (w.test === test ? { ...w, loinc } : w)));
+  const [loincSearchOpenFor, setLoincSearchOpenFor] = useState(null); // test name, or null
 
   const ddxLabels = ddxSpace.map((d) => d.condition.toLowerCase());
   const patientDiagnosisKeys = new Set(patient.encounters.map((e) => e.diagnosisKey).filter(Boolean));
@@ -17221,16 +17309,43 @@ function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, set
               <>
                 <div className="space-y-2 mb-3">
                   {workupSpace.map((w) => (
-                    <div key={w.test} className="bg-white border border-[#D8DED9] rounded-md px-3 py-2 flex items-center justify-between">
-                      <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{w.test}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeTest(w.test)}
-                        title="Delete"
-                        className="w-6 h-6 flex items-center justify-center rounded-sm text-[#B34A3C] hover:bg-[#FBEFEC] shrink-0"
-                      >
-                        <X size={14} />
-                      </button>
+                    <div key={w.test} className="bg-white border border-[#D8DED9] rounded-md px-3 py-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{w.test}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeTest(w.test)}
+                          title="Delete"
+                          className="w-6 h-6 flex items-center justify-center rounded-sm text-[#B34A3C] hover:bg-[#FBEFEC] shrink-0"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="relative mt-1">
+                        {w.loinc ? (
+                          <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm bg-[#F2F7F5] border border-[#D8C5E8] text-xs">
+                            <Tag size={11} className="text-[#6B4C93]" />
+                            <span className="font-medium">{w.loinc.term}</span>
+                            <span className="text-[#8A958E]">· LOINC {w.loinc.code}</span>
+                            <button type="button" onClick={() => setLoincForTest(w.test, null)} className="text-[#8A958E] hover:text-[#B34A3C] ml-1"><X size={11} /></button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setLoincSearchOpenFor(w.test)}
+                            className="inline-flex items-center gap-1 text-xs text-[#6B4C93] hover:underline"
+                          >
+                            <Search size={11} /> Find LOINC code
+                          </button>
+                        )}
+                        {loincSearchOpenFor === w.test && (
+                          <LoincCodeSearch
+                            initialTerm={w.test}
+                            onClose={() => setLoincSearchOpenFor(null)}
+                            onSelect={(result) => { setLoincForTest(w.test, result); setLoincSearchOpenFor(null); }}
+                          />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
