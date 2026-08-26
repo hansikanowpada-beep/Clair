@@ -77,6 +77,17 @@ function loadConfig() {
     // deployment from CSNOServ above, confirmed 26 August 2026 from its
     // own published Swagger/OpenAPI docs.
     loincBaseUrl: process.env.LOINC_BASE_URL || null,
+    // WHO ICD-API (separate from BHTS entirely) — used for ICD-11 lookup.
+    // BHTS's own SNOMED CT service has no ICD-10 map exposed yet (checked
+    // live, 26 August 2026: CSNOFinder's reference-set list has no ICD-10
+    // entry), and WHO's API itself has no free-text search for ICD-10,
+    // only ICD-11 — see services/whoIcd.js's header comment. OAuth2
+    // client-credentials: register at https://icd.who.int/icdapi to get
+    // these.
+    whoIcd: {
+      clientId: process.env.WHO_ICD_CLIENT_ID || null,
+      clientSecret: process.env.WHO_ICD_CLIENT_SECRET || null,
+    },
   };
 }
 
