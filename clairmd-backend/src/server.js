@@ -40,6 +40,7 @@ const inventoryRoutes = require("./routes/inventory");
 const feedPostsRoutes = require("./routes/feedPosts");
 const feedPostRequestsRoutes = require("./routes/feedPostRequests");
 const adminRoutes = require("./routes/admin");
+const terminologyRoutes = require("./routes/terminology");
 
 const app = express();
 
@@ -111,6 +112,7 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/feed-posts", feedPostsRoutes);
 app.use("/api/feed-post-requests", feedPostRequestsRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/terminology", terminologyRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not found." });

@@ -10,7 +10,7 @@ import {
   ChevronUp, Flame, Wind, Droplets, Radio, Activity,
   Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
-  CreditCard, ShieldOff, LogIn, Maximize2, Minimize2,
+  CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
@@ -15271,18 +15271,115 @@ const ALL_TESTS_INDEX = (() => {
 const SURGICAL_PROFILE_NAMES = ["Surgical Profile 1", "Surgical Profile 2", "Surgical Profile 3"];
 const ALL_TEST_NAMES = [...Object.keys(ALL_TESTS_INDEX), ...SURGICAL_PROFILE_NAMES].sort((a, b) => a.localeCompare(b));
 
+// BHTS's real search response shape hasn't been observed yet — this
+// sandbox can't reach nrces.in to see a live 200 response (confirmed
+// 26 August 2026), only the request shape, captured from a doctor's own
+// browser. So this reads several plausible field-name variants rather
+// than assuming one fixed schema, and simply skips anything it can't
+// make sense of instead of guessing. Tighten this to the real shape
+// once a live response has actually been seen (e.g. after this ships
+// to Render, which — unlike this sandbox — can reach BHTS).
+function normalizeSnomedResults(raw) {
+  const list = Array.isArray(raw) ? raw : raw?.items || raw?.results || raw?.concepts || raw?.data || [];
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((item) => ({
+      conceptId: item.conceptId || item.id || item.sctid || item.code || null,
+      term: item.term || item.preferredTerm || item.pt?.term || item.fsn?.term || item.name || null,
+    }))
+    .filter((c) => c.conceptId && c.term);
+}
+
+async function snomedSearchApi(term) {
+  const raw = await apiRequest(`/terminology/snomed/search?term=${encodeURIComponent(term)}`);
+  return normalizeSnomedResults(raw);
+}
+
+// Debounced SNOMED CT search popover — opened from a diagnosis entry,
+// pre-filled with whatever the doctor already typed as free text. Picking
+// a result attaches a real coded reference (BHTS/CSNOServ); this is
+// optional and never blocks entering a plain-text diagnosis without one.
+function SnomedCodeSearch({ initialTerm, onSelect, onClose }) {
+  const [term, setTerm] = useState(initialTerm || "");
+  const [results, setResults] = useState([]);
+  const [status, setStatus] = useState("idle"); // idle | loading | error | done
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (term.trim().length < 3) {
+      setResults([]);
+      setStatus("idle");
+      return;
+    }
+    setStatus("loading");
+    const handle = setTimeout(() => {
+      snomedSearchApi(term.trim())
+        .then((r) => { setResults(r); setStatus("done"); })
+        .catch((err) => { setErrorMsg(err.message); setStatus("error"); });
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [term]);
+
+  return (
+    <div className="absolute z-20 mt-1 w-80 bg-white border border-[#D8DED9] rounded-md shadow-lg p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-[#5B6B63] uppercase tracking-wide">Find SNOMED CT code</span>
+        <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={14} /></button>
+      </div>
+      <div className="relative">
+        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8A958E]" />
+        <input
+          autoFocus
+          value={term}
+          onChange={(e) => setTerm(e.target.value)}
+          placeholder="Type at least 3 characters…"
+          className="w-full pl-7 pr-2 py-1.5 text-sm border border-[#D8DED9] rounded-sm"
+        />
+      </div>
+      <div className="mt-2 max-h-52 overflow-y-auto">
+        {status === "loading" && (
+          <div className="flex items-center gap-2 text-xs text-[#8A958E] py-3 justify-center">
+            <Loader2 size={13} className="animate-spin" /> Searching BHTS…
+          </div>
+        )}
+        {status === "error" && (
+          <p className="text-xs text-[#B34A3C] py-2">{errorMsg}</p>
+        )}
+        {status === "done" && results.length === 0 && (
+          <p className="text-xs text-[#8A958E] py-2">No matches found.</p>
+        )}
+        {status === "done" && results.map((r) => (
+          <button
+            key={r.conceptId}
+            type="button"
+            onClick={() => onSelect(r)}
+            className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-[#F2F7F5] flex items-center justify-between gap-2"
+          >
+            <span className="truncate">{r.term}</span>
+            <span className="text-[10px] text-[#8A958E] shrink-0">{r.conceptId}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Page 4 — numbered, paired Provisional diagnosis / Treatment plan entries,
-// positioned toward the right side of the page. Not patient-specific state
-// (no backend wiring yet, same as everything else in this prototype), so
-// no patient prop needed.
+// positioned toward the right side of the page. Diagnosis text itself is
+// still local-only, same as the rest of this prototype — the one real
+// backend call here is the optional SNOMED CT code search/attach, via
+// BHTS/CSNOServ (see SnomedCodeSearch above).
 function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries: externalSetEntries } = {}) {
-  const [internalEntries, setInternalEntries] = useState([{ diagnosis: "", treatment: "" }]);
+  const [internalEntries, setInternalEntries] = useState([{ diagnosis: "", treatment: "", snomed: null }]);
   const entries = externalEntries !== undefined ? externalEntries : internalEntries;
   const setEntries = externalSetEntries !== undefined ? externalSetEntries : setInternalEntries;
 
+  const [snomedSearchOpenFor, setSnomedSearchOpenFor] = useState(null); // entry index, or null
+
   const updateDiagnosis = (i, value) => setEntries((prev) => prev.map((e, idx) => (idx === i ? { ...e, diagnosis: value } : e)));
   const updateTreatment = (i, value) => setEntries((prev) => prev.map((e, idx) => (idx === i ? { ...e, treatment: value } : e)));
-  const addEntry = () => setEntries((prev) => [...prev, { diagnosis: "", treatment: "" }]);
+  const setSnomed = (i, snomed) => setEntries((prev) => prev.map((e, idx) => (idx === i ? { ...e, snomed } : e)));
+  const addEntry = () => setEntries((prev) => [...prev, { diagnosis: "", treatment: "", snomed: null }]);
   const removeEntry = (i) => setEntries((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
 
   return (
@@ -15302,7 +15399,7 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
                 </button>
               </div>
             )}
-            <div className="flex items-start gap-3 mb-3">
+            <div className="flex items-start gap-3 mb-2">
               <span className="text-xs uppercase tracking-wide text-[#8A958E] shrink-0 pt-2" style={{ width: "140px" }}>{i + 1}. Provisional diagnosis</span>
               <div className="flex-1 min-w-0">
                 <AutoExpandingTextarea
@@ -15310,6 +15407,34 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
                   onChange={(e) => updateDiagnosis(i, e.target.value)}
                   placeholder={i === 0 ? "e.g. Diabetes mellitus" : "e.g. Hypertension"}
                 />
+              </div>
+            </div>
+            <div className="flex items-start gap-3 mb-3">
+              <span className="shrink-0" style={{ width: "140px" }} />
+              <div className="flex-1 min-w-0 relative">
+                {entry.snomed ? (
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm bg-[#F2F7F5] border border-[#D8C5E8] text-xs">
+                    <Tag size={11} className="text-[#6B4C93]" />
+                    <span className="font-medium">{entry.snomed.term}</span>
+                    <span className="text-[#8A958E]">· SNOMED CT {entry.snomed.conceptId}</span>
+                    <button type="button" onClick={() => setSnomed(i, null)} className="text-[#8A958E] hover:text-[#B34A3C] ml-1"><X size={11} /></button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSnomedSearchOpenFor(i)}
+                    className="inline-flex items-center gap-1 text-xs text-[#6B4C93] hover:underline"
+                  >
+                    <Search size={11} /> Find SNOMED CT code
+                  </button>
+                )}
+                {snomedSearchOpenFor === i && (
+                  <SnomedCodeSearch
+                    initialTerm={entry.diagnosis}
+                    onClose={() => setSnomedSearchOpenFor(null)}
+                    onSelect={(result) => { setSnomed(i, result); setSnomedSearchOpenFor(null); }}
+                  />
+                )}
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -15405,7 +15530,7 @@ function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examSpace
   if (addedTools.includes("diagnosisplan")) {
     lines.push("PROVISIONAL DIAGNOSIS & TREATMENT PLAN");
     diagnosisPlanEntries.forEach((e, i) => {
-      lines.push(`  ${i + 1}. Diagnosis: ${e.diagnosis || "(blank)"}`);
+      lines.push(`  ${i + 1}. Diagnosis: ${e.diagnosis || "(blank)"}${e.snomed ? ` [SNOMED CT ${e.snomed.conceptId}: ${e.snomed.term}]` : ""}`);
       lines.push(`     Treatment: ${e.treatment || "(blank)"}`);
     });
     lines.push("");
@@ -15523,7 +15648,7 @@ function buildIcuWardSlipText({ details, vitals, hpi, examSpace, ddxSpace, ddxSp
 
   lines.push("PROVISIONAL DIAGNOSIS & TREATMENT PLAN");
   diagnosisPlanEntries.forEach((e, i) => {
-    lines.push(`  ${i + 1}. Diagnosis: ${e.diagnosis || "(blank)"}`);
+    lines.push(`  ${i + 1}. Diagnosis: ${e.diagnosis || "(blank)"}${e.snomed ? ` [SNOMED CT ${e.snomed.conceptId}: ${e.snomed.term}]` : ""}`);
     lines.push(`     Treatment: ${e.treatment || "(blank)"}`);
   });
   lines.push("");
@@ -16021,7 +16146,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
   const [ddxSpaceNotes, setDdxSpaceNotes] = useState("");
   const [workupSpace, setWorkupSpace] = useState([]);
   const [workupNotes, setWorkupNotes] = useState("");
-  const [diagnosisPlanEntries, setDiagnosisPlanEntries] = useState([{ diagnosis: "", treatment: "" }]);
+  const [diagnosisPlanEntries, setDiagnosisPlanEntries] = useState([{ diagnosis: "", treatment: "", snomed: null }]);
   const [triageHistory, setTriageHistory] = useState([]);
   const [programmeTag, setProgrammeTag] = useState("");
   const [disposal, setDisposal] = useState({ option: "", facility: "" });
@@ -24105,7 +24230,7 @@ export default function ClairMDEHR() {
   const [draftDdxSpaceNotes, setDraftDdxSpaceNotes] = useState("");
   const [draftWorkupSpace, setDraftWorkupSpace] = useState([]);
   const [draftWorkupNotes, setDraftWorkupNotes] = useState("");
-  const [draftDiagnosisPlanEntries, setDraftDiagnosisPlanEntries] = useState([{ diagnosis: "", treatment: "" }]);
+  const [draftDiagnosisPlanEntries, setDraftDiagnosisPlanEntries] = useState([{ diagnosis: "", treatment: "", snomed: null }]);
   const [savedIcuWardRecords, setSavedIcuWardRecords] = useState([]); // [{ id, patientDetails, savedAt, text }]
   const [draftSaveMessage, setDraftSaveMessage] = useState(null);
   const [pageCaution, setPageCaution] = useState(null); // null | { message, fieldId }
