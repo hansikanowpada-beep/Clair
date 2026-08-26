@@ -1,6 +1,7 @@
-// Proxies BHTS's CSNOServ (SNOMED CT) service to authenticated doctor
-// accounts. See services/bhtsTerminology.js for what's confirmed about
-// the underlying API and how. This route exists mainly so:
+// Proxies BHTS's CSNOServ (SNOMED CT) and LOINCServ (LOINC lab codes)
+// services to authenticated doctor accounts. See
+// services/bhtsTerminology.js for what's confirmed about each underlying
+// API and how. This route exists mainly so:
 // (a) the frontend never needs BHTS's raw address baked into it — one
 //     place to change if the hostname ever moves, and
 // (b) our own rate limit sits in front of BHTS's public one, so one
@@ -10,7 +11,7 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const { requireAuth } = require("../middleware/auth");
-const { snomedSearch, snomedLookupConcept } = require("../services/bhtsTerminology");
+const { snomedSearch, snomedLookupConcept, loincSearch } = require("../services/bhtsTerminology");
 
 const router = express.Router();
 
@@ -43,6 +44,19 @@ router.get("/snomed/concept/:id", requireAuth, searchLimiter, async (req, res) =
     res.json(result);
   } catch (err) {
     res.status(502).json({ error: `Couldn't reach BHTS's SNOMED CT service: ${err.message}` });
+  }
+});
+
+router.get("/loinc/search", requireAuth, searchLimiter, async (req, res) => {
+  const text = (req.query.text || "").trim();
+  if (text.length < 3) {
+    return res.status(400).json({ error: "text must be at least 3 characters." });
+  }
+  try {
+    const result = await loincSearch(text);
+    res.json(result);
+  } catch (err) {
+    res.status(502).json({ error: `Couldn't reach BHTS's LOINC service: ${err.message}` });
   }
 });
 

@@ -47,19 +47,49 @@
 //   their paths — capture a real request the same way (DevTools Network
 //   tab while using CSNOFinder or Aarogyawali) and add them here once
 //   observed.
-// - LOINCServ (LOINC): no endpoint confirmed at all yet. Same process —
-//   use LOINCServ's own tool if BHTS exposes one, capture a real request.
+// - LOINCServ (LOINC): CONFIRMED LIVE, 26 August 2026, from LOINCServ's own
+//   published Swagger/OpenAPI docs (nrces.in/bhts/api/v1/loincserv/
+//   swagger-ui/) — a real spec, not reverse-engineered like CSNOServ above.
+//     * search: GET {loincBase}/v2/search
+//         ?status=ACTIVE&panelType=ALL&component=ALL&property=ALL
+//         &scale=ALL&timing=ALL&method=ALL&exampleUnits=ALL
+//         &sortByRank=false&enableClci=false
+//   Confirmed there is NO free-text search parameter on this endpoint —
+//   "status" is the first parameter, full stop. LOINC's own model
+//   searches across structured axes (component/property/system/scale/
+//   method/timing) rather than one text box. `loincSearch()` below maps
+//   a doctor's typed text onto `component` ("substance or entity being
+//   measured" — the closest axis to a plain lab-test name, e.g.
+//   "hemoglobin," "glucose") and leaves every other axis at its default
+//   ("ALL"), which is an interpretation of how to use this endpoint for
+//   a single search box, not something the spec states outright.
+//   Response is an array of objects with LOINC_NUMBER, COMPONENT,
+//   PROPERTY, SYSTEM, LONG_COMMON_NAME, ShortName, DisplayName, STATUS,
+//   CLASS, and more — see the Swagger docs for the full schema.
+//   Also documented, not yet wired here: reference-list endpoints at
+//   GET /v2/{classes,components,methods,properties,scales,systems,
+//   timings} (each takes an optional `text` filter, default "ALL") and
+//   GET /v2/version (no params). Add functions for these if/when
+//   actually needed.
+//   Unlike CSNOServ, this is a real published API surface — no Referer/
+//   X-Requested-With trick applied here unless it turns out to also be
+//   needed (unverified from this sandbox; nrces.in unreachable here).
 //
-// Default base URL below is the one confirmed live above. Override with
-// BHTS_BASE_URL in .env only if pointing at a different deployment (e.g.
-// a self-hosted CSNOServ instance for scale).
+// Default base URLs below are the ones confirmed live above. Override
+// with BHTS_BASE_URL / LOINC_BASE_URL in .env only if pointing at a
+// different deployment (e.g. a self-hosted instance for scale).
 
 const config = require("../config");
 
 const DEFAULT_BASE_URL = "https://www.nrces.in/bhts/api/v1/csnoserv";
+const DEFAULT_LOINC_BASE_URL = "https://www.nrces.in/bhts/api/v1/loincserv";
 
 function baseUrl() {
   return (config.bhtsBaseUrl || DEFAULT_BASE_URL).replace(/\/+$/, "");
+}
+
+function loincBaseUrl() {
+  return (config.loincBaseUrl || DEFAULT_LOINC_BASE_URL).replace(/\/+$/, "");
 }
 
 // Defensive unwrap for a JSONP-style body (`someCallback({...})`) in case
@@ -112,4 +142,37 @@ async function snomedLookupConcept(conceptId, opts = {}) {
   });
 }
 
-module.exports = { snomedSearch, snomedLookupConcept, parseMaybeJsonp };
+async function loincGet(path, params) {
+  const url = `${loincBaseUrl()}${path}?${new URLSearchParams(params).toString()}`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  // LOINCServ's own docs define 404 here as "no match found for the
+  // provided filters" — a real, documented empty-results response, not
+  // a failure. Treating it as an error (like SNOMED's 404, which really
+  // does mean something's wrong) would make an ordinary no-hits search
+  // look like an outage.
+  if (res.status === 404) return [];
+  if (!res.ok) {
+    throw new Error(`LOINCServ request failed: ${res.status} ${res.statusText} (${url})`);
+  }
+  return res.json();
+}
+
+// LOINC search for a lab test / observation name — maps `text` onto the
+// `component` axis (see the module header comment for why). Every other
+// axis stays at "ALL" (LOINCServ's own default), i.e. unfiltered.
+async function loincSearch(text, opts = {}) {
+  return loincGet("/v2/search", {
+    status: opts.status || "ACTIVE",
+    panelType: opts.panelType || "ALL",
+    component: text || "ALL",
+    property: opts.property || "ALL",
+    scale: opts.scale || "ALL",
+    timing: opts.timing || "ALL",
+    method: opts.method || "ALL",
+    exampleUnits: opts.exampleUnits || "ALL",
+    sortByRank: String(opts.sortByRank ?? false),
+    enableClci: String(opts.enableClci ?? false),
+  });
+}
+
+module.exports = { snomedSearch, snomedLookupConcept, loincSearch, parseMaybeJsonp };
