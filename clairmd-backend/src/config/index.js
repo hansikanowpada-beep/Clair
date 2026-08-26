@@ -56,10 +56,11 @@ function loadConfig() {
       windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "900000", 10),
       max: parseInt(process.env.RATE_LIMIT_MAX || "100", 10),
     },
-    // Base URL of a CSNOServ/LOINCServ deployment (BHTS — India's public
-    // SNOMED CT/LOINC/ICD-10 terminology service, or a self-hosted
-    // instance of the same NRCeS toolkit). No public hostname confirmed
-    // yet — see services/bhtsTerminology.js's header comment.
+    // Base URL of the CSNOServ deployment behind BHTS (India's public
+    // SNOMED CT terminology service). Defaults to the real public
+    // hostname confirmed live 26 August 2026 (see
+    // services/bhtsTerminology.js's header comment) — only set this to
+    // override, e.g. pointing at a self-hosted instance instead.
     bhtsBaseUrl: process.env.BHTS_BASE_URL || null,
   };
 }
