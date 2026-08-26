@@ -26,7 +26,18 @@ function loadConfig() {
     jwtSecret: process.env.JWT_SECRET,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
     secretsEncryptionKey: process.env.SECRETS_ENCRYPTION_KEY,
-    corsOrigin: process.env.CORS_ORIGIN || null,
+    // Comma-separated list, e.g. "https://clairmd.net,https://app.clairmd.net"
+    // — kept as a list (not one string) because Vercel gives every
+    // deployment its own hostname (branch alias, deployment-hash alias,
+    // the stable production alias), and a real custom domain will be
+    // added on top of those later. See server.js's corsOriginCheck for
+    // how this combines with automatic matching of this project's own
+    // *.vercel.app deployment URLs, which change on every deploy and
+    // can't be listed here one at a time.
+    corsOrigins: (process.env.CORS_ORIGIN || "")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean),
     licenseVerificationProvider: process.env.LICENSE_VERIFICATION_PROVIDER || "unconfigured",
     razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || null,
     // Separate from the webhook secret above — these authenticate OUTBOUND
