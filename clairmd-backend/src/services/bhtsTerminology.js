@@ -152,7 +152,13 @@ async function loincGet(path, params) {
   // look like an outage.
   if (res.status === 404) return [];
   if (!res.ok) {
-    throw new Error(`LOINCServ request failed: ${res.status} ${res.statusText} (${url})`);
+    // Surface LOINCServ's own response body (when it has one) rather than
+    // just the status — a 400 in particular usually names which parameter
+    // it rejected, and that's otherwise only visible by re-capturing the
+    // request in DevTools by hand.
+    const body = await res.text().catch(() => "");
+    const detail = body ? `: ${body.slice(0, 300)}` : "";
+    throw new Error(`LOINCServ request failed: ${res.status} ${res.statusText}${detail} (${url})`);
   }
   return res.json();
 }
