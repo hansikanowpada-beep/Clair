@@ -15371,22 +15371,156 @@ function SnomedCodeSearch({ initialTerm, onSelect, onClose }) {
   );
 }
 
+// ICD-10 — searched against ClairMD's own local copy of WHO's data (see
+// clairmd-backend's db/harvestIcd10.js), not a live WHO call: WHO's API
+// has no free-text search for ICD-10, only structured browse-by-code, so
+// there's a separate lookup-by-number path alongside the name search
+// rather than one combined box like SNOMED/LOINC above.
+async function icd10SearchByNameApi(text) {
+  const raw = await apiRequest(`/terminology/icd10/search?text=${encodeURIComponent(text)}`);
+  return Array.isArray(raw) ? raw : [];
+}
+
+async function icd10LookupByCodeApi(code) {
+  return apiRequest(`/terminology/icd10/code/${encodeURIComponent(code)}`);
+}
+
+// Debounced ICD-10 search popover — two independent ways in, matching how
+// a doctor might actually have the information: either they know roughly
+// what to call the condition (name search, same debounced-list pattern as
+// SnomedCodeSearch above) or they already have the code itself from
+// elsewhere and just want it confirmed and attached (direct lookup).
+function Icd10CodeSearch({ initialTerm, onSelect, onClose }) {
+  const [nameTerm, setNameTerm] = useState(initialTerm || "");
+  const [nameResults, setNameResults] = useState([]);
+  const [nameStatus, setNameStatus] = useState("idle"); // idle | loading | error | done
+  const [nameError, setNameError] = useState("");
+  const nameRequestSeq = useRef(0);
+
+  useEffect(() => {
+    if (nameTerm.trim().length < 3) {
+      setNameResults([]);
+      setNameStatus("idle");
+      return;
+    }
+    setNameStatus("loading");
+    const handle = setTimeout(() => {
+      const seq = ++nameRequestSeq.current;
+      icd10SearchByNameApi(nameTerm.trim())
+        .then((r) => { if (seq === nameRequestSeq.current) { setNameResults(r); setNameStatus("done"); } })
+        .catch((err) => { if (seq === nameRequestSeq.current) { setNameError(err.message); setNameStatus("error"); } });
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [nameTerm]);
+
+  const [codeTerm, setCodeTerm] = useState("");
+  const [codeStatus, setCodeStatus] = useState("idle"); // idle | loading | error | done
+  const [codeError, setCodeError] = useState("");
+  const [codeResult, setCodeResult] = useState(null);
+
+  const lookupCode = (e) => {
+    e.preventDefault();
+    const code = codeTerm.trim();
+    if (!code) return;
+    setCodeStatus("loading");
+    icd10LookupByCodeApi(code)
+      .then((r) => { setCodeResult(r); setCodeStatus("done"); })
+      .catch((err) => { setCodeError(err.message); setCodeStatus("error"); setCodeResult(null); });
+  };
+
+  return (
+    <div className="absolute z-20 mt-1 w-80 bg-white border border-[#D8DED9] rounded-md shadow-lg p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-[#5B6B63] uppercase tracking-wide">Find ICD-10 code</span>
+        <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={14} /></button>
+      </div>
+
+      <div className="relative">
+        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8A958E]" />
+        <input
+          autoFocus
+          value={nameTerm}
+          onChange={(e) => setNameTerm(e.target.value)}
+          placeholder="Search by name — at least 3 characters…"
+          className="w-full pl-7 pr-2 py-1.5 text-sm border border-[#D8DED9] rounded-sm"
+        />
+      </div>
+      <div className="mt-2 max-h-40 overflow-y-auto">
+        {nameStatus === "loading" && (
+          <div className="flex items-center gap-2 text-xs text-[#8A958E] py-3 justify-center">
+            <Loader2 size={13} className="animate-spin" /> Searching…
+          </div>
+        )}
+        {nameStatus === "error" && (
+          <p className="text-xs text-[#B34A3C] py-2">{nameError}</p>
+        )}
+        {nameStatus === "done" && nameResults.length === 0 && (
+          <p className="text-xs text-[#8A958E] py-2">No matches found.</p>
+        )}
+        {nameStatus === "done" && nameResults.map((r) => (
+          <button
+            key={r.code}
+            type="button"
+            onClick={() => onSelect(r)}
+            className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-[#F2F7F5] flex items-center justify-between gap-2"
+          >
+            <span className="truncate">{r.title}</span>
+            <span className="text-[10px] text-[#8A958E] shrink-0">{r.code}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-[#D8DED9]">
+        <span className="text-[10px] text-[#8A958E] uppercase tracking-wide">Or enter a code directly</span>
+        <form onSubmit={lookupCode} className="flex items-center gap-1.5 mt-1">
+          <input
+            value={codeTerm}
+            onChange={(e) => { setCodeTerm(e.target.value); setCodeStatus("idle"); }}
+            placeholder="e.g. I10"
+            className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-[#D8DED9] rounded-sm"
+          />
+          <button
+            type="submit"
+            disabled={codeStatus === "loading" || !codeTerm.trim()}
+            className="px-2.5 py-1.5 text-xs rounded-sm border border-[#0F5C56] text-[#0F5C56] font-medium hover:bg-[#F2F7F5] disabled:opacity-50 shrink-0"
+          >
+            {codeStatus === "loading" ? <Loader2 size={12} className="animate-spin" /> : "Check"}
+          </button>
+        </form>
+        {codeStatus === "error" && <p className="text-xs text-[#B34A3C] mt-1.5">{codeError}</p>}
+        {codeStatus === "done" && codeResult && (
+          <button
+            type="button"
+            onClick={() => onSelect(codeResult)}
+            className="w-full text-left px-2 py-1.5 mt-1.5 text-sm rounded-sm bg-[#F2F7F5] hover:bg-[#E7F0EC] flex items-center justify-between gap-2"
+          >
+            <span className="truncate">{codeResult.title}</span>
+            <span className="text-[10px] text-[#8A958E] shrink-0">{codeResult.code}</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Page 4 — numbered, paired Provisional diagnosis / Treatment plan entries,
 // positioned toward the right side of the page. Diagnosis text itself is
 // still local-only, same as the rest of this prototype — the one real
 // backend call here is the optional SNOMED CT code search/attach, via
 // BHTS/CSNOServ (see SnomedCodeSearch above).
 function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries: externalSetEntries } = {}) {
-  const [internalEntries, setInternalEntries] = useState([{ diagnosis: "", treatment: "", snomed: null }]);
+  const [internalEntries, setInternalEntries] = useState([{ diagnosis: "", treatment: "", snomed: null, icd10: null }]);
   const entries = externalEntries !== undefined ? externalEntries : internalEntries;
   const setEntries = externalSetEntries !== undefined ? externalSetEntries : setInternalEntries;
 
   const [snomedSearchOpenFor, setSnomedSearchOpenFor] = useState(null); // entry index, or null
+  const [icd10SearchOpenFor, setIcd10SearchOpenFor] = useState(null); // entry index, or null
 
   const updateDiagnosis = (i, value) => setEntries((prev) => prev.map((e, idx) => (idx === i ? { ...e, diagnosis: value } : e)));
   const updateTreatment = (i, value) => setEntries((prev) => prev.map((e, idx) => (idx === i ? { ...e, treatment: value } : e)));
   const setSnomed = (i, snomed) => setEntries((prev) => prev.map((e, idx) => (idx === i ? { ...e, snomed } : e)));
-  const addEntry = () => setEntries((prev) => [...prev, { diagnosis: "", treatment: "", snomed: null }]);
+  const setIcd10 = (i, icd10) => setEntries((prev) => prev.map((e, idx) => (idx === i ? { ...e, icd10 } : e)));
+  const addEntry = () => setEntries((prev) => [...prev, { diagnosis: "", treatment: "", snomed: null, icd10: null }]);
   const removeEntry = (i) => setEntries((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
 
   return (
@@ -15440,6 +15574,34 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
                     initialTerm={entry.diagnosis}
                     onClose={() => setSnomedSearchOpenFor(null)}
                     onSelect={(result) => { setSnomed(i, result); setSnomedSearchOpenFor(null); }}
+                  />
+                )}
+              </div>
+            </div>
+            <div className="flex items-start gap-3 mb-3">
+              <span className="shrink-0" style={{ width: "140px" }} />
+              <div className="flex-1 min-w-0 relative">
+                {entry.icd10 ? (
+                  <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm bg-[#F2F7F5] border border-[#B9CFE0] text-xs">
+                    <Tag size={11} className="text-[#2F5C82]" />
+                    <span className="font-medium">{entry.icd10.title}</span>
+                    <span className="text-[#8A958E]">· ICD-10 {entry.icd10.code}</span>
+                    <button type="button" onClick={() => setIcd10(i, null)} className="text-[#8A958E] hover:text-[#B34A3C] ml-1"><X size={11} /></button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIcd10SearchOpenFor(i)}
+                    className="inline-flex items-center gap-1 text-xs text-[#2F5C82] hover:underline"
+                  >
+                    <Search size={11} /> Find ICD-10 code
+                  </button>
+                )}
+                {icd10SearchOpenFor === i && (
+                  <Icd10CodeSearch
+                    initialTerm={entry.diagnosis}
+                    onClose={() => setIcd10SearchOpenFor(null)}
+                    onSelect={(result) => { setIcd10(i, result); setIcd10SearchOpenFor(null); }}
                   />
                 )}
               </div>
@@ -15537,7 +15699,7 @@ function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examSpace
   if (addedTools.includes("diagnosisplan")) {
     lines.push("PROVISIONAL DIAGNOSIS & TREATMENT PLAN");
     diagnosisPlanEntries.forEach((e, i) => {
-      lines.push(`  ${i + 1}. Diagnosis: ${e.diagnosis || "(blank)"}${e.snomed ? ` [SNOMED CT ${e.snomed.conceptId}: ${e.snomed.term}]` : ""}`);
+      lines.push(`  ${i + 1}. Diagnosis: ${e.diagnosis || "(blank)"}${e.snomed ? ` [SNOMED CT ${e.snomed.conceptId}: ${e.snomed.term}]` : ""}${e.icd10 ? ` [ICD-10 ${e.icd10.code}: ${e.icd10.title}]` : ""}`);
       lines.push(`     Treatment: ${e.treatment || "(blank)"}`);
     });
     lines.push("");
@@ -15655,7 +15817,7 @@ function buildIcuWardSlipText({ details, vitals, hpi, examSpace, ddxSpace, ddxSp
 
   lines.push("PROVISIONAL DIAGNOSIS & TREATMENT PLAN");
   diagnosisPlanEntries.forEach((e, i) => {
-    lines.push(`  ${i + 1}. Diagnosis: ${e.diagnosis || "(blank)"}${e.snomed ? ` [SNOMED CT ${e.snomed.conceptId}: ${e.snomed.term}]` : ""}`);
+    lines.push(`  ${i + 1}. Diagnosis: ${e.diagnosis || "(blank)"}${e.snomed ? ` [SNOMED CT ${e.snomed.conceptId}: ${e.snomed.term}]` : ""}${e.icd10 ? ` [ICD-10 ${e.icd10.code}: ${e.icd10.title}]` : ""}`);
     lines.push(`     Treatment: ${e.treatment || "(blank)"}`);
   });
   lines.push("");
@@ -16153,7 +16315,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
   const [ddxSpaceNotes, setDdxSpaceNotes] = useState("");
   const [workupSpace, setWorkupSpace] = useState([]);
   const [workupNotes, setWorkupNotes] = useState("");
-  const [diagnosisPlanEntries, setDiagnosisPlanEntries] = useState([{ diagnosis: "", treatment: "", snomed: null }]);
+  const [diagnosisPlanEntries, setDiagnosisPlanEntries] = useState([{ diagnosis: "", treatment: "", snomed: null, icd10: null }]);
   const [triageHistory, setTriageHistory] = useState([]);
   const [programmeTag, setProgrammeTag] = useState("");
   const [disposal, setDisposal] = useState({ option: "", facility: "" });
@@ -24356,7 +24518,7 @@ export default function ClairMDEHR() {
   const [draftDdxSpaceNotes, setDraftDdxSpaceNotes] = useState("");
   const [draftWorkupSpace, setDraftWorkupSpace] = useState([]);
   const [draftWorkupNotes, setDraftWorkupNotes] = useState("");
-  const [draftDiagnosisPlanEntries, setDraftDiagnosisPlanEntries] = useState([{ diagnosis: "", treatment: "", snomed: null }]);
+  const [draftDiagnosisPlanEntries, setDraftDiagnosisPlanEntries] = useState([{ diagnosis: "", treatment: "", snomed: null, icd10: null }]);
   const [savedIcuWardRecords, setSavedIcuWardRecords] = useState([]); // [{ id, patientDetails, savedAt, text }]
   const [draftSaveMessage, setDraftSaveMessage] = useState(null);
   const [pageCaution, setPageCaution] = useState(null); // null | { message, fieldId }

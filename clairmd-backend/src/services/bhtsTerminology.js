@@ -51,18 +51,17 @@
 //   published Swagger/OpenAPI docs (nrces.in/bhts/api/v1/loincserv/
 //   swagger-ui/) — a real spec, not reverse-engineered like CSNOServ above.
 //     * search: GET {loincBase}/v2/search
-//         ?status=ACTIVE&panelType=ALL&component=ALL&property=ALL
+//         ?term=...&status=ACTIVE&panelType=ALL&component=ALL&property=ALL
 //         &scale=ALL&timing=ALL&method=ALL&exampleUnits=ALL
 //         &sortByRank=false&enableClci=false
-//   Confirmed there is NO free-text search parameter on this endpoint —
-//   "status" is the first parameter, full stop. LOINC's own model
-//   searches across structured axes (component/property/system/scale/
-//   method/timing) rather than one text box. `loincSearch()` below maps
-//   a doctor's typed text onto `component` ("substance or entity being
-//   measured" — the closest axis to a plain lab-test name, e.g.
-//   "hemoglobin," "glucose") and leaves every other axis at its default
-//   ("ALL"), which is an interpretation of how to use this endpoint for
-//   a single search box, not something the spec states outright.
+//   CORRECTION, 26 August 2026 (live-tested by Hansika): there IS a
+//   free-text `term` parameter, and it's REQUIRED — a request without it
+//   fails with a 400 whose body is `{"status":400,"error":"BAD_REQUEST",
+//   "message":"Required parameter 'term' is missing."}`. The initial read
+//   of the Swagger UI's parameter list (which led to mapping typed text
+//   onto `component` instead, below) missed it. `component` is left at
+//   "ALL" now that `term` carries the actual search text; every other
+//   axis still defaults to "ALL" (unfiltered).
 //   Response is an array of objects with LOINC_NUMBER, COMPONENT,
 //   PROPERTY, SYSTEM, LONG_COMMON_NAME, ShortName, DisplayName, STATUS,
 //   CLASS, and more — see the Swagger docs for the full schema.
@@ -152,19 +151,27 @@ async function loincGet(path, params) {
   // look like an outage.
   if (res.status === 404) return [];
   if (!res.ok) {
-    throw new Error(`LOINCServ request failed: ${res.status} ${res.statusText} (${url})`);
+    // Surface LOINCServ's own response body (when it has one) rather than
+    // just the status — a 400 in particular usually names which parameter
+    // it rejected, and that's otherwise only visible by re-capturing the
+    // request in DevTools by hand.
+    const body = await res.text().catch(() => "");
+    const detail = body ? `: ${body.slice(0, 300)}` : "";
+    throw new Error(`LOINCServ request failed: ${res.status} ${res.statusText}${detail} (${url})`);
   }
   return res.json();
 }
 
-// LOINC search for a lab test / observation name — maps `text` onto the
-// `component` axis (see the module header comment for why). Every other
-// axis stays at "ALL" (LOINCServ's own default), i.e. unfiltered.
+// LOINC search for a lab test / observation name — passes `text` as the
+// required free-text `term` parameter (see the module header comment for
+// how that was confirmed). Every axis filter stays at "ALL" (LOINCServ's
+// own default), i.e. unfiltered.
 async function loincSearch(text, opts = {}) {
   return loincGet("/v2/search", {
+    term: text,
     status: opts.status || "ACTIVE",
     panelType: opts.panelType || "ALL",
-    component: text || "ALL",
+    component: opts.component || "ALL",
     property: opts.property || "ALL",
     scale: opts.scale || "ALL",
     timing: opts.timing || "ALL",

@@ -12,6 +12,7 @@
     "nightly-overage-billing": "node src/db/runNightlyOverageBilling.js",
     "deliver-notifications": "node src/db/deliverNotifications.js",
     "create-admin": "node src/db/createAdminAccount.js",
+    "harvest-icd10": "node src/db/harvestIcd10.js",
     "test": "node --test src/**/*.test.js"
   },
   "dependencies": {
