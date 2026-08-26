@@ -147,4 +147,45 @@ async function icd11Search(term, opts = {}) {
   return raw;
 }
 
-module.exports = { icd11Search };
+// ---------------------------------------------------------------------------
+// ICD-10 — WHO's API has no search for this (see this file's header
+// comment), only structured browse-by-code:
+//   GET /icd/release/10                 lists available ICD-10 releases
+//   GET /icd/release/10/{releaseId}      chapters of that release
+//   GET /icd/release/10/{releaseId}/{code}  a category + its children
+// db/harvestIcd10.js walks this tree once to build a locally searchable
+// copy (see 026_icd10_codes.sql). The exact response shape below is
+// UNVERIFIED — this sandbox can't reach id.who.int (confirmed repeatedly
+// this session, same block as nrces.in), so icd10Probe() exists to fetch
+// just the root + one chapter and return them raw, so the real shape can
+// be inspected before the full multi-hour harvest runs against guessed
+// field names. Once confirmed, tighten this comment and the harvester's
+// parsing to match.
+// ---------------------------------------------------------------------------
+
+async function getIcd10Releases(token) {
+  return whoIcdGet("/icd/release/10", null, token);
+}
+
+// Fetches just the release root (its chapters) and the first chapter's
+// detail, unparsed — for confirming the real response shape before
+// writing the full recursive harvester.
+async function icd10Probe() {
+  const token = await getAccessToken();
+  const releases = await getIcd10Releases(token);
+  const releaseId = releases?.release?.[releases.release.length - 1]?.split("/").pop()
+    || releases?.latestRelease?.split("/").pop();
+  if (!releaseId) {
+    return { releases, note: "Couldn't guess a releaseId from the releases response above — that's exactly what this probe is for. Send this whole object back." };
+  }
+  const root = await whoIcdGet(`/icd/release/10/${releaseId}`, null, token);
+  const firstChapterRef = Array.isArray(root?.child) ? root.child[0] : null;
+  let firstChapter = null;
+  if (firstChapterRef) {
+    const chapterCode = String(firstChapterRef).split("/").pop();
+    firstChapter = await whoIcdGet(`/icd/release/10/${releaseId}/${chapterCode}`, null, token);
+  }
+  return { releaseId, releases, root, firstChapter };
+}
+
+module.exports = { icd11Search, icd10Probe };
