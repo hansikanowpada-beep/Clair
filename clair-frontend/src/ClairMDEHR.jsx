@@ -17340,7 +17340,7 @@ function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, set
                         )}
                         {loincSearchOpenFor === w.test && (
                           <LoincCodeSearch
-                            initialTerm={w.test}
+                            initialTerm={w.test.replace(/\s*\(.*$/, "").trim()}
                             onClose={() => setLoincSearchOpenFor(null)}
                             onSelect={(result) => { setLoincForTest(w.test, result); setLoincSearchOpenFor(null); }}
                           />
