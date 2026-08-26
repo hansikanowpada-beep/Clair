@@ -136,9 +136,19 @@ async function harvest() {
   console.log(`Done. ${counters.stored} codes stored, ${counters.skipped} skipped, ${counters.resumedSkips} already-done from a previous run.`);
 }
 
-harvest()
-  .catch((err) => {
-    console.error("Harvest failed:", err.message);
-    process.exitCode = 1;
-  })
-  .finally(() => pool.end());
+module.exports = { harvest };
+
+// Only run (and close the shared DB pool afterward) when executed directly
+// as a script — e.g. `node src/db/harvestIcd10.js`. When imported instead
+// (see routes/admin.js's /harvest-icd10, which triggers this from the
+// already-running web server since Render's free tier has no Shell
+// access), closing the pool here would kill the whole live app's
+// database connection once the harvest finished.
+if (require.main === module) {
+  harvest()
+    .catch((err) => {
+      console.error("Harvest failed:", err.message);
+      process.exitCode = 1;
+    })
+    .finally(() => pool.end());
+}

@@ -1,8 +1,14 @@
 const express = require("express");
 const pool = require("../db/pool");
 const { requireAuth, requireAccountType } = require("../middleware/auth");
+const { harvest: harvestIcd10 } = require("../db/harvestIcd10");
 
 const router = express.Router();
+
+// Tracks whether an ICD-10 harvest is currently running, so a second
+// trigger (e.g. an accidental double-click) doesn't start a duplicate
+// crawl hammering WHO's API concurrently with the first one.
+let icd10HarvestRunning = false;
 
 // Founder/admin-only aggregate views across the whole platform. Every
 // route here is gated to account_type = 'admin', which (see db/schema.sql
@@ -30,6 +36,39 @@ router.get("/overview", requireAuth, requireAccountType("admin"), async (req, re
     signupsThisMonth: Number(signupsThisMonth.rows[0].count),
     signupsLastMonth: Number(signupsLastMonth.rows[0].count),
     revenueThisMonthPaise: Number(revenueThisMonth.rows[0].total_paise),
+  });
+});
+
+// Kicks off the ICD-10 harvest (see db/harvestIcd10.js) as a background
+// task inside this already-running server process — Render's free tier
+// has no Shell access to run it as a standalone script, so this is the
+// only way to trigger it. Deliberately requireAuth only, not admin-only:
+// see the same reasoning on the (now-removed) icd10-probe route this
+// replaced. Responds immediately; the harvest keeps running after the
+// response is sent (and after the triggering browser tab is closed) for
+// as long as this server process stays up. It's safely resumable (see
+// migrations/027_icd10_harvest_progress.sql) if Render's free tier spins
+// the service down mid-run — just trigger this route again.
+router.post("/harvest-icd10", requireAuth, (req, res) => {
+  if (icd10HarvestRunning) {
+    return res.status(409).json({ error: "A harvest is already running." });
+  }
+  icd10HarvestRunning = true;
+  res.json({ started: true, note: "Running in the background — check GET /admin/harvest-icd10/status for progress." });
+  harvestIcd10()
+    .catch((err) => console.error("Background ICD-10 harvest failed:", err.message))
+    .finally(() => { icd10HarvestRunning = false; });
+});
+
+router.get("/harvest-icd10/status", requireAuth, async (req, res) => {
+  const [total, complete] = await Promise.all([
+    pool.query(`SELECT COUNT(*) AS count FROM icd10_codes`),
+    pool.query(`SELECT COUNT(*) AS count FROM icd10_codes WHERE harvest_complete`),
+  ]);
+  res.json({
+    running: icd10HarvestRunning,
+    codesStored: Number(total.rows[0].count),
+    subtreesComplete: Number(complete.rows[0].count),
   });
 });
 
