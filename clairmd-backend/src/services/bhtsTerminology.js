@@ -27,6 +27,20 @@
 //   entirely, confirmed again 26 August 2026 — both a direct fetch and a
 //   raw curl through the proxy failed), so treat the first real call
 //   from a reachable environment as the actual verification.
+// - CONFIRMED LIVE, 26 August 2026 (Hansika testing from her own
+//   browser): the exact same URL that works when CSNOFinder's own JS
+//   calls it 404s when opened directly (address-bar navigation, and
+//   equally a plain server-to-server call like this file's) — same
+//   params both times, only the request's origin/context differs. That
+//   points to the server checking where a request came from (a
+//   `Referer` check, most likely) rather than the query string. `Referer`
+//   and `X-Requested-With` below are set to look like a real request from
+//   CSNOFinder's own page for that reason. Still unverified from this
+//   sandbox (nrces.in unreachable here) — if search still fails after
+//   this change, the next thing to try is capturing CSNOFinder's full
+//   request headers (DevTools -> Network tab -> click the request ->
+//   Headers -> the Request Headers section, not just the URL) rather than
+//   guessing further.
 // - CONFIRMED to exist, but exact REST paths NOT confirmed: `suggest`,
 //   `explore`, `map` (SNOMED CT -> ICD-10 and -> LOINC — directly useful
 //   for tagging conditions once wired up), and `validate`. Do not guess
@@ -63,7 +77,13 @@ function parseMaybeJsonp(text) {
 
 async function bhtsGet(path, params) {
   const url = `${baseUrl()}${path}?${new URLSearchParams(params).toString()}`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json, text/javascript, */*; q=0.01",
+      Referer: "https://www.nrces.in/bhts/browser/",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  });
   if (!res.ok) {
     throw new Error(`BHTS request failed: ${res.status} ${res.statusText} (${url})`);
   }
