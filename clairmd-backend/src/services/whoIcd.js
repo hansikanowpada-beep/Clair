@@ -163,21 +163,34 @@ async function icd11Search(term, opts = {}) {
 // parsing to match.
 // ---------------------------------------------------------------------------
 
-async function getIcd10Releases(token) {
-  return whoIcdGet("/icd/release/10", null, token);
+// CONFIRMED LIVE, 26 August 2026 (Hansika ran icd10Probe below from her
+// own browser console and sent back the real response — this sandbox
+// still can't reach id.who.int itself). Real shape:
+//   GET /icd/release/10 -> { latestRelease: ".../release/10/2019", release: [...] }
+//   GET /icd/release/10/{releaseId} -> { "@id", child: [<chapter URI>, ...] }
+//     (22 entries, Roman numerals I-XXII - all of ICD-10's chapters)
+//   GET /icd/release/10/{releaseId}/{code} -> { "@id", code, classKind,
+//     title: {"@language":"en","@value":"..."}, parent: [<URI>],
+//     child?: [<URI>, ...] }  (child absent/empty on leaf codes)
+// harvestIcd10.js walks this: root.child gives the 22 chapters; each
+// node's own child array (when present) gives its children, recursed
+// until a node has none.
+async function getCurrentIcd10Release(token) {
+  const releases = await whoIcdGet("/icd/release/10", null, token);
+  const match = String(releases?.latestRelease || "").match(/\/release\/10\/([^/]+)$/);
+  if (!match) {
+    throw new Error("Couldn't read latestRelease from WHO's /icd/release/10 response — its shape may have changed since this was last confirmed (26 August 2026).");
+  }
+  return match[1];
 }
 
 // Fetches just the release root (its chapters) and the first chapter's
-// detail, unparsed — for confirming the real response shape before
-// writing the full recursive harvester.
+// detail, unparsed — used once to confirm the real response shape
+// before writing the full recursive harvester (see the comment above).
+// Kept for future re-verification if WHO ever changes this shape.
 async function icd10Probe() {
   const token = await getAccessToken();
-  const releases = await getIcd10Releases(token);
-  const releaseId = releases?.release?.[releases.release.length - 1]?.split("/").pop()
-    || releases?.latestRelease?.split("/").pop();
-  if (!releaseId) {
-    return { releases, note: "Couldn't guess a releaseId from the releases response above — that's exactly what this probe is for. Send this whole object back." };
-  }
+  const releaseId = await getCurrentIcd10Release(token);
   const root = await whoIcdGet(`/icd/release/10/${releaseId}`, null, token);
   const firstChapterRef = Array.isArray(root?.child) ? root.child[0] : null;
   let firstChapter = null;
@@ -185,7 +198,7 @@ async function icd10Probe() {
     const chapterCode = String(firstChapterRef).split("/").pop();
     firstChapter = await whoIcdGet(`/icd/release/10/${releaseId}/${chapterCode}`, null, token);
   }
-  return { releaseId, releases, root, firstChapter };
+  return { releaseId, root, firstChapter };
 }
 
-module.exports = { icd11Search, icd10Probe };
+module.exports = { icd11Search, icd10Probe, getAccessToken, whoIcdGet, getCurrentIcd10Release };

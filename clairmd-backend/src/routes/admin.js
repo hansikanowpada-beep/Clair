@@ -1,7 +1,6 @@
 const express = require("express");
 const pool = require("../db/pool");
 const { requireAuth, requireAccountType } = require("../middleware/auth");
-const { icd10Probe } = require("../services/whoIcd");
 
 const router = express.Router();
 
@@ -32,24 +31,6 @@ router.get("/overview", requireAuth, requireAccountType("admin"), async (req, re
     signupsLastMonth: Number(signupsLastMonth.rows[0].count),
     revenueThisMonthPaise: Number(revenueThisMonth.rows[0].total_paise),
   });
-});
-
-// TEMPORARY — for confirming the real shape of WHO's ICD-10 browse
-// response before writing db/harvestIcd10.js's real parsing logic. See
-// services/whoIcd.js's icd10Probe() header comment. Delete this route
-// once that's done; it has no lasting purpose. Deliberately just
-// requireAuth (not admin-only, unlike every other route in this file) —
-// this only ever returns WHO's own public ICD-10 data, nothing about
-// this platform's accounts, so gating it behind a full admin account
-// (which can only be created via the create-admin script, not signup)
-// would be more ceremony than this one-off debug check warrants.
-router.get("/icd10-probe", requireAuth, async (req, res) => {
-  try {
-    const result = await icd10Probe();
-    res.json(result);
-  } catch (err) {
-    res.status(502).json({ error: `ICD-10 probe failed: ${err.message}` });
-  }
 });
 
 // Hospitals currently restricted for unresolved overage billing, plus
