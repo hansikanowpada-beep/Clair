@@ -18,6 +18,14 @@
 // whatever rate limit WHO enforces (unconfirmed, so deliberately
 // conservative here rather than guessed at a faster pace and had to
 // restart mid-crawl after getting throttled).
+//
+// SAFELY RESUMABLE (see migrations/027_icd10_harvest_progress.sql): a
+// node's `harvest_complete` flag is only set once its ENTIRE subtree
+// (itself + every descendant) has been stored. A node already marked
+// complete is skipped outright — no WHO call, no recursion — so
+// re-running this after an interruption (e.g. Render's free tier
+// spinning the service down) only redoes the branch it was cut off on,
+// not the whole tree.
 
 const pool = require("./pool");
 const { getAccessToken, whoIcdGet, getCurrentIcd10Release } = require("../services/whoIcd");
@@ -54,22 +62,38 @@ async function fetchNodeWithRetry(releaseId, code, token) {
   }
 }
 
-async function upsertCode({ code, title, uri, chapter, parentCode }) {
+async function isAlreadyComplete(code) {
+  const result = await pool.query(`SELECT 1 FROM icd10_codes WHERE code = $1 AND harvest_complete`, [code]);
+  return result.rows.length > 0;
+}
+
+async function upsertCode({ code, title, uri, chapter, parentCode }, complete) {
   await pool.query(
-    `INSERT INTO icd10_codes (code, title, uri, chapter, parent_code, updated_at)
-     VALUES ($1, $2, $3, $4, $5, now())
-     ON CONFLICT (code) DO UPDATE SET title = $2, uri = $3, chapter = $4, parent_code = $5, updated_at = now()`,
-    [code, title, uri, chapter, parentCode]
+    `INSERT INTO icd10_codes (code, title, uri, chapter, parent_code, harvest_complete, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, now())
+     ON CONFLICT (code) DO UPDATE SET title = $2, uri = $3, chapter = $4, parent_code = $5, harvest_complete = $6, updated_at = now()`,
+    [code, title, uri, chapter, parentCode, complete]
   );
 }
 
+async function markComplete(code) {
+  await pool.query(`UPDATE icd10_codes SET harvest_complete = true WHERE code = $1`, [code]);
+}
+
 async function harvestSubtree(releaseId, token, chapterCode, code, parentCode, counters) {
+  if (await isAlreadyComplete(code)) {
+    counters.resumedSkips++;
+    return;
+  }
+
   const node = await fetchNodeWithRetry(releaseId, code, token);
   await sleep(DELAY_MS);
 
   const title = titleText(node.title);
   if (title) {
-    await upsertCode({ code, title, uri: node["@id"], chapter: chapterCode, parentCode });
+    // Stored now, but not yet marked complete — its children (if any)
+    // haven't been harvested yet. Complete is set after they are, below.
+    await upsertCode({ code, title, uri: node["@id"], chapter: chapterCode, parentCode }, false);
     counters.stored++;
   } else {
     counters.skipped++;
@@ -77,7 +101,7 @@ async function harvestSubtree(releaseId, token, chapterCode, code, parentCode, c
   }
 
   if ((counters.stored + counters.skipped) % 50 === 0) {
-    console.log(`  ...${counters.stored} stored, ${counters.skipped} skipped so far`);
+    console.log(`  ...${counters.stored} stored, ${counters.skipped} skipped, ${counters.resumedSkips} already-done so far`);
   }
 
   const children = Array.isArray(node.child) ? node.child : [];
@@ -85,6 +109,8 @@ async function harvestSubtree(releaseId, token, chapterCode, code, parentCode, c
     const childCode = codeFromUri(childUri);
     await harvestSubtree(releaseId, token, chapterCode, childCode, code, counters);
   }
+
+  if (title) await markComplete(code);
 }
 
 async function harvest() {
@@ -100,14 +126,14 @@ async function harvest() {
   const chapterUris = Array.isArray(root.child) ? root.child : [];
   console.log(`Found ${chapterUris.length} chapters. Starting harvest — this will take a while.`);
 
-  const counters = { stored: 0, skipped: 0 };
+  const counters = { stored: 0, skipped: 0, resumedSkips: 0 };
   for (const chapterUri of chapterUris) {
     const chapterCode = codeFromUri(chapterUri);
     console.log(`Chapter ${chapterCode}...`);
     await harvestSubtree(releaseId, token, chapterCode, chapterCode, null, counters);
   }
 
-  console.log(`Done. ${counters.stored} codes stored, ${counters.skipped} skipped.`);
+  console.log(`Done. ${counters.stored} codes stored, ${counters.skipped} skipped, ${counters.resumedSkips} already-done from a previous run.`);
 }
 
 harvest()
