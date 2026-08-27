@@ -18,12 +18,11 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Save, Undo2, Redo2, FilePlus, FolderOpen, Printer, Download, ChevronDown,
+  Save, Undo2, Redo2, FilePlus, FolderOpen, Printer, ChevronDown,
   Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, AlignRight,
   AlignJustify, List, ListOrdered, Indent, Outdent, Type, Palette, Highlighter,
-  Table, Image, Link2, Search, ClipboardPaste, Copy, Scissors, Paintbrush,
-  MoreHorizontal, HelpCircle, Sparkles, Users, FileText, Stethoscope, Tag,
-  ChevronRight, PenLine, Share2, RemoveFormatting,
+  Table, Image, Link2, Search, ClipboardPaste, Copy, Scissors,
+  HelpCircle, Sparkles, Tag, ChevronRight, RemoveFormatting,
 } from "lucide-react";
 
 // --- ClairMD brand tokens (see ClairMDEHR.jsx's own design-tokens comment)
@@ -317,21 +316,6 @@ export const DEFAULT_TABS = [
         commands: [
           { id: "spelling", label: "Spelling", icon: Sparkles, tooltip: { title: "Check Spelling", description: "Check the note for spelling issues." } },
           { id: "find", label: "Find", icon: Search, hasMenu: true, tooltip: { title: "Find", description: "Search within this record (Ctrl+F)." } },
-        ],
-      },
-    ],
-  },
-  {
-    id: "view",
-    label: "View",
-    groups: [
-      {
-        id: "share",
-        label: "Share",
-        commands: [
-          { id: "print", label: "Print", icon: Printer, tooltip: { title: "Print", description: "Print this record (Ctrl+P)." } },
-          { id: "export", label: "Export", icon: Download, tooltip: { title: "Export", description: "Save a copy as PDF." } },
-          { id: "share", label: "Share", icon: Share2, tooltip: { title: "Share", description: "Share this record with a co-admin." } },
         ],
       },
     ],
