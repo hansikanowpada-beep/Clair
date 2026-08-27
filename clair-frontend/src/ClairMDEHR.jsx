@@ -11,6 +11,7 @@ import {
   Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
+  LifeBuoy, Wrench, CircleHelp, HelpCircle,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
@@ -22881,6 +22882,203 @@ function LibraryModal({ configKey, onClose, onMinimize, theme }) {
   );
 }
 
+// Non-patient correspondence — a company, vendor, or member of the public
+// reaching the doctor for a reason that isn't a patient's care — routed
+// here instead of mixing into the specialty feed or patient records. Real
+// delivery needs a connected backend account (there's no inbox without
+// one); once connected this is honestly empty rather than showing fake
+// mail, same pattern as the notifications panel above.
+function MailingsPanel({ onBack }) {
+  const [connectedEmail, setConnectedEmail] = useState(null);
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-1">
+        <Mail size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Mailings</h2>
+      </div>
+      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        When a company, vendor, or member of the public wants to reach you for something other than a patient's care, it arrives here — kept separate from your specialty feed and patient records.
+      </p>
+      {!connectedEmail ? (
+        <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — mailings require a connected account" onConnected={(account) => setConnectedEmail(account.email)} />
+      ) : (
+        <div className="bg-white border border-[#D8DED9] rounded-md p-6 flex flex-col items-center text-center">
+          <Inbox size={28} className="text-[#B8C0BC] mb-2" />
+          <p className="text-sm text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No mailings yet.</p>
+          <p className="text-xs text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connected as {connectedEmail}.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Real, specific troubleshooting for things this app actually does — not
+// generic filler. Each entry describes a behavior that's really built this
+// way (spin-down cold starts, clipboard permission fallback, the premium
+// lock, locally-harvested code search, the draft/save distinction).
+const TROUBLESHOOTING_ITEMS = [
+  {
+    q: "It says \"Backend: not connected\"",
+    a: "ClairMD's backend can spin down after a period of inactivity on its current hosting tier — the next request can take up to a minute to wake it back up. If reconnecting doesn't work after a minute, try logging in again from the panel.",
+  },
+  {
+    q: "Paste didn't work in my OPD note",
+    a: "Some browsers block programmatic clipboard access outside a direct user action. If the note's paste button doesn't work, use Ctrl+V (Cmd+V on Mac) directly in the note text area instead.",
+  },
+  {
+    q: "A ribbon/module button is greyed out (e.g. Virtual OPD)",
+    a: "That's a Premium-tier feature and your account is currently on the free plan. Upgrade from Administration → Account access to unlock it.",
+  },
+  {
+    q: "ICD-10, SNOMED CT, or LOINC search returns nothing for a term I expect",
+    a: "These are searched against ClairMD's own locally-harvested copy of the WHO/SNOMED/LOINC data, not a live external lookup. Try the official code itself, or a shorter/partial term, rather than a synonym.",
+  },
+  {
+    q: "My note says \"Draft — nothing here is saved yet\"",
+    a: "That's accurate, not an error — a new OPD or ICU/Ward note stays a local draft until you press Save. Saving is what turns it into a real (locally kept, and backend-synced if connected) record.",
+  },
+];
+
+function TroubleshootingPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-4">
+        <Wrench size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Troubleshooting</h2>
+      </div>
+      <div className="space-y-3">
+        {TROUBLESHOOTING_ITEMS.map((item, i) => (
+          <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
+            <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.q}</div>
+            <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.a}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const FAQ_ITEMS = [
+  {
+    q: "Is my patient data secure?",
+    a: "Yes — patient record content is encrypted on your own device before it's ever sent anywhere. ClairMD's backend stores only encrypted data and has no way to read it.",
+  },
+  {
+    q: "What's the difference between OPD Notes and ICU/Ward Notes?",
+    a: "OPD Notes are a quick, single-page note for outpatient visits. ICU/Ward Notes are a fuller multi-page workflow (Overview, Records, Differential Diagnosis & Workup, Provisional Diagnosis & Treatment Plan) for inpatient care.",
+  },
+  {
+    q: "Can I use ClairMD without an internet connection?",
+    a: "You can draft an OPD or ICU/Ward note offline, but saving it to your synced record and backup requires a connection.",
+  },
+  {
+    q: "How do I unlock Premium features like Virtual OPD?",
+    a: "Upgrade your plan from Administration → Account access.",
+  },
+  {
+    q: "Who can see my Mailings?",
+    a: "Only you — Mailings is scoped to your own account, separate from any patient record or shared hospital data.",
+  },
+];
+
+function FaqsPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-4">
+        <CircleHelp size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Frequently asked questions</h2>
+      </div>
+      <div className="space-y-3">
+        {FAQ_ITEMS.map((item, i) => (
+          <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
+            <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.q}</div>
+            <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.a}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Shared shape for Report a problem / Feedback — both are a short text
+// submission with the same honest "kept locally in this prototype, not
+// yet wired to a backend" ceiling as every other unfinished write-path in
+// this app (see OPD/ICU-Ward's own save flow for the same pattern).
+function TextSubmitPanel({ icon: Icon, title, description, placeholder, submitLabel, submittedText }) {
+  const [text, setText] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  return (
+    <>
+      <div className="flex items-center gap-2 mb-1">
+        <Icon size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{title}</h2>
+      </div>
+      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{description}</p>
+      {submitted ? (
+        <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-md p-4 text-sm text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          {submittedText}
+        </div>
+      ) : (
+        <>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={placeholder}
+            rows={6}
+            className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm resize-none mb-3 focus:outline-none focus:border-[#0F5C56]"
+            style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+          />
+          <button
+            type="button"
+            disabled={!text.trim()}
+            onClick={() => setSubmitted(true)}
+            className="flex items-center gap-1.5 bg-[#0F5C56] text-white text-sm px-4 py-2 rounded-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+          >
+            <Send size={14} /> {submitLabel}
+          </button>
+          <p className="text-[11px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+        </>
+      )}
+    </>
+  );
+}
+
+function ReportProblemPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <TextSubmitPanel
+        icon={Bug}
+        title="Report a problem"
+        description="Something not working as expected? Describe what happened, and what you expected instead."
+        placeholder="What went wrong, and what were you trying to do?"
+        submitLabel="Send report"
+        submittedText="Thanks — your report has been noted for this session."
+      />
+    </div>
+  );
+}
+
+function FeedbackPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <TextSubmitPanel
+        icon={MessagesSquare}
+        title="Feedback"
+        description="Have a suggestion for ClairMD? Let us know what would make it more useful for your practice."
+        placeholder="What would you like to see added or changed?"
+        submitLabel="Send feedback"
+        submittedText="Thanks — your feedback has been noted for this session."
+      />
+    </div>
+  );
+}
+
 // Sidebar buttons (Statistics, Doctor profile, Account access, etc.) open
 // their panel in this centered popup instead of squeezing it into the
 // narrow sidebar column itself — that in-column layout was uncomfortable
@@ -22899,6 +23097,11 @@ const SIDEBAR_VIEW_META = {
   virtualOpd: { label: "Virtual OPD", icon: GraduationCap },
   doctorProfile: { label: "Doctor profile", icon: UserCircle2 },
   feed: { label: "Specialty feed", icon: Rss },
+  mailings: { label: "Mailings", icon: Mail },
+  troubleshooting: { label: "Troubleshooting", icon: Wrench },
+  faqs: { label: "FAQs", icon: CircleHelp },
+  report: { label: "Report a problem", icon: Bug },
+  feedback: { label: "Feedback", icon: MessagesSquare },
 };
 
 function SidebarViewModal({ viewKey, onClose, onMinimize, theme, children }) {
@@ -24960,6 +25163,16 @@ export default function ClairMDEHR() {
               <DoctorProfilePanel onBack={() => setSidebarView("patients")} doctorSpecialty={doctorSpecialty} theme={theme} />
             ) : sidebarView === "feed" ? (
               <CmeFeedPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "mailings" ? (
+              <MailingsPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "troubleshooting" ? (
+              <TroubleshootingPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "faqs" ? (
+              <FaqsPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "report" ? (
+              <ReportProblemPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "feedback" ? (
+              <FeedbackPanel onBack={() => setSidebarView("patients")} />
             ) : null}
           </SidebarViewModal>
         )}

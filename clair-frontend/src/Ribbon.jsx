@@ -17,6 +17,7 @@
 // ---------------------------------------------------------------------------
 
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Save, Undo2, Redo2, FilePlus, FolderOpen, Printer, ChevronDown,
   Bold, Italic, Underline, Strikethrough, AlignLeft, AlignCenter, AlignRight,
@@ -27,6 +28,7 @@ import {
   Hammer, Tent, Building2, BarChart3, BedDouble, Package, CreditCard,
   Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss,
   UserPlus, ShieldAlert, AlertTriangle, Wind,
+  Mail, Wrench, CircleHelp, Bug, MessagesSquare, LifeBuoy,
 } from "lucide-react";
 
 // --- ClairMD brand tokens (see ClairMDEHR.jsx's own design-tokens comment)
@@ -68,6 +70,9 @@ function CommandTooltip({ command, anchorRef, visible }) {
 // ---------------------------------------------------------------------------
 function RibbonButton({ command, size = "small", active, onRun }) {
   const [hovered, setHovered] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuRect, setMenuRect] = useState(null);
+  const menuTriggerRef = useRef(null);
   const timerRef = useRef(null);
   const Icon = command.icon || Type;
 
@@ -80,28 +85,99 @@ function RibbonButton({ command, size = "small", active, onRun }) {
   };
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
+  // Close a real dropdown (command.menuItems) on outside click/Escape —
+  // same convention as the app-menu ("C" button) dropdown in Ribbon below.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDocClick = () => setMenuOpen(false);
+    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
+    document.addEventListener("click", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
+
   const base =
     "relative flex items-center rounded-sm transition-colors focus:outline-none focus-visible:ring-2";
   const activeStyle = active ? { background: TEAL_SOFT } : {};
 
   if (size === "large") {
+    // A real dropdown (command.menuItems) can't be a <button> wrapping more
+    // <button>s (invalid, nested-interactive HTML) — wrap in a <div> instead
+    // and keep the trigger and the menu as siblings inside it.
+    const Wrapper = command.menuItems ? "div" : "button";
     return (
-      <button
-        type="button"
-        disabled={command.disabled}
-        onClick={() => onRun?.(command)}
+      <Wrapper
+        type={command.menuItems ? undefined : "button"}
+        disabled={command.menuItems ? undefined : command.disabled}
+        onClick={command.menuItems ? undefined : () => onRun?.(command)}
         onMouseEnter={showTooltipSoon}
         onMouseLeave={hideTooltip}
         className={`${base} flex-col justify-start gap-1 px-2 py-1.5 min-w-[64px] hover:bg-[#EDF4F3] disabled:opacity-40`}
         style={{ ...activeStyle, fontFamily: "IBM Plex Sans, sans-serif" }}
       >
-        <Icon size={22} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : TEAL }} />
-        <span className="text-[11px] leading-tight text-center" style={{ color: INK }}>
-          {command.label}
-          {command.hasMenu && <ChevronDown size={10} className="inline ml-0.5 -mb-px" />}
-        </span>
-        <CommandTooltip command={command} visible={hovered} />
-      </button>
+        {command.menuItems ? (
+          <button
+            ref={menuTriggerRef}
+            type="button"
+            disabled={command.disabled}
+            onClick={(e) => {
+              e.stopPropagation();
+              // Positioned via a portal (see below), not CSS position:
+              // absolute — the ribbon's own content row scrolls
+              // horizontally (overflow-x-auto), which per the CSS spec
+              // also forces overflow-y to auto, clipping anything tall
+              // that tries to hang off an in-flow absolute box. A portal
+              // to document.body sidesteps that entirely.
+              const rect = menuTriggerRef.current?.getBoundingClientRect();
+              if (rect) setMenuRect({ top: rect.bottom + 4, left: rect.left });
+              setMenuOpen((v) => !v);
+            }}
+            className="flex flex-col items-center gap-1 bg-transparent"
+          >
+            <Icon size={22} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : TEAL }} />
+            <span className="text-[11px] leading-tight text-center" style={{ color: INK }}>
+              {command.label}
+              <ChevronDown size={10} className="inline ml-0.5 -mb-px" />
+            </span>
+          </button>
+        ) : (
+          <>
+            <Icon size={22} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : TEAL }} />
+            <span className="text-[11px] leading-tight text-center" style={{ color: INK }}>
+              {command.label}
+              {command.hasMenu && <ChevronDown size={10} className="inline ml-0.5 -mb-px" />}
+            </span>
+          </>
+        )}
+        <CommandTooltip command={command} visible={hovered && !menuOpen} />
+        {command.menuItems && menuOpen && menuRect && createPortal(
+          <div
+            className="fixed z-50 w-48 rounded-md border shadow-lg py-1 text-left"
+            style={{ background: "#FFFFFF", borderColor: HAIRLINE, top: menuRect.top, left: menuRect.left }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {command.menuItems.map((item) => {
+              const ItemIcon = item.icon || Type;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => { setMenuOpen(false); onRun?.(item); }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[#EDF4F3]"
+                  style={{ color: INK, fontFamily: "IBM Plex Sans, sans-serif" }}
+                >
+                  <ItemIcon size={14} style={{ color: TEAL }} />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>,
+          document.body
+        )}
+      </Wrapper>
     );
   }
 
@@ -494,10 +570,66 @@ const TAB_DEFINITIONS = [
       },
     ],
   },
+  {
+    // Non-medical correspondence — a company, vendor, or member of the
+    // public reaching the doctor for something other than a patient's
+    // care — kept on its own tab, separate from the specialty feed and
+    // from patient records (same "mod-" id/action as every other
+    // sidebar-view command, see onCommand in ClairMDEHR.jsx).
+    id: "mailings",
+    label: "Mailings",
+    groups: [
+      {
+        id: "mailings-actions",
+        label: "Mailings",
+        commands: [
+          { id: "mod-mailings", label: "Mailings", icon: Mail, tooltip: { title: "Mailings", description: "Messages from companies, vendors, or the public — kept separate from patient records." } },
+        ],
+      },
+    ],
+  },
+  {
+    // A real dropdown (menuItems), not three separate ribbon buttons —
+    // Troubleshooting / FAQs / Report a problem stack one below the other
+    // when the Help button is clicked, per explicit request.
+    id: "help",
+    label: "Help",
+    groups: [
+      {
+        id: "help-actions",
+        label: "Help",
+        commands: [
+          {
+            id: "help-menu",
+            label: "Help",
+            icon: LifeBuoy,
+            menuItems: [
+              { id: "mod-troubleshooting", label: "Troubleshooting", icon: Wrench },
+              { id: "mod-faqs", label: "FAQs", icon: CircleHelp },
+              { id: "mod-report", label: "Report a problem", icon: Bug },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "feedback",
+    label: "Feedback",
+    groups: [
+      {
+        id: "feedback-actions",
+        label: "Feedback",
+        commands: [
+          { id: "mod-feedback", label: "Feedback", icon: MessagesSquare, tooltip: { title: "Feedback", description: "Send a suggestion to the ClairMD team." } },
+        ],
+      },
+    ],
+  },
 ];
 
 // Administration first, then the rest in their original order.
-const TAB_ORDER = ["administration", "home", "insert", "review", "library", "special-situations", "specialty-feed"];
+const TAB_ORDER = ["administration", "home", "insert", "review", "library", "special-situations", "specialty-feed", "mailings", "help", "feedback"];
 export const DEFAULT_TABS = TAB_ORDER.map((id) => TAB_DEFINITIONS.find((t) => t.id === id)).filter(Boolean);
 
 const DEFAULT_QUICK_ACCESS = [
