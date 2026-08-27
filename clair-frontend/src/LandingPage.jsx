@@ -17,7 +17,7 @@
 import React, { useState } from "react";
 import {
   Stethoscope, Users2, HeartPulse, GraduationCap, Briefcase, ShieldCheck,
-  ArrowRight, Loader2, Mail, Heart,
+  ArrowRight, Loader2, Mail, Heart, CreditCard, Download, AlertTriangle,
 } from "lucide-react";
 import { backendLogin, backendSignup } from "./api.js";
 
@@ -300,29 +300,112 @@ function FooterInfoPage({ pageKey, onBack }) {
   );
 }
 
-// Donations aren't live yet — no payment processing is wired up, and
-// ClairMD's Section 8 nonprofit registration (the vehicle for a real
-// patient financial-assistance program) hasn't happened yet either. Same
-// honesty pattern as MedicalStudentForm/OthersContact: collect interest,
-// say plainly what stage this is at, don't fake a payment flow.
-function DonateForm() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+const DONATE_PRESETS = [500, 1000, 2500];
 
-  if (submitted) {
+function generateSampleReceiptText({ name, email, amount, refId }) {
+  return [
+    "ClairMD — SAMPLE DONATION RECEIPT (PREVIEW ONLY)",
+    "================================================",
+    "This is a preview generated inside a prototype. No payment was",
+    "actually processed and no money has changed hands. ClairMD is not",
+    "yet Section 8 registered, so this is not a valid donation, tax, or",
+    "financial record of any kind — do not use it as one.",
+    "",
+    `Reference: ${refId}`,
+    `Date: ${new Date().toLocaleString()}`,
+    `Donor name: ${name || "—"}`,
+    `Donor email: ${email}`,
+    `Amount: Rs. ${amount} (India, domestic — preview)`,
+    "",
+    "Once ClairMD is Section 8 registered and donations are genuinely",
+    "open, a real receipt for a real transaction will look like this —",
+    "and will also be emailed to the address above automatically.",
+  ].join("\n");
+}
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Domestic donations, mocked end-to-end — per explicit request, kept a
+// mockup rather than wired to real payments: no real Razorpay account
+// exists yet (needs a real key ID/secret as backend env vars), and
+// ClairMD isn't Section 8 registered, so there's nowhere for real money
+// to responsibly go yet either. This walks through what the real flow
+// will look like — pick an amount, "pay" via a Razorpay-styled button,
+// get a receipt you can download and that would be emailed automatically
+// once real — with every screen labeled PREVIEW so nobody mistakes it
+// for an actual transaction or a real financial document.
+function MockDonateCheckout() {
+  const [amount, setAmount] = useState(DONATE_PRESETS[1]);
+  const [customAmount, setCustomAmount] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [stage, setStage] = useState("form"); // form | processing | done
+  const [refId, setRefId] = useState(null);
+
+  const finalAmount = customAmount ? Number(customAmount) : amount;
+
+  const submit = (e) => {
+    e.preventDefault();
+    setStage("processing");
+    setTimeout(() => {
+      setRefId(`PREVIEW-${Date.now().toString(36).toUpperCase()}`);
+      setStage("done");
+    }, 900);
+  };
+
+  if (stage === "done") {
     return (
-      <div className="rounded-sm p-4 text-sm" style={{ background: "#FBF6EC", border: `1px solid #F0DDB0`, color: INK }}>
-        Thanks — we'll email {email} the moment donations open.
+      <div className="rounded-sm p-4 text-sm space-y-3" style={{ background: "#F2F7F5", border: `1px solid ${HAIRLINE}`, color: INK }}>
+        <p className="font-medium">Preview complete — no payment was actually processed. Ref: {refId}</p>
+        <p className="text-[#5B6B63]">Once donations are genuinely live, a real receipt for a real transaction would also be emailed automatically to {email}.</p>
+        <button
+          type="button"
+          onClick={() => downloadTextFile(`clairmd-sample-receipt-${refId}.txt`, generateSampleReceiptText({ name, email, amount: finalAmount, refId }))}
+          className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white"
+          style={{ background: TEAL }}
+        >
+          <Download size={15} /> Download transaction receipt (sample)
+        </button>
       </div>
     );
   }
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="space-y-3">
-      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
-      <button type="submit" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white" style={{ background: MARIGOLD }}>
-        <Heart size={15} /> Notify me when donations open
+    <form onSubmit={submit} className="space-y-3">
+      <div className="flex gap-2">
+        {DONATE_PRESETS.map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => { setAmount(v); setCustomAmount(""); }}
+            className="flex-1 py-2 rounded-sm text-sm border"
+            style={amount === v && !customAmount ? { borderColor: MARIGOLD, background: "#FBF6EC", color: INK, fontWeight: 500 } : { borderColor: HAIRLINE, color: "#5B6B63" }}
+          >
+            ₹{v}
+          </button>
+        ))}
+      </div>
+      <input type="number" min="1" value={customAmount} onChange={(e) => setCustomAmount(e.target.value)} placeholder="Or enter a custom amount (₹)" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email — for the receipt" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      <button type="submit" disabled={stage === "processing"} className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white" style={{ background: "#3395FF" }}>
+        {stage === "processing" ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
+        {stage === "processing" ? "Processing…" : `Pay ₹${finalAmount || 0} via Razorpay`}
       </button>
-      <p className="text-[11px] text-[#8A958E]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+      <p className="text-[11px] text-[#8A958E] flex items-start gap-1">
+        <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+        Preview only — no real Razorpay integration is connected yet, and no payment is actually processed. This shows what the flow will look like once ClairMD is Section 8 registered and a real Razorpay account is wired up.
+      </p>
     </form>
   );
 }
@@ -330,12 +413,12 @@ function DonateForm() {
 function DonatePage({ onBack }) {
   return (
     <FooterPageShell onBack={onBack}>
-      <div className="bg-white border rounded-md p-5" style={{ borderColor: "#F0DDB0" }}>
+      <div className="bg-white border rounded-md p-5 mb-4" style={{ borderColor: "#F0DDB0" }}>
         <div className="flex items-center gap-2 mb-3">
           <Heart size={18} style={{ color: MARIGOLD }} />
           <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>Donate</h2>
         </div>
-        <div className="space-y-3 mb-4">
+        <div className="space-y-3">
           <p className="text-sm text-[#5B6B63]">
             ClairMD is working toward Section 8 nonprofit registration to run a patient financial-assistance program alongside the clinical product — a way to help cover care costs (ICU stays, surgeries, ongoing treatment) for patients who can't afford them, funded separately from the clinical software business.
           </p>
@@ -343,7 +426,22 @@ function DonatePage({ onBack }) {
             Public donations aren't open yet, and won't be until that registration is complete: without it, there's no legal structure to issue a proper donation receipt, no 80G tax-exemption status to offer donors, and no board oversight of how funds are used. We'd rather build that properly than take money before the structure exists to use it responsibly.
           </p>
         </div>
-        <DonateForm />
+      </div>
+
+      <div className="bg-white border rounded-md p-5 mb-4" style={{ borderColor: HAIRLINE }}>
+        <h3 className="text-sm font-medium mb-1" style={{ color: INK }}>Domestic donations (India) — preview</h3>
+        <p className="text-xs text-[#8A958E] mb-3">A walkthrough of what the real flow will look like once it's live. Nothing on this screen is a real transaction.</p>
+        <MockDonateCheckout />
+      </div>
+
+      <div className="bg-white border rounded-md p-5" style={{ borderColor: HAIRLINE }}>
+        <div className="flex items-center gap-2 mb-2">
+          <AlertTriangle size={15} style={{ color: "#B34A3C" }} />
+          <h3 className="text-sm font-medium" style={{ color: INK }}>International donations</h3>
+        </div>
+        <p className="text-xs text-[#5B6B63]">
+          Not available, even as a preview. Indian law (the Foreign Contribution Regulation Act, FCRA) requires an Indian entity to hold separate FCRA registration before it can legally accept donations from outside India — an approval that typically can't even be applied for until well after Section 8 registration and a track record of activity. We're not building a foreign-donation flow, mocked or otherwise, until that's genuinely in place.
+        </p>
       </div>
     </FooterPageShell>
   );
