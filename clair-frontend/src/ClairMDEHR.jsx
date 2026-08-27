@@ -11,9 +11,11 @@ import {
   Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
+  LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
+import Ribbon, { NoteTypeToolbar, DEFAULT_TABS as RIBBON_DEFAULT_TABS } from "./Ribbon.jsx";
 
 // ---------------------------------------------------------------------------
 // Design tokens
@@ -3597,6 +3599,18 @@ const EXAM_TEMPLATES = {
     source: { title: "Otoscopy", org: "StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK556090/" },
   },
 };
+
+// Shared by ExaminationPicker's own "+" buttons and any external trigger
+// (the Ribbon's Examination Templates group) that adds a system to an
+// examSpace array — kept as one function so both build the identical shape
+// ({ key, notes: { [sectionTitle]: "" }, signs: {} }).
+function buildExamSpaceEntry(key) {
+  const t = EXAM_TEMPLATES[key];
+  if (!t) return null;
+  const notes = {};
+  t.sections.forEach((sec) => { notes[sec.title] = ""; });
+  return { key, notes, signs: {} };
+}
 
 // Differential diagnosis reference lists by presenting complaint. Original
 // content written from general medical knowledge — not extracted from any
@@ -15157,7 +15171,7 @@ function AutoExpandingTextarea({ value, onChange, placeholder }) {
   );
 }
 
-function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examSpace: externalExamSpace, setExamSpace: externalSetExamSpace, disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, ssValues: externalSsValues, setSsValues: externalSetSsValues, envValues: externalEnvValues, setEnvValues: externalSetEnvValues }) {
+function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examSpace: externalExamSpace, setExamSpace: externalSetExamSpace, disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, ssValues: externalSsValues, setSsValues: externalSetSsValues, envValues: externalEnvValues, setEnvValues: externalSetEnvValues, traumaOpen: externalTraumaOpen, setTraumaOpen: externalSetTraumaOpen, disasterOpen: externalDisasterOpen, setDisasterOpen: externalSetDisasterOpen, poisoningOpen: externalPoisoningOpen, setPoisoningOpen: externalSetPoisoningOpen, envOpen: externalEnvOpen, setEnvOpen: externalSetEnvOpen, ssOpen: externalSsOpen, setSsOpen: externalSetSsOpen }) {
   const [internalDraftHpi, setInternalDraftHpi] = useState("");
   const draftHpi = externalDraftHpi !== undefined ? externalDraftHpi : internalDraftHpi;
   const setDraftHpi = externalSetDraftHpi !== undefined ? externalSetDraftHpi : setInternalDraftHpi;
@@ -15198,11 +15212,11 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
             )}
 
             <ExaminationPicker examSpace={isDraft ? externalExamSpace : undefined} setExamSpace={isDraft ? externalSetExamSpace : undefined} />
-            <TraumaPicker />
-            <DisasterManagementPicker disasterValues={isDraft ? externalDisasterValues : undefined} setDisasterValues={isDraft ? externalSetDisasterValues : undefined} />
-            <PoisoningPicker poisoningValues={isDraft ? externalPoisoningValues : undefined} setPoisoningValues={isDraft ? externalSetPoisoningValues : undefined} />
-            <EnvironmentalInjuriesPicker envValues={isDraft ? externalEnvValues : undefined} setEnvValues={isDraft ? externalSetEnvValues : undefined} />
-            <SpecialSituationsPicker ssValues={isDraft ? externalSsValues : undefined} setSsValues={isDraft ? externalSetSsValues : undefined} />
+            <TraumaPicker open={isDraft ? externalTraumaOpen : undefined} setOpen={isDraft ? externalSetTraumaOpen : undefined} />
+            <DisasterManagementPicker disasterValues={isDraft ? externalDisasterValues : undefined} setDisasterValues={isDraft ? externalSetDisasterValues : undefined} open={isDraft ? externalDisasterOpen : undefined} setOpen={isDraft ? externalSetDisasterOpen : undefined} />
+            <PoisoningPicker poisoningValues={isDraft ? externalPoisoningValues : undefined} setPoisoningValues={isDraft ? externalSetPoisoningValues : undefined} open={isDraft ? externalPoisoningOpen : undefined} setOpen={isDraft ? externalSetPoisoningOpen : undefined} />
+            <EnvironmentalInjuriesPicker envValues={isDraft ? externalEnvValues : undefined} setEnvValues={isDraft ? externalSetEnvValues : undefined} open={isDraft ? externalEnvOpen : undefined} setOpen={isDraft ? externalSetEnvOpen : undefined} />
+            <SpecialSituationsPicker ssValues={isDraft ? externalSsValues : undefined} setSsValues={isDraft ? externalSetSsValues : undefined} open={isDraft ? externalSsOpen : undefined} setOpen={isDraft ? externalSetSsOpen : undefined} />
           </div>
         );
       })}
@@ -15923,7 +15937,10 @@ function buildIcuWardSlipText({ details, vitals, hpi, examSpace, ddxSpace, ddxSp
 const OPD_TOOL_DEFS = [
   { key: "hpi", label: "History of present illness", icon: FileText },
   { key: "vitals", label: "Vitals", icon: Activity },
-  { key: "examination", label: "Examination", icon: Stethoscope },
+  // "examination" deliberately not here — Ribbon's Insert tab (the 11
+  // body-system buttons) is the only way to add it now, via
+  // insertExamTemplate (which itself calls addTool("examination")); this
+  // icon used to duplicate that.
   { key: "ddx", label: "Differential diagnosis", icon: ListChecks },
   { key: "workup", label: "Workup", icon: FlaskConical },
   { key: "diagnosisplan", label: "Provisional diagnosis & treatment plan", icon: ClipboardList },
@@ -16464,7 +16481,21 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
     return true;
   };
 
-  React.useImperativeHandle(ref, () => ({ attemptSave: handleSave }));
+  // Ribbon → Insert → Examination Templates targets this directly (same
+  // shape/dedupe rule as ExaminationPicker's own "+" button — see
+  // buildExamSpaceEntry) so a ribbon click and the picker's own button do
+  // the exact same thing to examSpace. Also turns on the "examination" tool
+  // card itself (addTool) — without that, the section stays hidden and
+  // buildOpdSlipText (which also gates on addedTools.includes("examination"))
+  // would silently drop it from the saved note.
+  const insertExamTemplate = (key) => {
+    addTool("examination");
+    if (examSpace.some((e) => e.key === key)) return;
+    const entry = buildExamSpaceEntry(key);
+    if (entry) setExamSpace((prev) => [...prev, entry]);
+  };
+
+  React.useImperativeHandle(ref, () => ({ attemptSave: handleSave, insertExamTemplate }));
 
   return (
     <div>
@@ -16975,15 +17006,6 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
   const [internalExamSpace, setInternalExamSpace] = useState([]); // [{ key, notes: { [sectionTitle]: string }, signs: { [sectionTitle]: { [label]: "present"|"absent" } } }]
   const examSpace = externalExamSpace !== undefined ? externalExamSpace : internalExamSpace;
   const setExamSpace = externalSetExamSpace !== undefined ? externalSetExamSpace : setInternalExamSpace;
-  const [browserOpen, setBrowserOpen] = useState(false);
-
-  const addSystem = (key) => {
-    if (examSpace.some((e) => e.key === key)) return;
-    const t = EXAM_TEMPLATES[key];
-    const notes = {};
-    t.sections.forEach((sec) => { notes[sec.title] = ""; });
-    setExamSpace((prev) => [...prev, { key, notes, signs: {} }]);
-  };
 
   const removeSystem = (key) => setExamSpace((prev) => prev.filter((e) => e.key !== key));
   const clearAll = () => setExamSpace([]);
@@ -17003,15 +17025,14 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
   return (
     <div className="mt-4 pt-4 border-t-2 border-[#0F5C56]">
       <div className="flex items-center justify-between mb-2">
-        <button
-          type="button"
-          onClick={() => setBrowserOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-[#0F5C56]"
-        >
-          {browserOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {/* Plain label, not a button — browsing/adding the 11 body systems
+            now happens only via the Ribbon's Insert tab, so there's no
+            "+/-" browse panel here to toggle open anymore (used to
+            duplicate exactly what those 11 ribbon buttons already do). */}
+        <div className="flex items-center gap-1.5 text-[#0F5C56]">
           <Stethoscope size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Examination</span>
-        </button>
+        </div>
         {examSpace.length > 0 && (
           <button
             type="button"
@@ -17024,53 +17045,9 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
         )}
       </div>
 
-      {browserOpen && (
-        <>
-          <style>{`
-            .exam-list-scroll::-webkit-scrollbar { width: 8px; }
-            .exam-list-scroll::-webkit-scrollbar-track { background: #F2F7F5; }
-            .exam-list-scroll::-webkit-scrollbar-thumb { background-color: #0F5C56; border-radius: 999px; }
-            .exam-list-scroll { scrollbar-width: thin; scrollbar-color: #0F5C56 #F2F7F5; }
-          `}</style>
-          <div
-            className="exam-list-scroll mb-3 border border-[#D8DED9] rounded-md divide-y divide-[#EEF1EE] bg-white overflow-y-auto"
-            style={{ width: "5cm", maxHeight: "200px" }}
-          >
-            {Object.entries(EXAM_TEMPLATES).map(([key, t]) => {
-              const added = examSpace.some((e) => e.key === key);
-              return (
-                <div key={key} className="flex items-center justify-between px-3 py-2">
-                  <span className="text-xs font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{t.name}</span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => addSystem(key)}
-                      disabled={added}
-                      title={added ? "Already in examination space" : "Add to examination space"}
-                      className={`w-6 h-6 flex items-center justify-center rounded-sm border ${added ? "border-[#0F5C56] text-[#0F5C56] bg-[#F2F7F5] cursor-not-allowed" : "border-[#0F5C56] text-[#0F5C56] hover:bg-[#F2F7F5]"}`}
-                    >
-                      {added ? <CheckCircle2 size={13} /> : <Plus size={13} />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeSystem(key)}
-                      disabled={!added}
-                      title={added ? "Remove from examination space" : "Not currently added"}
-                      className={`w-6 h-6 flex items-center justify-center rounded-sm border ${!added ? "border-[#EEF1EE] text-[#D8DED9] cursor-not-allowed" : "border-[#B34A3C] text-[#B34A3C] hover:bg-[#FBEFEC]"}`}
-                    >
-                      <Undo2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
       {examSpace.length === 0 ? (
         <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          {browserOpen ? "Click + next to a system above to add its examination template here." : "Click Examination above to browse all 11 body systems and add the ones relevant here."}
+          Use Insert → Examination Templates on the ribbon above to add a body system's checklist here.
         </p>
       ) : (
         <div className="space-y-3">
@@ -17706,19 +17683,34 @@ function OrthopaedicInjuriesToggle() {
   );
 }
 
-function TraumaPicker() {
-  const [collapsibleOpen, setCollapsibleOpen] = useState(false);
+function TraumaPicker({ open: externalOpen, setOpen: externalSetOpen } = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isExternallyControlled = externalOpen !== undefined;
+  const collapsibleOpen = isExternallyControlled ? externalOpen : internalOpen;
+  const setCollapsibleOpen = isExternallyControlled ? externalSetOpen : setInternalOpen;
   return (
     <div className="mt-4 pt-4 border-t-2 border-[#B34A3C]">
-      <button
-        type="button"
-        onClick={() => setCollapsibleOpen((v) => !v)}
-        className="flex items-center gap-1.5 mb-2 text-[#B34A3C]"
-      >
-        {collapsibleOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <ShieldAlert size={14} />
-        <span className="text-xs uppercase tracking-wide font-semibold">Trauma</span>
-      </button>
+      {/* On a live draft, the Ribbon's Special Situations → Trauma button is
+          the only way to open this now (no duplicate click-to-open here) —
+          plain label, not a button. Viewing a locked past encounter has no
+          ribbon equivalent, so it keeps its own clickable toggle — otherwise
+          historical trauma findings would become permanently unreachable. */}
+      {isExternallyControlled ? (
+        <div className="flex items-center gap-1.5 mb-2 text-[#B34A3C]">
+          <ShieldAlert size={14} />
+          <span className="text-xs uppercase tracking-wide font-semibold">Trauma</span>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setCollapsibleOpen((v) => !v)}
+          className="flex items-center gap-1.5 mb-2 text-[#B34A3C]"
+        >
+          {collapsibleOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <ShieldAlert size={14} />
+          <span className="text-xs uppercase tracking-wide font-semibold">Trauma</span>
+        </button>
+      )}
       {collapsibleOpen && (
         <>
           <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -17868,8 +17860,10 @@ function DisasterResponseReference() {
   );
 }
 
-function DisasterManagementPicker({ disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues }) {
-  const [moduleOn, setModuleOn] = useState(false);
+function DisasterManagementPicker({ disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, open: externalOpen, setOpen: externalSetOpen }) {
+  const [internalModuleOn, setInternalModuleOn] = useState(false);
+  const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
+  const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
   const isExternallyControlled = externalDisasterValues !== undefined;
   const setTopicValues = (topicId, updater) => {
     if (!isExternallyControlled) return; // topic cards fall back to their own internal state when not externally controlled
@@ -17886,13 +17880,27 @@ function DisasterManagementPicker({ disasterValues: externalDisasterValues, setD
           <AlertTriangle size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Disaster Management</span>
         </div>
-        <button
-          onClick={() => setModuleOn((v) => !v)}
-          className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
-          style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-        >
-          {moduleOn ? "On" : "Off"}
-        </button>
+        {/* On a live draft, the Ribbon's Special Situations → Disaster
+            Management button is the only way to switch this on now — a
+            plain status label here, not a duplicate clickable toggle.
+            Viewing a locked past encounter keeps its own toggle, same
+            reasoning as TraumaPicker above. */}
+        {externalOpen !== undefined ? (
+          <span
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </span>
+        ) : (
+          <button
+            onClick={() => setModuleOn((v) => !v)}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </button>
+        )}
       </div>
       {moduleOn && (
         <div className="space-y-2">
@@ -18065,8 +18073,10 @@ function PoisoningManagementReference() {
   );
 }
 
-function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues }) {
-  const [moduleOn, setModuleOn] = useState(false);
+function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, open: externalOpen, setOpen: externalSetOpen }) {
+  const [internalModuleOn, setInternalModuleOn] = useState(false);
+  const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
+  const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
   const isExternallyControlled = externalPoisoningValues !== undefined;
   const setTopicValues = (topicId, updater) => {
     if (!isExternallyControlled) return;
@@ -18083,13 +18093,22 @@ function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisonin
           <Pill size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Poisoning</span>
         </div>
-        <button
-          onClick={() => setModuleOn((v) => !v)}
-          className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
-          style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-        >
-          {moduleOn ? "On" : "Off"}
-        </button>
+        {externalOpen !== undefined ? (
+          <span
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </span>
+        ) : (
+          <button
+            onClick={() => setModuleOn((v) => !v)}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </button>
+        )}
       </div>
       {moduleOn && (
         <div className="space-y-2">
@@ -18251,8 +18270,10 @@ function EnvGeneralApproachReference() {
   );
 }
 
-function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValues: externalSetEnvValues }) {
-  const [moduleOn, setModuleOn] = useState(false);
+function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValues: externalSetEnvValues, open: externalOpen, setOpen: externalSetOpen }) {
+  const [internalModuleOn, setInternalModuleOn] = useState(false);
+  const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
+  const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
   const isExternallyControlled = externalEnvValues !== undefined;
   const setTopicValues = (topicId, updater) => {
     if (!isExternallyControlled) return;
@@ -18269,13 +18290,22 @@ function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValue
           <Wind size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Environmental Injuries</span>
         </div>
-        <button
-          onClick={() => setModuleOn((v) => !v)}
-          className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
-          style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-        >
-          {moduleOn ? "On" : "Off"}
-        </button>
+        {externalOpen !== undefined ? (
+          <span
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </span>
+        ) : (
+          <button
+            onClick={() => setModuleOn((v) => !v)}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </button>
+        )}
       </div>
       {moduleOn && (
         <div className="space-y-2">
@@ -18436,8 +18466,10 @@ function SSAdminOverview() {
   );
 }
 
-function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: externalSetSsValues }) {
-  const [moduleOn, setModuleOn] = useState(false);
+function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: externalSetSsValues, open: externalOpen, setOpen: externalSetOpen }) {
+  const [internalModuleOn, setInternalModuleOn] = useState(false);
+  const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
+  const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
   const isExternallyControlled = externalSsValues !== undefined;
   const setTopicValues = (topicId, updater) => {
     if (!isExternallyControlled) return;
@@ -18454,13 +18486,22 @@ function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: exte
           <ShieldAlert size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Special Situations</span>
         </div>
-        <button
-          onClick={() => setModuleOn((v) => !v)}
-          className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
-          style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-        >
-          {moduleOn ? "On" : "Off"}
-        </button>
+        {externalOpen !== undefined ? (
+          <span
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </span>
+        ) : (
+          <button
+            onClick={() => setModuleOn((v) => !v)}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </button>
+        )}
       </div>
       {moduleOn && (
         <div className="space-y-2">
@@ -19554,7 +19595,7 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
 
       <div className="flex items-center gap-2 mb-1">
         <Building2 size={18} className="text-[#0F5C56]" />
-        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Account access</h2>
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Profile</h2>
       </div>
       <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Each account is fully isolated — a hospital, a solo doctor, and a hospital-affiliated doctor never see one another's data unless explicitly linked.
@@ -22841,14 +22882,268 @@ function LibraryModal({ configKey, onClose, onMinimize, theme }) {
   );
 }
 
-// Sidebar buttons (Statistics, Doctor profile, Account access, etc.) open
+// Non-patient correspondence — a company, vendor, or member of the public
+// reaching the doctor for a reason that isn't a patient's care — routed
+// here instead of mixing into the specialty feed or patient records. Real
+// delivery needs a connected backend account (there's no inbox without
+// one); once connected this is honestly empty rather than showing fake
+// mail, same pattern as the notifications panel above.
+function MailingsPanel({ onBack }) {
+  const [connectedEmail, setConnectedEmail] = useState(null);
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-1">
+        <Mail size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Mailings</h2>
+      </div>
+      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        When a company, vendor, or member of the public wants to reach you for something other than a patient's care, it arrives here — kept separate from your specialty feed and patient records.
+      </p>
+      {!connectedEmail ? (
+        <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — mailings require a connected account" onConnected={(account) => setConnectedEmail(account.email)} />
+      ) : (
+        <div className="bg-white border border-[#D8DED9] rounded-md p-6 flex flex-col items-center text-center">
+          <Inbox size={28} className="text-[#B8C0BC] mb-2" />
+          <p className="text-sm text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No mailings yet.</p>
+          <p className="text-xs text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connected as {connectedEmail}.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// A real orientation tour of what's actually built — not generic
+// marketing copy. Each step names the real tab/feature it's describing,
+// in the order a new doctor would actually encounter them.
+const TUTORIAL_SECTIONS = [
+  {
+    title: "1. Starting a note",
+    body: "From the sidebar's Patients button, pick a patient (or start a new one). Then choose OPD Notes for a quick single-page outpatient note, or ICU/Ward Notes for the full four-page inpatient workflow (Overview, Records, Differential Diagnosis & Workup, Provisional Diagnosis & Treatment Plan).",
+  },
+  {
+    title: "2. The ribbon toolbar",
+    body: "Home has text formatting for the note itself. Insert has the 11 body-system Examination Templates — click one to drop that system's checklist straight into whichever note you have open. Review has spelling and find.",
+  },
+  {
+    title: "3. Library",
+    body: "Medical Condition, Symptoms, Aetiology, and Drug Database — reference lookups you can open at any time, independent of any specific note.",
+  },
+  {
+    title: "4. Special Situations",
+    body: "Trauma, Disaster Management, Poisoning, Environmental Injuries, and Special Situations — five clinical-scenario checklists. These only apply to ICU/Ward Notes; clicking one opens (or closes) that section on the note's Records page.",
+  },
+  {
+    title: "5. Administration",
+    body: "Planner, Follow-ups, Doctor profile, and — for hospital accounts — Build a hospital, Bed availability, Inventory, Billing, Affiliated doctors, and Statistics. Virtual OPD is a Premium-tier feature; it stays greyed out until your account is upgraded.",
+  },
+  {
+    title: "6. Mailings, Help, and Feedback",
+    body: "Mailings is where non-patient correspondence (companies, vendors, the public) reaches you. Help has this tutorial plus Troubleshooting, FAQs, and a way to report a problem. Feedback sends a suggestion straight to the ClairMD team.",
+  },
+  {
+    title: "7. Your data's privacy",
+    body: "Patient record content is encrypted on your own device before it's ever sent anywhere — ClairMD's backend stores only encrypted data and has no way to read it, even from the founder's own admin tools.",
+  },
+];
+
+function TutorialPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-1">
+        <Compass size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Tutorial — about ClairMD</h2>
+      </div>
+      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        A quick tour of what's here and where to find it.
+      </p>
+      <div className="space-y-3">
+        {TUTORIAL_SECTIONS.map((s, i) => (
+          <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
+            <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.title}</div>
+            <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.body}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Real, specific troubleshooting for things this app actually does — not
+// generic filler. Each entry describes a behavior that's really built this
+// way (spin-down cold starts, clipboard permission fallback, the premium
+// lock, locally-harvested code search, the draft/save distinction).
+const TROUBLESHOOTING_ITEMS = [
+  {
+    q: "It says \"Backend: not connected\"",
+    a: "ClairMD's backend can spin down after a period of inactivity on its current hosting tier — the next request can take up to a minute to wake it back up. If reconnecting doesn't work after a minute, try logging in again from the panel.",
+  },
+  {
+    q: "Paste didn't work in my OPD note",
+    a: "Some browsers block programmatic clipboard access outside a direct user action. If the note's paste button doesn't work, use Ctrl+V (Cmd+V on Mac) directly in the note text area instead.",
+  },
+  {
+    q: "A ribbon/module button is greyed out (e.g. Virtual OPD)",
+    a: "That's a Premium-tier feature and your account is currently on the free plan. Upgrade from the sidebar's Profile button to unlock it.",
+  },
+  {
+    q: "ICD-10, SNOMED CT, or LOINC search returns nothing for a term I expect",
+    a: "These are searched against ClairMD's own locally-harvested copy of the WHO/SNOMED/LOINC data, not a live external lookup. Try the official code itself, or a shorter/partial term, rather than a synonym.",
+  },
+  {
+    q: "My note says \"Draft — nothing here is saved yet\"",
+    a: "That's accurate, not an error — a new OPD or ICU/Ward note stays a local draft until you press Save. Saving is what turns it into a real (locally kept, and backend-synced if connected) record.",
+  },
+];
+
+function TroubleshootingPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-4">
+        <Wrench size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Troubleshooting</h2>
+      </div>
+      <div className="space-y-3">
+        {TROUBLESHOOTING_ITEMS.map((item, i) => (
+          <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
+            <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.q}</div>
+            <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.a}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const FAQ_ITEMS = [
+  {
+    q: "Is my patient data secure?",
+    a: "Yes — patient record content is encrypted on your own device before it's ever sent anywhere. ClairMD's backend stores only encrypted data and has no way to read it.",
+  },
+  {
+    q: "What's the difference between OPD Notes and ICU/Ward Notes?",
+    a: "OPD Notes are a quick, single-page note for outpatient visits. ICU/Ward Notes are a fuller multi-page workflow (Overview, Records, Differential Diagnosis & Workup, Provisional Diagnosis & Treatment Plan) for inpatient care.",
+  },
+  {
+    q: "Can I use ClairMD without an internet connection?",
+    a: "You can draft an OPD or ICU/Ward note offline, but saving it to your synced record and backup requires a connection.",
+  },
+  {
+    q: "How do I unlock Premium features like Virtual OPD?",
+    a: "Upgrade your plan from the sidebar's Profile button.",
+  },
+  {
+    q: "Who can see my Mailings?",
+    a: "Only you — Mailings is scoped to your own account, separate from any patient record or shared hospital data.",
+  },
+];
+
+function FaqsPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-4">
+        <CircleHelp size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Frequently asked questions</h2>
+      </div>
+      <div className="space-y-3">
+        {FAQ_ITEMS.map((item, i) => (
+          <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
+            <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.q}</div>
+            <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.a}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Shared shape for Report a problem / Feedback — both are a short text
+// submission with the same honest "kept locally in this prototype, not
+// yet wired to a backend" ceiling as every other unfinished write-path in
+// this app (see OPD/ICU-Ward's own save flow for the same pattern).
+function TextSubmitPanel({ icon: Icon, title, description, placeholder, submitLabel, submittedText }) {
+  const [text, setText] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  return (
+    <>
+      <div className="flex items-center gap-2 mb-1">
+        <Icon size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{title}</h2>
+      </div>
+      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{description}</p>
+      {submitted ? (
+        <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-md p-4 text-sm text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          {submittedText}
+        </div>
+      ) : (
+        <>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={placeholder}
+            rows={6}
+            className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm resize-none mb-3 focus:outline-none focus:border-[#0F5C56]"
+            style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+          />
+          <button
+            type="button"
+            disabled={!text.trim()}
+            onClick={() => setSubmitted(true)}
+            className="flex items-center gap-1.5 bg-[#0F5C56] text-white text-sm px-4 py-2 rounded-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+          >
+            <Send size={14} /> {submitLabel}
+          </button>
+          <p className="text-[11px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+        </>
+      )}
+    </>
+  );
+}
+
+function ReportProblemPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <TextSubmitPanel
+        icon={Bug}
+        title="Report a problem"
+        description="Something not working as expected? Describe what happened, and what you expected instead."
+        placeholder="What went wrong, and what were you trying to do?"
+        submitLabel="Send report"
+        submittedText="Thanks — your report has been noted for this session."
+      />
+    </div>
+  );
+}
+
+function FeedbackPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <TextSubmitPanel
+        icon={MessagesSquare}
+        title="Feedback"
+        description="Have a suggestion for ClairMD? Let us know what would make it more useful for your practice."
+        placeholder="What would you like to see added or changed?"
+        submitLabel="Send feedback"
+        submittedText="Thanks — your feedback has been noted for this session."
+      />
+    </div>
+  );
+}
+
+// Sidebar/ribbon buttons (Statistics, Doctor profile, Profile, etc.) open
 // their panel in this centered popup instead of squeezing it into the
 // narrow sidebar column itself — that in-column layout was uncomfortable
 // to read and scroll (see commit history / user feedback).
 const SIDEBAR_VIEW_META = {
   buildHospital: { label: "Build a hospital", icon: Hammer },
   campMode: { label: "Camp / medical aid mode", icon: Tent },
-  hospitalAuth: { label: "Account access", icon: Building2 },
+  hospitalAuth: { label: "Profile", icon: Building2 },
   statistics: { label: "Statistics", icon: BarChart3 },
   beds: { label: "Bed availability", icon: BedDouble },
   inventory: { label: "Inventory manager", icon: Package },
@@ -22859,6 +23154,12 @@ const SIDEBAR_VIEW_META = {
   virtualOpd: { label: "Virtual OPD", icon: GraduationCap },
   doctorProfile: { label: "Doctor profile", icon: UserCircle2 },
   feed: { label: "Specialty feed", icon: Rss },
+  mailings: { label: "Mailings", icon: Mail },
+  tutorial: { label: "Tutorial (About App)", icon: Compass },
+  troubleshooting: { label: "Troubleshooting", icon: Wrench },
+  faqs: { label: "FAQs", icon: CircleHelp },
+  report: { label: "Report a problem", icon: Bug },
+  feedback: { label: "Feedback", icon: MessagesSquare },
 };
 
 function SidebarViewModal({ viewKey, onClose, onMinimize, theme, children }) {
@@ -24514,6 +24815,16 @@ export default function ClairMDEHR() {
   const [draftPoisoningValues, setDraftPoisoningValues] = useState({});
   const [draftSsValues, setDraftSsValues] = useState({});
   const [draftEnvValues, setDraftEnvValues] = useState({});
+  // Each special-situation picker's own on/off section toggle (TraumaPicker's
+  // collapsibleOpen, the other four's moduleOn) — lifted the same way
+  // examSpace/disasterValues etc. already are, so the Ribbon's Special
+  // Situations buttons can actually open the section, not just seed data
+  // that would otherwise stay hidden behind a closed toggle.
+  const [draftTraumaOpen, setDraftTraumaOpen] = useState(false);
+  const [draftDisasterOpen, setDraftDisasterOpen] = useState(false);
+  const [draftPoisoningOpen, setDraftPoisoningOpen] = useState(false);
+  const [draftEnvOpen, setDraftEnvOpen] = useState(false);
+  const [draftSsOpen, setDraftSsOpen] = useState(false);
   const [draftDdxSpace, setDraftDdxSpace] = useState([]);
   const [draftDdxSpaceNotes, setDraftDdxSpaceNotes] = useState("");
   const [draftWorkupSpace, setDraftWorkupSpace] = useState([]);
@@ -24525,11 +24836,28 @@ export default function ClairMDEHR() {
   const [tab, setTab] = useState("overview");
   const [scoringSelections, setScoringSelections] = useState({});
   const [sidebarView, setSidebarView] = useState("patients"); // patients | hospitalAuth | accounting | feed
-  const [libraryOpen, setLibraryOpen] = useState(true);
-  const [adminOpen, setAdminOpen] = useState(true);
   const [labOrders, setLabOrders] = useState([]);
   const [doctorSpecialty, setDoctorSpecialty] = useState(null);
   const [doctorPlan, setDoctorPlan] = useState("free");
+
+  // The Ribbon's Administration tab is ClairMD's real sidebar module list
+  // (see Ribbon.jsx's MODULE_SECTIONS) — patched here, not in Ribbon.jsx
+  // itself, so the one real paywalled item (Virtual OPD) keeps the exact
+  // same doctorPlan-aware lock the old sidebar button enforced, instead of
+  // silently becoming free-for-everyone when it moved onto the ribbon.
+  const ribbonTabs = useMemo(() => RIBBON_DEFAULT_TABS.map((t) => {
+    if (t.id !== "administration") return t;
+    return {
+      ...t,
+      groups: t.groups.map((g) => ({
+        ...g,
+        commands: g.commands.map((c) => {
+          if (c.id !== "mod-virtualOpd" || doctorPlan === "premium") return c;
+          return { ...c, disabled: true, tooltip: { title: c.label, description: "Premium feature — upgrade to unlock." } };
+        }),
+      })),
+    };
+  }), [doctorPlan]);
   const [followups, setFollowups] = useState(FOLLOWUPS);
   const [feedPosts, setFeedPosts] = useState(DOCTOR_FEED_POSTS);
   const [postExpiryMonths, setPostExpiryMonths] = useState(6);
@@ -24819,6 +25147,31 @@ export default function ClairMDEHR() {
             )}
           </div>
 
+          {/* Profile gets its own colored strip, separate from the
+              Patients nav below — a distinct space, not just another
+              nav-list item, per explicit request. Marigold matches the
+              accent this app already used for its old Admin group. */}
+          <div className="px-3 py-3 border-b border-[#D8DED9]" style={{ backgroundColor: "#FBF6EC" }}>
+            <button
+              type="button"
+              onClick={() => setSidebarView("hospitalAuth")}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-sm text-sm text-left transition-colors border ${
+                sidebarView === "hospitalAuth" ? "font-medium" : "hover:bg-white"
+              }`}
+              style={{
+                backgroundColor: sidebarView === "hospitalAuth" ? "#FFFFFF" : "transparent",
+                borderColor: "#F0DDB0",
+                color: "#7A5A19",
+                fontFamily: "'IBM Plex Sans', sans-serif",
+              }}
+            >
+              <span className="flex items-center gap-2.5">
+                <Building2 size={16} />Profile
+              </span>
+              <span aria-hidden="true">&gt;</span>
+            </button>
+          </div>
+
           <style>{`
             .sidebar-nav-scroll::-webkit-scrollbar { width: 6px; }
             .sidebar-nav-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -24845,123 +25198,6 @@ export default function ClairMDEHR() {
             >
               <Users size={16} />Patients
             </button>
-
-            {/* Admin group — marigold accent, shared by the section header and every
-                item nested under it, so the whole block reads as one colored zone
-                distinct from Library (slate-blue) and the ad rail (plum) below. */}
-            <div className="border-l-2 pl-1" style={{ borderColor: "#F0DDB0" }}>
-              <button
-                onClick={() => setAdminOpen((v) => !v)}
-                className="w-full flex items-center justify-between pt-2 pb-1 px-2 text-[10px] uppercase tracking-wide hover:text-[#7A5A19]"
-                style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#B3822E" }}
-              >
-                Admin
-                {adminOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              </button>
-              {adminOpen && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setSidebarView("buildHospital")}
-                    className={`w-full flex items-center gap-2.5 pl-4 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors mb-1 border ${
-                      sidebarView === "buildHospital" ? "font-medium" : "hover:bg-[#FBF6EC]"
-                    }`}
-                    style={{ backgroundColor: "#FBF6EC", borderColor: "#F0DDB0", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" }}
-                  >
-                    <Hammer size={16} className="shrink-0" />Build a hospital
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSidebarView("campMode")}
-                    className={`w-full flex items-center gap-2.5 pl-4 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors mb-1 border ${
-                      sidebarView === "campMode" ? "font-medium" : "hover:bg-[#FBF6EC]"
-                    }`}
-                    style={{ backgroundColor: "#FBF6EC", borderColor: "#F0DDB0", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" }}
-                  >
-                    <Tent size={16} className="shrink-0" />Camp / medical aid mode
-                  </button>
-                  {[
-                    { key: "statistics", label: "Statistics", icon: BarChart3 },
-                    { key: "beds", label: "Bed availability", icon: BedDouble },
-                    { key: "inventory", label: "Inventory manager", icon: Package },
-                    { key: "hospitalBilling", label: "Billing & payment", icon: CreditCard },
-                    { key: "affiliatedDoctors", label: "Affiliated doctors", icon: Users2 },
-                    { key: "planner", label: "Planner", icon: CalendarDays },
-                    { key: "followups", label: "Follow-ups", icon: ClipboardList },
-                    { key: "virtualOpd", label: "Virtual OPD", icon: GraduationCap, premium: true },
-                  ].map((item) => {
-                    const locked = item.premium && doctorPlan !== "premium";
-                    return (
-                      <button
-                        key={item.key}
-                        onClick={() => !locked && setSidebarView(item.key)}
-                        disabled={locked}
-                        title={locked ? "Premium feature — upgrade to unlock" : ""}
-                        className={`w-full flex items-center justify-between gap-2.5 pl-4 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors ${
-                          locked ? "text-[#B8C0BC] cursor-not-allowed" : sidebarView === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#FBF6EC]"
-                        }`}
-                        style={!locked && sidebarView === item.key ? { backgroundColor: "#FBF6EC", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
-                      >
-                        <span className="flex items-center gap-2.5"><item.icon size={16} className="shrink-0" />{item.label}</span>
-                        {locked && <Lock size={12} />}
-                      </button>
-                    );
-                  })}
-                </>
-              )}
-            </div>
-
-            {/* Library group — slate-blue accent, same treatment as Admin above. */}
-            <div className="border-l-2 pl-1 mt-1" style={{ borderColor: "#C9D6E3" }}>
-              <button
-                onClick={() => setLibraryOpen((v) => !v)}
-                className="w-full flex items-center justify-between pt-2 pb-1 px-2 text-[10px] uppercase tracking-wide hover:text-[#2B3E58]"
-                style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#4C6A8C" }}
-              >
-                Library
-                {libraryOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              </button>
-              {libraryOpen && [
-                { key: "medicalCondition", label: "Medical condition", icon: BookOpen },
-                { key: "aetiology", label: "Aetiology", icon: BookOpen },
-                { key: "symptoms", label: "Symptoms", icon: Activity },
-                { key: "drugDatabase", label: "Drug database", icon: Pill },
-              ].map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => { setLibraryModalKey(item.key); setLibraryModalMinimized(false); }}
-                  className={`w-full flex items-center gap-2 pl-4 pr-2 py-2.5 rounded-sm text-xs whitespace-nowrap text-left transition-colors ${
-                    libraryModalKey === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#EDF1F6]"
-                  }`}
-                  style={libraryModalKey === item.key ? { backgroundColor: "#EDF1F6", color: "#3A5478", fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
-                >
-                  <item.icon size={14} className="shrink-0" />{item.label}
-                </button>
-              ))}
-            </div>
-
-            {[
-              { key: "doctorProfile", label: "Doctor profile", icon: UserCircle2 },
-              { key: "feed", label: "Specialty feed", icon: Rss },
-              { key: "hospitalAuth", label: "Account access", icon: Building2 },
-            ].map((item) => {
-              const locked = item.premium && doctorPlan !== "premium";
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => !locked && setSidebarView(item.key)}
-                  disabled={locked}
-                  title={locked ? "Premium feature — upgrade to unlock" : ""}
-                  className={`w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors ${
-                    locked ? "text-[#B8C0BC] cursor-not-allowed" : sidebarView === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#F7F9F7]"
-                  }`}
-                  style={!locked && sidebarView === item.key ? { backgroundColor: `${theme.color}14`, color: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
-                >
-                  <span className="flex items-center gap-2.5"><item.icon size={16} />{item.label}</span>
-                  {locked && <Lock size={12} />}
-                </button>
-              );
-            })}
           </nav>
 
           <div
@@ -25003,6 +25239,18 @@ export default function ClairMDEHR() {
               <DoctorProfilePanel onBack={() => setSidebarView("patients")} doctorSpecialty={doctorSpecialty} theme={theme} />
             ) : sidebarView === "feed" ? (
               <CmeFeedPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "mailings" ? (
+              <MailingsPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "tutorial" ? (
+              <TutorialPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "troubleshooting" ? (
+              <TroubleshootingPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "faqs" ? (
+              <FaqsPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "report" ? (
+              <ReportProblemPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "feedback" ? (
+              <FeedbackPanel onBack={() => setSidebarView("patients")} />
             ) : null}
           </SidebarViewModal>
         )}
@@ -25010,25 +25258,93 @@ export default function ClairMDEHR() {
         <main className="flex-1 overflow-y-auto">
           {!patient ? (
             <>
-              <div className="border-b border-[#D8DED9] bg-white px-8 pt-6">
-                <div className="flex gap-1 overflow-x-auto">
-                  {!newEntryMode && (
-                    <>
-                      <Tab active={false} onClick={() => setNewEntryMode("opd")} icon={UserPlus}>OPD</Tab>
-                      <Tab active={false} onClick={() => setNewEntryMode("icuward")} icon={UserPlus}>ICU / Ward</Tab>
-                    </>
-                  )}
-                  {newEntryMode === "opd" && <Tab active={true} icon={UserPlus}>OPD note</Tab>}
-                  {newEntryMode === "icuward" && tabs.filter((t) => t.key !== "advanced").map((t, i) => (
-                    <Tab key={t.key} active={tab === t.key} onClick={() => attemptTabChange(t.key)} icon={t.icon}>{`Page ${i + 1} · ${t.label}`}</Tab>
-                  ))}
+              <Ribbon
+                tabs={ribbonTabs}
+                documentLabel={newEntryMode === "opd" ? "OPD Note" : newEntryMode === "icuward" ? "ICU / Ward Note" : "No note open"}
+                onCommand={(command) => {
+                  // Library and Administration commands map onto this same
+                  // screen's real sidebar actions (setLibraryModalKey /
+                  // setSidebarView — the exact functions the sidebar's own
+                  // Library/module buttons called before those buttons were
+                  // removed in favor of the ribbon). Administration's Virtual
+                  // OPD keeps its doctorPlan-aware lock via ribbonTabs above,
+                  // not here — a disabled button never fires onClick, so no
+                  // extra guard is needed in this handler. Examination
+                  // Templates route into whichever note is actually open —
+                  // OPD via OpdBuilderTab's own examSpace (through its ref,
+                  // same as attemptSave), ICU/Ward via draftExamSpace
+                  // directly (already lifted up here, same state
+                  // RecordsTab's ExaminationPicker reads/writes). Both use
+                  // buildExamSpaceEntry so a ribbon click and the picker's
+                  // own "+" button build the identical shape. Special
+                  // Situations (Trauma/Disaster Management/Poisoning/
+                  // Environmental Injuries/Special Situations) route into
+                  // ICU/Ward only, via the same open-toggle lifting pattern
+                  // (draftTraumaOpen etc. above) — OPD's OpdBuilderTab never
+                  // mounted these 5 pickers at all (only Examination), so
+                  // there's nothing to open there; clicking one while an
+                  // OPD note is open is a deliberate no-op, not a bug. Same
+                  // for Home/Review (Bold, Insert Table, etc.) — OpdBuilderTab
+                  // and the ICU/Ward wizard's other fields are structured
+                  // inputs, not a shared rich-text surface.
+                  if (command.id?.startsWith("lib-")) {
+                    setLibraryModalKey(command.id.slice(4));
+                    setLibraryModalMinimized(false);
+                  } else if (command.id?.startsWith("mod-")) {
+                    setSidebarView(command.id.slice(4));
+                  } else if (command.id?.startsWith("exam-")) {
+                    const key = command.id.slice(5);
+                    if (newEntryMode === "opd") {
+                      opdBuilderRef.current?.insertExamTemplate(key);
+                    } else if (newEntryMode === "icuward") {
+                      setDraftExamSpace((prev) => {
+                        if (prev.some((e) => e.key === key)) return prev;
+                        const entry = buildExamSpaceEntry(key);
+                        return entry ? [...prev, entry] : prev;
+                      });
+                    }
+                  } else if (command.id?.startsWith("situ-")) {
+                    // Only ICU/Ward has these 5 pickers mounted at all —
+                    // RecordsTab is where TraumaPicker/DisasterManagementPicker/
+                    // PoisoningPicker/EnvironmentalInjuriesPicker/
+                    // SpecialSituationsPicker live; OPD's OpdBuilderTab never
+                    // included them, so there's nothing to open there.
+                    // Toggles (not just forces-open) each picker's own
+                    // on/off state (see draftTraumaOpen etc. above) — the
+                    // pickers themselves no longer have their own duplicate
+                    // click-to-open control on a live draft (see
+                    // TraumaPicker/DisasterManagementPicker/etc.), so this
+                    // ribbon button is the sole open AND close control now.
+                    if (newEntryMode === "icuward") {
+                      const key = command.id.slice(5);
+                      const opener = {
+                        trauma: setDraftTraumaOpen,
+                        disasterManagement: setDraftDisasterOpen,
+                        poisoning: setDraftPoisoningOpen,
+                        environmentalInjuries: setDraftEnvOpen,
+                        specialSituations: setDraftSsOpen,
+                      }[key];
+                      opener?.((prev) => !prev);
+                    }
+                  }
+                }}
+              />
+              <NoteTypeToolbar activeType={newEntryMode} onSelect={setNewEntryMode} />
+              {newEntryMode && (
+                <div className="border-b border-[#D8DED9] bg-white px-8 pt-6">
+                  <div className="flex gap-1 overflow-x-auto">
+                    {newEntryMode === "opd" && <Tab active={true} icon={UserPlus}>OPD note</Tab>}
+                    {newEntryMode === "icuward" && tabs.filter((t) => t.key !== "advanced").map((t, i) => (
+                      <Tab key={t.key} active={tab === t.key} onClick={() => attemptTabChange(t.key)} icon={t.icon}>{`Page ${i + 1} · ${t.label}`}</Tab>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               {!newEntryMode ? (
                 <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
                   <UserPlus size={32} className="text-[#B8C0BC] mb-3" />
                   <p className="text-sm text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No patient selected.</p>
-                  <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Click "OPD" for a quick, doctor-built note, or "ICU / Ward" for the full multi-page workflow — or open the Patients button in the sidebar.</p>
+                  <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Click "OPD Notes" above for a quick, doctor-built note, or "ICU / Ward Notes" for the full multi-page workflow — or open the Patients button in the sidebar.</p>
                 </div>
               ) : newEntryMode === "opd" ? (
                 <div className="p-8">
@@ -25068,7 +25384,7 @@ export default function ClairMDEHR() {
                       />
                     </div>
                     <div style={{ display: tab === "records" ? "block" : "none" }}>
-                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} examSpace={draftExamSpace} setExamSpace={setDraftExamSpace} disasterValues={draftDisasterValues} setDisasterValues={setDraftDisasterValues} poisoningValues={draftPoisoningValues} setPoisoningValues={setDraftPoisoningValues} ssValues={draftSsValues} setSsValues={setDraftSsValues} envValues={draftEnvValues} setEnvValues={setDraftEnvValues} />
+                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} examSpace={draftExamSpace} setExamSpace={setDraftExamSpace} disasterValues={draftDisasterValues} setDisasterValues={setDraftDisasterValues} poisoningValues={draftPoisoningValues} setPoisoningValues={setDraftPoisoningValues} ssValues={draftSsValues} setSsValues={setDraftSsValues} envValues={draftEnvValues} setEnvValues={setDraftEnvValues} traumaOpen={draftTraumaOpen} setTraumaOpen={setDraftTraumaOpen} disasterOpen={draftDisasterOpen} setDisasterOpen={setDraftDisasterOpen} poisoningOpen={draftPoisoningOpen} setPoisoningOpen={setDraftPoisoningOpen} envOpen={draftEnvOpen} setEnvOpen={setDraftEnvOpen} ssOpen={draftSsOpen} setSsOpen={setDraftSsOpen} />
                     </div>
                     <div style={{ display: tab === "workup" ? "block" : "none" }}>
                       <DifferentialWorkupTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} ddxSpace={draftDdxSpace} setDdxSpace={setDraftDdxSpace} ddxSpaceNotes={draftDdxSpaceNotes} setDdxSpaceNotes={setDraftDdxSpaceNotes} workupSpace={draftWorkupSpace} setWorkupSpace={setDraftWorkupSpace} workupNotes={draftWorkupNotes} setWorkupNotes={setDraftWorkupNotes} />
