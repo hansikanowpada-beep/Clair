@@ -236,15 +236,27 @@ function OthersContact() {
 const FOOTER_PAGES = {
   about: {
     title: "About Us",
-    body: "ClairMD is an AI-assisted EHR built for small Indian clinics — quick OPD notes, a full ICU/Ward workflow, and clinical reference tools, all with patient record content encrypted on your own device before it ever reaches our servers. Built by Ayodhya.",
+    body: [
+      "ClairMD is an AI-assisted EHR built for small Indian clinics, hospitals, and the people who work in them — quick OPD notes, a full ICU/Ward workflow, and clinical reference tools in one place.",
+      "Diagnoses are coded against a locally-harvested ICD-10 terminology database (WHO's classification, tens of thousands of codes), searchable by code or by name. A built-in library covers medical conditions, symptoms, aetiology, and drugs, alongside examination templates for eleven body systems and dedicated workflows for trauma, disaster management, poisoning, and environmental injuries.",
+      "Separate, scoped accounts exist for independent doctors, hospital doctors, hospital administrators, hospital staff (technicians, pharmacists, administrative assistants), patients, and care-team members — each sees only what their role needs, nothing more.",
+      "Patient record content is encrypted on your own device before it's ever sent anywhere; ClairMD's backend stores only encrypted data and has no way to read it, even from our own admin tools. Nightly backup runs to your own Google Drive, and every account can export or deactivate its data on request, per DPDP.",
+      "Built by Ayodhya.",
+    ],
   },
   contact: {
     title: "Contact Us",
-    body: "Reach us via the Feedback and Report a problem panels once you're logged in, or through the Mailings inbox on a doctor account. A public contact address will be listed here once clairmd.net is live.",
+    body: [
+      "Reach us via the Feedback and Report a problem panels once you're logged in, or through the Mailings inbox on a doctor account — mail sent there by companies, other doctors, or anyone contacting a doctor for a non-clinical reason routes straight to that doctor's inbox.",
+      "A public contact address will be listed here once clairmd.net is live.",
+    ],
   },
   affiliations: {
     title: "Affiliations",
-    body: "ClairMD is currently in early pilot conversations with hospitals. Confirmed affiliation partnerships will be listed here once they're finalized — nothing is confirmed yet, and we'd rather say that plainly than claim a partnership before it's real.",
+    body: [
+      "ClairMD is currently in early pilot conversations with hospitals interested in running the OPD/ICU-Ward workflow and hospital billing features on real wards.",
+      "Confirmed affiliation partnerships will be listed here once they're finalized — nothing is confirmed yet, and we'd rather say that plainly than claim a partnership before it's real.",
+    ],
   },
 };
 
@@ -280,7 +292,9 @@ function FooterInfoPage({ pageKey, onBack }) {
     <FooterPageShell onBack={onBack}>
       <div className="bg-white border rounded-md p-5" style={{ borderColor: HAIRLINE }}>
         <h2 className="text-lg mb-3" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>{p.title}</h2>
-        <p className="text-sm text-[#5B6B63]">{p.body}</p>
+        <div className="space-y-3">
+          {p.body.map((para, i) => <p key={i} className="text-sm text-[#5B6B63]">{para}</p>)}
+        </div>
       </div>
     </FooterPageShell>
   );
@@ -321,9 +335,14 @@ function DonatePage({ onBack }) {
           <Heart size={18} style={{ color: MARIGOLD }} />
           <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>Donate</h2>
         </div>
-        <p className="text-sm text-[#5B6B63] mb-4">
-          ClairMD is working toward Section 8 nonprofit registration to run a patient financial-assistance program alongside the clinical product — helping cover care costs for patients who can't afford them. Public donations aren't open yet; we'd rather build that properly than take money before the structure exists to use it responsibly.
-        </p>
+        <div className="space-y-3 mb-4">
+          <p className="text-sm text-[#5B6B63]">
+            ClairMD is working toward Section 8 nonprofit registration to run a patient financial-assistance program alongside the clinical product — a way to help cover care costs (ICU stays, surgeries, ongoing treatment) for patients who can't afford them, funded separately from the clinical software business.
+          </p>
+          <p className="text-sm text-[#5B6B63]">
+            Public donations aren't open yet, and won't be until that registration is complete: without it, there's no legal structure to issue a proper donation receipt, no 80G tax-exemption status to offer donors, and no board oversight of how funds are used. We'd rather build that properly than take money before the structure exists to use it responsibly.
+          </p>
+        </div>
         <DonateForm />
       </div>
     </FooterPageShell>

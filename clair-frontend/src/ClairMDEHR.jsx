@@ -24514,7 +24514,7 @@ function AdminLoginLanding({ onBack, backLabel, connectedAccount, loginForm, set
           <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD</h1>
           <p className="text-sm mb-3" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", color: "#E8A33D" }}>Founder &amp; staff access</p>
           <p className="text-xs text-[#5B6B63] max-w-xs">
-            Platform-wide monitoring for the people who run ClairMD — not a clinic or patient account. Admin accounts are provisioned directly against the database, never through public signup.
+            Platform-wide monitoring for the people who run ClairMD — not a clinic or patient account. After logging in you'll see account growth and revenue, hospitals restricted for unresolved overage billing, backup reliability, notification delivery, and ICD-10 terminology harvest progress — read-only, and never patient clinical content. Admin accounts are provisioned directly against the database, never through public signup.
           </p>
         </div>
 
