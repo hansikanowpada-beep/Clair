@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
-import Ribbon, { NoteTypeToolbar } from "./Ribbon.jsx";
+import Ribbon, { NoteTypeToolbar, DEFAULT_TABS as RIBBON_DEFAULT_TABS } from "./Ribbon.jsx";
 
 // ---------------------------------------------------------------------------
 // Design tokens
@@ -24550,11 +24550,28 @@ export default function ClairMDEHR() {
   const [tab, setTab] = useState("overview");
   const [scoringSelections, setScoringSelections] = useState({});
   const [sidebarView, setSidebarView] = useState("patients"); // patients | hospitalAuth | accounting | feed
-  const [libraryOpen, setLibraryOpen] = useState(true);
-  const [adminOpen, setAdminOpen] = useState(true);
   const [labOrders, setLabOrders] = useState([]);
   const [doctorSpecialty, setDoctorSpecialty] = useState(null);
   const [doctorPlan, setDoctorPlan] = useState("free");
+
+  // The Ribbon's Administration tab is ClairMD's real sidebar module list
+  // (see Ribbon.jsx's MODULE_SECTIONS) — patched here, not in Ribbon.jsx
+  // itself, so the one real paywalled item (Virtual OPD) keeps the exact
+  // same doctorPlan-aware lock the old sidebar button enforced, instead of
+  // silently becoming free-for-everyone when it moved onto the ribbon.
+  const ribbonTabs = useMemo(() => RIBBON_DEFAULT_TABS.map((t) => {
+    if (t.id !== "administration") return t;
+    return {
+      ...t,
+      groups: t.groups.map((g) => ({
+        ...g,
+        commands: g.commands.map((c) => {
+          if (c.id !== "mod-virtualOpd" || doctorPlan === "premium") return c;
+          return { ...c, disabled: true, tooltip: { title: c.label, description: "Premium feature — upgrade to unlock." } };
+        }),
+      })),
+    };
+  }), [doctorPlan]);
   const [followups, setFollowups] = useState(FOLLOWUPS);
   const [feedPosts, setFeedPosts] = useState(DOCTOR_FEED_POSTS);
   const [postExpiryMonths, setPostExpiryMonths] = useState(6);
@@ -24871,122 +24888,12 @@ export default function ClairMDEHR() {
               <Users size={16} />Patients
             </button>
 
-            {/* Admin group — marigold accent, shared by the section header and every
-                item nested under it, so the whole block reads as one colored zone
-                distinct from Library (slate-blue) and the ad rail (plum) below. */}
-            <div className="border-l-2 pl-1" style={{ borderColor: "#F0DDB0" }}>
-              <button
-                onClick={() => setAdminOpen((v) => !v)}
-                className="w-full flex items-center justify-between pt-2 pb-1 px-2 text-[10px] uppercase tracking-wide hover:text-[#7A5A19]"
-                style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#B3822E" }}
-              >
-                Admin
-                {adminOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              </button>
-              {adminOpen && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setSidebarView("buildHospital")}
-                    className={`w-full flex items-center gap-2.5 pl-4 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors mb-1 border ${
-                      sidebarView === "buildHospital" ? "font-medium" : "hover:bg-[#FBF6EC]"
-                    }`}
-                    style={{ backgroundColor: "#FBF6EC", borderColor: "#F0DDB0", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" }}
-                  >
-                    <Hammer size={16} className="shrink-0" />Build a hospital
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSidebarView("campMode")}
-                    className={`w-full flex items-center gap-2.5 pl-4 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors mb-1 border ${
-                      sidebarView === "campMode" ? "font-medium" : "hover:bg-[#FBF6EC]"
-                    }`}
-                    style={{ backgroundColor: "#FBF6EC", borderColor: "#F0DDB0", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" }}
-                  >
-                    <Tent size={16} className="shrink-0" />Camp / medical aid mode
-                  </button>
-                  {[
-                    { key: "statistics", label: "Statistics", icon: BarChart3 },
-                    { key: "beds", label: "Bed availability", icon: BedDouble },
-                    { key: "inventory", label: "Inventory manager", icon: Package },
-                    { key: "hospitalBilling", label: "Billing & payment", icon: CreditCard },
-                    { key: "affiliatedDoctors", label: "Affiliated doctors", icon: Users2 },
-                    { key: "planner", label: "Planner", icon: CalendarDays },
-                    { key: "followups", label: "Follow-ups", icon: ClipboardList },
-                    { key: "virtualOpd", label: "Virtual OPD", icon: GraduationCap, premium: true },
-                  ].map((item) => {
-                    const locked = item.premium && doctorPlan !== "premium";
-                    return (
-                      <button
-                        key={item.key}
-                        onClick={() => !locked && setSidebarView(item.key)}
-                        disabled={locked}
-                        title={locked ? "Premium feature — upgrade to unlock" : ""}
-                        className={`w-full flex items-center justify-between gap-2.5 pl-4 pr-2 py-2.5 rounded-sm text-sm text-left transition-colors ${
-                          locked ? "text-[#B8C0BC] cursor-not-allowed" : sidebarView === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#FBF6EC]"
-                        }`}
-                        style={!locked && sidebarView === item.key ? { backgroundColor: "#FBF6EC", color: "#7A5A19", fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
-                      >
-                        <span className="flex items-center gap-2.5"><item.icon size={16} className="shrink-0" />{item.label}</span>
-                        {locked && <Lock size={12} />}
-                      </button>
-                    );
-                  })}
-                </>
-              )}
-            </div>
-
-            {/* Library group — slate-blue accent, same treatment as Admin above. */}
-            <div className="border-l-2 pl-1 mt-1" style={{ borderColor: "#C9D6E3" }}>
-              <button
-                onClick={() => setLibraryOpen((v) => !v)}
-                className="w-full flex items-center justify-between pt-2 pb-1 px-2 text-[10px] uppercase tracking-wide hover:text-[#2B3E58]"
-                style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#4C6A8C" }}
-              >
-                Library
-                {libraryOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              </button>
-              {libraryOpen && [
-                { key: "medicalCondition", label: "Medical condition", icon: BookOpen },
-                { key: "aetiology", label: "Aetiology", icon: BookOpen },
-                { key: "symptoms", label: "Symptoms", icon: Activity },
-                { key: "drugDatabase", label: "Drug database", icon: Pill },
-              ].map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => { setLibraryModalKey(item.key); setLibraryModalMinimized(false); }}
-                  className={`w-full flex items-center gap-2 pl-4 pr-2 py-2.5 rounded-sm text-xs whitespace-nowrap text-left transition-colors ${
-                    libraryModalKey === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#EDF1F6]"
-                  }`}
-                  style={libraryModalKey === item.key ? { backgroundColor: "#EDF1F6", color: "#3A5478", fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
-                >
-                  <item.icon size={14} className="shrink-0" />{item.label}
-                </button>
-              ))}
-            </div>
-
-            {[
-              { key: "doctorProfile", label: "Doctor profile", icon: UserCircle2 },
-              { key: "feed", label: "Specialty feed", icon: Rss },
-              { key: "hospitalAuth", label: "Account access", icon: Building2 },
-            ].map((item) => {
-              const locked = item.premium && doctorPlan !== "premium";
-              return (
-                <button
-                  key={item.key}
-                  onClick={() => !locked && setSidebarView(item.key)}
-                  disabled={locked}
-                  title={locked ? "Premium feature — upgrade to unlock" : ""}
-                  className={`w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors ${
-                    locked ? "text-[#B8C0BC] cursor-not-allowed" : sidebarView === item.key ? "font-medium" : "text-[#5B6B63] hover:bg-[#F7F9F7]"
-                  }`}
-                  style={!locked && sidebarView === item.key ? { backgroundColor: `${theme.color}14`, color: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
-                >
-                  <span className="flex items-center gap-2.5"><item.icon size={16} />{item.label}</span>
-                  {locked && <Lock size={12} />}
-                </button>
-              );
-            })}
+            {/* Admin, Library, and the doctorProfile/feed/hospitalAuth trio
+                used to live here as their own sidebar groups — removed since
+                every one of those is now reachable from the ribbon's Library
+                and Administration tabs above (same setLibraryModalKey /
+                setSidebarView calls, see the Ribbon's onCommand handler),
+                so keeping both copies would just be duplicate navigation. */}
           </nav>
 
           <div
@@ -25036,23 +24943,33 @@ export default function ClairMDEHR() {
           {!patient ? (
             <>
               <Ribbon
+                tabs={ribbonTabs}
                 documentLabel={newEntryMode === "opd" ? "OPD Note" : newEntryMode === "icuward" ? "ICU / Ward Note" : "No note open"}
                 onCommand={(command) => {
-                  // Library and Modules commands map onto this same screen's
-                  // real sidebar actions (setLibraryModalKey / setSidebarView
-                  // — the exact functions the sidebar's own Library/Modules
-                  // buttons call). Examination Templates route into whichever
-                  // note is actually open — OPD via OpdBuilderTab's own
-                  // examSpace (through its ref, same as attemptSave), ICU/Ward
-                  // via draftExamSpace directly (already lifted up here, same
-                  // state RecordsTab's ExaminationPicker reads/writes). Both
-                  // use buildExamSpaceEntry so a ribbon click and the
-                  // picker's own "+" button build the identical shape.
-                  // Everything else on the ribbon (Bold, Insert Table, etc.)
-                  // isn't wired to note content yet — OpdBuilderTab and the
+                  // Library and Administration commands map onto this same
+                  // screen's real sidebar actions (setLibraryModalKey /
+                  // setSidebarView — the exact functions the sidebar's own
+                  // Library/module buttons called before those buttons were
+                  // removed in favor of the ribbon). Administration's Virtual
+                  // OPD keeps its doctorPlan-aware lock via ribbonTabs above,
+                  // not here — a disabled button never fires onClick, so no
+                  // extra guard is needed in this handler. Examination
+                  // Templates route into whichever note is actually open —
+                  // OPD via OpdBuilderTab's own examSpace (through its ref,
+                  // same as attemptSave), ICU/Ward via draftExamSpace
+                  // directly (already lifted up here, same state
+                  // RecordsTab's ExaminationPicker reads/writes). Both use
+                  // buildExamSpaceEntry so a ribbon click and the picker's
+                  // own "+" button build the identical shape. Special
+                  // Situations (Trauma/Disaster Management/Poisoning/
+                  // Environmental Injuries/Special Situations) are NOT
+                  // wired yet — each picker's own open/closed toggle is
+                  // local state inside RecordsTab's own picker instances,
+                  // not lifted up like examSpace was, so reaching it from
+                  // here needs its own scoped pass. Same for Home/Review
+                  // (Bold, Insert Table, etc.) — OpdBuilderTab and the
                   // ICU/Ward wizard's other fields are structured inputs,
-                  // not a shared rich-text surface, so wiring those needs
-                  // its own scoped pass rather than a guess here.
+                  // not a shared rich-text surface.
                   if (command.id?.startsWith("lib-")) {
                     setLibraryModalKey(command.id.slice(4));
                     setLibraryModalMinimized(false);

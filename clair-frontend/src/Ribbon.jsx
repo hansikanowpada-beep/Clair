@@ -26,7 +26,7 @@ import {
   Stethoscope, BookOpen, Activity, Pill,
   Hammer, Tent, Building2, BarChart3, BedDouble, Package, CreditCard,
   Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss,
-  UserPlus,
+  UserPlus, ShieldAlert, AlertTriangle, Wind,
 } from "lucide-react";
 
 // --- ClairMD brand tokens (see ClairMDEHR.jsx's own design-tokens comment)
@@ -238,6 +238,18 @@ const LIBRARY_SECTIONS = [
   { key: "drugDatabase", label: "Drug Database", icon: Pill },
 ];
 
+// The app's real "special situation" clinical pickers, stacked together
+// inside RecordsTab in ClairMDEHR.jsx (TraumaPicker, DisasterManagementPicker,
+// PoisoningPicker, EnvironmentalInjuriesPicker, SpecialSituationsPicker) —
+// same 5 categories, same real labels/icons each picker's own header uses.
+const SPECIAL_SITUATION_SECTIONS = [
+  { key: "trauma", label: "Trauma", icon: ShieldAlert },
+  { key: "disasterManagement", label: "Disaster Management", icon: AlertTriangle },
+  { key: "poisoning", label: "Poisoning", icon: Pill },
+  { key: "environmentalInjuries", label: "Environmental Injuries", icon: Wind },
+  { key: "specialSituations", label: "Special Situations", icon: ShieldAlert },
+];
+
 const MODULE_SECTIONS = {
   clinical: [
     { key: "planner", label: "Planner", icon: CalendarDays },
@@ -261,12 +273,13 @@ const MODULE_SECTIONS = {
 };
 
 // ---------------------------------------------------------------------------
-// Default example config — Home / Insert / Review / Library / Modules,
-// sized for an EHR's own note-taking needs rather than a copy of Word's
-// tab set. Library and Modules mirror ClairMD's real sidebar sections
-// (see LIBRARY_SECTIONS/MODULE_SECTIONS above) so this isn't placeholder
-// content — it's the app's actual reference library and module list,
-// just reachable from the ribbon as well as the sidebar.
+// Default example config — Home / Insert / Review / Library /
+// Special Situations / Administration, sized for an EHR's own note-taking
+// needs rather than a copy of Word's tab set. Library, Special Situations,
+// and Administration all mirror ClairMD's real sections (see
+// LIBRARY_SECTIONS/SPECIAL_SITUATION_SECTIONS/MODULE_SECTIONS above) so
+// this isn't placeholder content — it's the app's actual reference
+// library, clinical-scenario pickers, and admin/module list.
 // ---------------------------------------------------------------------------
 export const DEFAULT_TABS = [
   {
@@ -409,8 +422,24 @@ export const DEFAULT_TABS = [
     ],
   },
   {
-    id: "modules",
-    label: "Modules",
+    id: "special-situations",
+    label: "Special Situations",
+    groups: [
+      {
+        id: "scenarios",
+        label: "Clinical Scenarios",
+        commands: SPECIAL_SITUATION_SECTIONS.map((s) => ({
+          id: `situ-${s.key}`,
+          label: s.label,
+          icon: s.icon,
+          tooltip: { title: s.label, description: `${s.label} reference — open this section on the note's Records page.` },
+        })),
+      },
+    ],
+  },
+  {
+    id: "administration",
+    label: "Administration",
     groups: [
       {
         id: "mod-clinical",
