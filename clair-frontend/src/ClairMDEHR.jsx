@@ -16,6 +16,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
 import Ribbon, { NoteTypeToolbar, DEFAULT_TABS as RIBBON_DEFAULT_TABS } from "./Ribbon.jsx";
+import { getApiBase, getAuthToken, setAuthToken, apiRequest, backendSignup, backendLogin, backendLogout } from "./api.js";
 
 // ---------------------------------------------------------------------------
 // Design tokens
@@ -13200,70 +13201,10 @@ function printSummary(text, title) {
 //   downloadEncryptedBlobFromDrive below.
 // ---------------------------------------------------------------------------
 
-// Resolution order: an explicit localStorage override (useful for
-// pointing a deployed frontend at a different backend temporarily,
-// without a rebuild) — then VITE_API_BASE, baked in at build time by
-// Vite (see vite.config.js; this is undefined in the esbuild --bundle=
-// false parse check this file is also validated with, which is fine,
-// import.meta.env just isn't populated outside an actual Vite build) —
-// then the localhost default this file has always used for local dev.
-function getApiBase() {
-  if (typeof localStorage !== "undefined" && localStorage.getItem("clair_api_base")) {
-    return localStorage.getItem("clair_api_base");
-  }
-  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_BASE) {
-    return import.meta.env.VITE_API_BASE;
-  }
-  return "http://localhost:4000/api";
-}
-
-function getAuthToken() {
-  return typeof localStorage !== "undefined" ? localStorage.getItem("clair_auth_token") : null;
-}
-function setAuthToken(token) {
-  if (typeof localStorage === "undefined") return;
-  if (token) localStorage.setItem("clair_auth_token", token);
-  else localStorage.removeItem("clair_auth_token");
-}
-
-async function apiRequest(path, { method = "GET", body, auth = true } = {}) {
-  const headers = { "Content-Type": "application/json" };
-  if (auth) {
-    const token = getAuthToken();
-    if (!token) throw new Error("Not connected to the backend yet — log in or sign up below first.");
-    headers.Authorization = `Bearer ${token}`;
-  }
-  let res;
-  try {
-    res = await fetch(`${getApiBase()}${path}`, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-  } catch (err) {
-    throw new Error(`Couldn't reach the backend at ${getApiBase()} — is clairmd-backend running? (${err.message})`);
-  }
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Backend request failed (${res.status}).`);
-  return data;
-}
-
-async function backendSignup({ accountType, email, password, displayName, licenseNumber }) {
-  const data = await apiRequest("/auth/signup", { method: "POST", auth: false, body: { accountType, email, password, displayName, licenseNumber } });
-  setAuthToken(data.token);
-  return data.account;
-}
-
-async function backendLogin({ email, password }) {
-  const data = await apiRequest("/auth/login", { method: "POST", auth: false, body: { email, password } });
-  setAuthToken(data.token);
-  const me = await apiRequest("/auth/me");
-  return me.account;
-}
-
-function backendLogout() {
-  setAuthToken(null);
-}
+// getApiBase/getAuthToken/setAuthToken/apiRequest/backendSignup/
+// backendLogin/backendLogout moved to ./api.js so LandingPage.jsx can call
+// the exact same real auth logic instead of re-implementing it — see that
+// file for the (unchanged) implementations.
 
 // --- Per-record AES-GCM key (prototype-only local key store — see the
 // module comment above for why this stands in for the real key-wrap
@@ -20215,7 +20156,7 @@ function PatientSearchBar({ onGoToTab }) {
   );
 }
 
-function PatientPortalView({ patients, onBack, followups, setFollowups, feedPosts, setFeedPosts, postExpiryMonths, pendingPostRequests, setPendingPostRequests }) {
+function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view", followups, setFollowups, feedPosts, setFeedPosts, postExpiryMonths, pendingPostRequests, setPendingPostRequests }) {
   const [account, setAccount] = useState(null); // null until "signed up"
   const [portalMode, setPortalMode] = useState("signup"); // signup | login
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -20388,7 +20329,7 @@ function PatientPortalView({ patients, onBack, followups, setFollowups, feedPost
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#EFF3F0" }}>
         <link href={FONT_LINK} rel="stylesheet" />
         <div className="bg-white border border-[#D8DED9] rounded-md p-8 w-full max-w-sm">
-          <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to clinic view</button>
+          <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
 
           <div className="flex gap-1 mb-5 bg-[#EFF3F0] rounded-sm p-1">
             {["signup", "login"].map((m) => (
@@ -20541,7 +20482,7 @@ function PatientPortalView({ patients, onBack, followups, setFollowups, feedPost
         </div>
       )}
       <div className="max-w-5xl mx-auto py-8 px-6">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to clinic view</button>
+        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
 
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-2xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Hi, {account.name || patient.name.split(" ")[0]}</h1>
@@ -24706,7 +24647,7 @@ function AdminNotificationHealthCard({ notif }) {
 // (CareTeamTab) had a view. A care team account gets a scoped instruction
 // queue ONLY — never chart or key access, matching the backend's own
 // design (see schema.sql's care_team_instructions comment).
-function CareTeamPortalView({ onBack }) {
+function CareTeamPortalView({ onBack, backLabel = "Back to clinic view" }) {
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24742,7 +24683,7 @@ function CareTeamPortalView({ onBack }) {
   return (
     <div className="min-h-screen bg-[#F7F9F7] p-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to clinic view</button>
+        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
         <div className="flex items-center gap-2 mb-1">
           <LogIn size={18} className="text-[#0F5C56]" />
           <h1 className="text-xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD — Care team</h1>
@@ -24795,8 +24736,20 @@ function CareTeamPortalView({ onBack }) {
   );
 }
 
-export default function ClairMDEHR() {
-  const [appMode, setAppMode] = useState("clinic"); // clinic | patient | admin | careTeam
+// initialAppMode/onExitToLanding let LandingPage.jsx hand off directly into
+// the right internal view (patient/careTeam roles skip straight past the
+// clinic view entirely) without duplicating PatientPortalView's or
+// CareTeamPortalView's own real login screens — both already have one.
+// "Back" from those views should exit to the landing page, NOT the doctor's
+// clinic view, when that's genuinely how this session started; but a doctor
+// who toggles into "patient" (previewing a specific chart) or "careTeam"
+// (the sidebar's own "Care team login" link) from inside the clinic view
+// should still land back in the clinic on "back" — comparing against the
+// immutable initialAppMode (never reassigned) distinguishes the two.
+export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding } = {}) {
+  const [appMode, setAppMode] = useState(initialAppMode); // clinic | patient | admin | careTeam
+  const goBackFromExternalRole = () => (initialAppMode === "clinic" ? setAppMode("clinic") : onExitToLanding?.());
+  const externalRoleBackLabel = initialAppMode === "clinic" ? "Back to clinic view" : "Back to role selection";
   const [selectedId, setSelectedId] = useState(null);
   const [newEntryMode, setNewEntryMode] = useState(null); // null | "opd" | "icuward"
   const [backConfirm, setBackConfirm] = useState(null); // null | "opd" | "icuward"
@@ -24877,7 +24830,7 @@ export default function ClairMDEHR() {
   const isComplexPatient = patient ? patient.encounters.some((e) => e.isComplex) : false;
 
   if (appMode === "patient") {
-    return <PatientPortalView patients={PATIENTS} onBack={() => setAppMode("clinic")} followups={followups} setFollowups={setFollowups} feedPosts={feedPosts} setFeedPosts={setFeedPosts} postExpiryMonths={postExpiryMonths} pendingPostRequests={pendingPostRequests} setPendingPostRequests={setPendingPostRequests} />;
+    return <PatientPortalView patients={PATIENTS} onBack={goBackFromExternalRole} backLabel={externalRoleBackLabel} followups={followups} setFollowups={setFollowups} feedPosts={feedPosts} setFeedPosts={setFeedPosts} postExpiryMonths={postExpiryMonths} pendingPostRequests={pendingPostRequests} setPendingPostRequests={setPendingPostRequests} />;
   }
 
   if (appMode === "admin") {
@@ -24885,7 +24838,7 @@ export default function ClairMDEHR() {
   }
 
   if (appMode === "careTeam") {
-    return <CareTeamPortalView onBack={() => setAppMode("clinic")} />;
+    return <CareTeamPortalView onBack={goBackFromExternalRole} backLabel={externalRoleBackLabel} />;
   }
 
   const tabs = [
