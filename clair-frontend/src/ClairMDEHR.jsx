@@ -19595,7 +19595,7 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
 
       <div className="flex items-center gap-2 mb-1">
         <Building2 size={18} className="text-[#0F5C56]" />
-        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Account access</h2>
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Profile</h2>
       </div>
       <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Each account is fully isolated — a hospital, a solo doctor, and a hospital-affiliated doctor never see one another's data unless explicitly linked.
@@ -22985,7 +22985,7 @@ const TROUBLESHOOTING_ITEMS = [
   },
   {
     q: "A ribbon/module button is greyed out (e.g. Virtual OPD)",
-    a: "That's a Premium-tier feature and your account is currently on the free plan. Upgrade from Administration → Account access to unlock it.",
+    a: "That's a Premium-tier feature and your account is currently on the free plan. Upgrade from the sidebar's Profile button to unlock it.",
   },
   {
     q: "ICD-10, SNOMED CT, or LOINC search returns nothing for a term I expect",
@@ -23032,7 +23032,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "How do I unlock Premium features like Virtual OPD?",
-    a: "Upgrade your plan from Administration → Account access.",
+    a: "Upgrade your plan from the sidebar's Profile button.",
   },
   {
     q: "Who can see my Mailings?",
@@ -23136,14 +23136,14 @@ function FeedbackPanel({ onBack }) {
   );
 }
 
-// Sidebar buttons (Statistics, Doctor profile, Account access, etc.) open
+// Sidebar/ribbon buttons (Statistics, Doctor profile, Profile, etc.) open
 // their panel in this centered popup instead of squeezing it into the
 // narrow sidebar column itself — that in-column layout was uncomfortable
 // to read and scroll (see commit history / user feedback).
 const SIDEBAR_VIEW_META = {
   buildHospital: { label: "Build a hospital", icon: Hammer },
   campMode: { label: "Camp / medical aid mode", icon: Tent },
-  hospitalAuth: { label: "Account access", icon: Building2 },
+  hospitalAuth: { label: "Profile", icon: Building2 },
   statistics: { label: "Statistics", icon: BarChart3 },
   beds: { label: "Bed availability", icon: BedDouble },
   inventory: { label: "Inventory manager", icon: Package },
@@ -25174,12 +25174,22 @@ export default function ClairMDEHR() {
               <Users size={16} />Patients
             </button>
 
-            {/* Admin, Library, and the doctorProfile/feed/hospitalAuth trio
-                used to live here as their own sidebar groups — removed since
-                every one of those is now reachable from the ribbon's Library
-                and Administration tabs above (same setLibraryModalKey /
-                setSidebarView calls, see the Ribbon's onCommand handler),
-                so keeping both copies would just be duplicate navigation. */}
+            {/* Profile (the account-access/login panel — SIDEBAR_VIEW_META
+                key "hospitalAuth") is the one item kept on the sidebar
+                itself rather than folded into the ribbon's Administration
+                tab, per explicit request — everything else that trio used
+                to hold (Library, doctorProfile, feed) is still reachable
+                from the ribbon only (see the Ribbon's onCommand handler). */}
+            <button
+              type="button"
+              onClick={() => setSidebarView("hospitalAuth")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors ${
+                sidebarView === "hospitalAuth" ? "font-medium" : "text-[#5B6B63] hover:bg-[#F7F9F7]"
+              }`}
+              style={sidebarView === "hospitalAuth" ? { backgroundColor: `${theme.color}14`, color: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
+            >
+              <Building2 size={16} />Profile
+            </button>
           </nav>
 
           <div

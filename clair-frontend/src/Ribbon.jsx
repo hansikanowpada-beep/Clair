@@ -25,7 +25,7 @@ import {
   Table, Image, Link2, Search, ClipboardPaste, Copy, Scissors,
   HelpCircle, Sparkles, Tag, ChevronRight, RemoveFormatting,
   Stethoscope, BookOpen, Activity, Pill,
-  Hammer, Tent, Building2, BarChart3, BedDouble, Package, CreditCard,
+  Hammer, Tent, BarChart3, BedDouble, Package, CreditCard,
   Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss,
   UserPlus, ShieldAlert, AlertTriangle, Wind,
   Mail, Wrench, CircleHelp, Bug, MessagesSquare, LifeBuoy, Compass,
@@ -344,7 +344,9 @@ const MODULE_SECTIONS = {
     { key: "affiliatedDoctors", label: "Affiliated doctors", icon: Users2 },
   ],
   account: [
-    { key: "hospitalAuth", label: "Account access", icon: Building2 },
+    // "hospitalAuth" (Account access, now labeled "Profile") deliberately
+    // not here — moved to the left sidebar per explicit request, not
+    // reachable from the ribbon anymore.
     { key: "statistics", label: "Statistics", icon: BarChart3 },
   ],
 };
