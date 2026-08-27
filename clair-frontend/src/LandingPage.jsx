@@ -301,7 +301,7 @@ export default function LandingPage({ onEnter }) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             {MAIN_ROLES.map((r) => <RoleButton key={r.key} role={r} active={selectedRole === r.key} onClick={() => setSelectedRole(r.key)} />)}
           </div>
-          <div className="mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <RoleButton role={OTHERS_ROLE} active={selectedRole === OTHERS_ROLE.key} onClick={() => setSelectedRole(OTHERS_ROLE.key)} />
           </div>
 
