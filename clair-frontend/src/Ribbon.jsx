@@ -436,7 +436,7 @@ const TAB_DEFINITIONS = [
           id: `situ-${s.key}`,
           label: s.label,
           icon: s.icon,
-          tooltip: { title: s.label, description: `${s.label} reference — open this section on the note's Records page.` },
+          tooltip: { title: s.label, description: `Show/hide the ${s.label} section on the note's Records page.` },
         })),
       },
     ],

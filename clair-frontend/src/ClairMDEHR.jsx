@@ -15936,7 +15936,10 @@ function buildIcuWardSlipText({ details, vitals, hpi, examSpace, ddxSpace, ddxSp
 const OPD_TOOL_DEFS = [
   { key: "hpi", label: "History of present illness", icon: FileText },
   { key: "vitals", label: "Vitals", icon: Activity },
-  { key: "examination", label: "Examination", icon: Stethoscope },
+  // "examination" deliberately not here — Ribbon's Insert tab (the 11
+  // body-system buttons) is the only way to add it now, via
+  // insertExamTemplate (which itself calls addTool("examination")); this
+  // icon used to duplicate that.
   { key: "ddx", label: "Differential diagnosis", icon: ListChecks },
   { key: "workup", label: "Workup", icon: FlaskConical },
   { key: "diagnosisplan", label: "Provisional diagnosis & treatment plan", icon: ClipboardList },
@@ -17002,13 +17005,6 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
   const [internalExamSpace, setInternalExamSpace] = useState([]); // [{ key, notes: { [sectionTitle]: string }, signs: { [sectionTitle]: { [label]: "present"|"absent" } } }]
   const examSpace = externalExamSpace !== undefined ? externalExamSpace : internalExamSpace;
   const setExamSpace = externalSetExamSpace !== undefined ? externalSetExamSpace : setInternalExamSpace;
-  const [browserOpen, setBrowserOpen] = useState(false);
-
-  const addSystem = (key) => {
-    if (examSpace.some((e) => e.key === key)) return;
-    const entry = buildExamSpaceEntry(key);
-    if (entry) setExamSpace((prev) => [...prev, entry]);
-  };
 
   const removeSystem = (key) => setExamSpace((prev) => prev.filter((e) => e.key !== key));
   const clearAll = () => setExamSpace([]);
@@ -17028,15 +17024,14 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
   return (
     <div className="mt-4 pt-4 border-t-2 border-[#0F5C56]">
       <div className="flex items-center justify-between mb-2">
-        <button
-          type="button"
-          onClick={() => setBrowserOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-[#0F5C56]"
-        >
-          {browserOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        {/* Plain label, not a button — browsing/adding the 11 body systems
+            now happens only via the Ribbon's Insert tab, so there's no
+            "+/-" browse panel here to toggle open anymore (used to
+            duplicate exactly what those 11 ribbon buttons already do). */}
+        <div className="flex items-center gap-1.5 text-[#0F5C56]">
           <Stethoscope size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Examination</span>
-        </button>
+        </div>
         {examSpace.length > 0 && (
           <button
             type="button"
@@ -17049,53 +17044,9 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
         )}
       </div>
 
-      {browserOpen && (
-        <>
-          <style>{`
-            .exam-list-scroll::-webkit-scrollbar { width: 8px; }
-            .exam-list-scroll::-webkit-scrollbar-track { background: #F2F7F5; }
-            .exam-list-scroll::-webkit-scrollbar-thumb { background-color: #0F5C56; border-radius: 999px; }
-            .exam-list-scroll { scrollbar-width: thin; scrollbar-color: #0F5C56 #F2F7F5; }
-          `}</style>
-          <div
-            className="exam-list-scroll mb-3 border border-[#D8DED9] rounded-md divide-y divide-[#EEF1EE] bg-white overflow-y-auto"
-            style={{ width: "5cm", maxHeight: "200px" }}
-          >
-            {Object.entries(EXAM_TEMPLATES).map(([key, t]) => {
-              const added = examSpace.some((e) => e.key === key);
-              return (
-                <div key={key} className="flex items-center justify-between px-3 py-2">
-                  <span className="text-xs font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{t.name}</span>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => addSystem(key)}
-                      disabled={added}
-                      title={added ? "Already in examination space" : "Add to examination space"}
-                      className={`w-6 h-6 flex items-center justify-center rounded-sm border ${added ? "border-[#0F5C56] text-[#0F5C56] bg-[#F2F7F5] cursor-not-allowed" : "border-[#0F5C56] text-[#0F5C56] hover:bg-[#F2F7F5]"}`}
-                    >
-                      {added ? <CheckCircle2 size={13} /> : <Plus size={13} />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeSystem(key)}
-                      disabled={!added}
-                      title={added ? "Remove from examination space" : "Not currently added"}
-                      className={`w-6 h-6 flex items-center justify-center rounded-sm border ${!added ? "border-[#EEF1EE] text-[#D8DED9] cursor-not-allowed" : "border-[#B34A3C] text-[#B34A3C] hover:bg-[#FBEFEC]"}`}
-                    >
-                      <Undo2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
       {examSpace.length === 0 ? (
         <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          {browserOpen ? "Click + next to a system above to add its examination template here." : "Click Examination above to browse all 11 body systems and add the ones relevant here."}
+          Use Insert → Examination Templates on the ribbon above to add a body system's checklist here.
         </p>
       ) : (
         <div className="space-y-3">
@@ -17733,19 +17684,32 @@ function OrthopaedicInjuriesToggle() {
 
 function TraumaPicker({ open: externalOpen, setOpen: externalSetOpen } = {}) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const collapsibleOpen = externalOpen !== undefined ? externalOpen : internalOpen;
-  const setCollapsibleOpen = externalSetOpen !== undefined ? externalSetOpen : setInternalOpen;
+  const isExternallyControlled = externalOpen !== undefined;
+  const collapsibleOpen = isExternallyControlled ? externalOpen : internalOpen;
+  const setCollapsibleOpen = isExternallyControlled ? externalSetOpen : setInternalOpen;
   return (
     <div className="mt-4 pt-4 border-t-2 border-[#B34A3C]">
-      <button
-        type="button"
-        onClick={() => setCollapsibleOpen((v) => !v)}
-        className="flex items-center gap-1.5 mb-2 text-[#B34A3C]"
-      >
-        {collapsibleOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <ShieldAlert size={14} />
-        <span className="text-xs uppercase tracking-wide font-semibold">Trauma</span>
-      </button>
+      {/* On a live draft, the Ribbon's Special Situations → Trauma button is
+          the only way to open this now (no duplicate click-to-open here) —
+          plain label, not a button. Viewing a locked past encounter has no
+          ribbon equivalent, so it keeps its own clickable toggle — otherwise
+          historical trauma findings would become permanently unreachable. */}
+      {isExternallyControlled ? (
+        <div className="flex items-center gap-1.5 mb-2 text-[#B34A3C]">
+          <ShieldAlert size={14} />
+          <span className="text-xs uppercase tracking-wide font-semibold">Trauma</span>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setCollapsibleOpen((v) => !v)}
+          className="flex items-center gap-1.5 mb-2 text-[#B34A3C]"
+        >
+          {collapsibleOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <ShieldAlert size={14} />
+          <span className="text-xs uppercase tracking-wide font-semibold">Trauma</span>
+        </button>
+      )}
       {collapsibleOpen && (
         <>
           <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -17915,13 +17879,27 @@ function DisasterManagementPicker({ disasterValues: externalDisasterValues, setD
           <AlertTriangle size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Disaster Management</span>
         </div>
-        <button
-          onClick={() => setModuleOn((v) => !v)}
-          className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
-          style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-        >
-          {moduleOn ? "On" : "Off"}
-        </button>
+        {/* On a live draft, the Ribbon's Special Situations → Disaster
+            Management button is the only way to switch this on now — a
+            plain status label here, not a duplicate clickable toggle.
+            Viewing a locked past encounter keeps its own toggle, same
+            reasoning as TraumaPicker above. */}
+        {externalOpen !== undefined ? (
+          <span
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </span>
+        ) : (
+          <button
+            onClick={() => setModuleOn((v) => !v)}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </button>
+        )}
       </div>
       {moduleOn && (
         <div className="space-y-2">
@@ -18114,13 +18092,22 @@ function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisonin
           <Pill size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Poisoning</span>
         </div>
-        <button
-          onClick={() => setModuleOn((v) => !v)}
-          className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
-          style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-        >
-          {moduleOn ? "On" : "Off"}
-        </button>
+        {externalOpen !== undefined ? (
+          <span
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </span>
+        ) : (
+          <button
+            onClick={() => setModuleOn((v) => !v)}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </button>
+        )}
       </div>
       {moduleOn && (
         <div className="space-y-2">
@@ -18302,13 +18289,22 @@ function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValue
           <Wind size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Environmental Injuries</span>
         </div>
-        <button
-          onClick={() => setModuleOn((v) => !v)}
-          className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
-          style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-        >
-          {moduleOn ? "On" : "Off"}
-        </button>
+        {externalOpen !== undefined ? (
+          <span
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </span>
+        ) : (
+          <button
+            onClick={() => setModuleOn((v) => !v)}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </button>
+        )}
       </div>
       {moduleOn && (
         <div className="space-y-2">
@@ -18489,13 +18485,22 @@ function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: exte
           <ShieldAlert size={14} />
           <span className="text-xs uppercase tracking-wide font-semibold">Special Situations</span>
         </div>
-        <button
-          onClick={() => setModuleOn((v) => !v)}
-          className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
-          style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-        >
-          {moduleOn ? "On" : "Off"}
-        </button>
+        {externalOpen !== undefined ? (
+          <span
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </span>
+        ) : (
+          <button
+            onClick={() => setModuleOn((v) => !v)}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+          >
+            {moduleOn ? "On" : "Off"}
+          </button>
+        )}
       </div>
       {moduleOn && (
         <div className="space-y-2">
@@ -25012,10 +25017,13 @@ export default function ClairMDEHR() {
                     // RecordsTab is where TraumaPicker/DisasterManagementPicker/
                     // PoisoningPicker/EnvironmentalInjuriesPicker/
                     // SpecialSituationsPicker live; OPD's OpdBuilderTab never
-                    // included them, so there's nothing to open there. Sets
-                    // each picker's own on/off toggle true (see
-                    // draftTraumaOpen etc. above) — same section a doctor
-                    // would reveal by clicking the picker's own header.
+                    // included them, so there's nothing to open there.
+                    // Toggles (not just forces-open) each picker's own
+                    // on/off state (see draftTraumaOpen etc. above) — the
+                    // pickers themselves no longer have their own duplicate
+                    // click-to-open control on a live draft (see
+                    // TraumaPicker/DisasterManagementPicker/etc.), so this
+                    // ribbon button is the sole open AND close control now.
                     if (newEntryMode === "icuward") {
                       const key = command.id.slice(5);
                       const opener = {
@@ -25025,7 +25033,7 @@ export default function ClairMDEHR() {
                         environmentalInjuries: setDraftEnvOpen,
                         specialSituations: setDraftSsOpen,
                       }[key];
-                      opener?.(true);
+                      opener?.((prev) => !prev);
                     }
                   }
                 }}
