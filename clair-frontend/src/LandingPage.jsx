@@ -307,17 +307,15 @@ export default function LandingPage({ onEnter }) {
 
       <main className="flex-1 flex flex-col items-center px-6 py-16">
         <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: TEAL, fontFamily: "'Fraunces', serif" }}>C</div>
-        <h1 className="text-4xl mb-2" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>ClairMD</h1>
+        <h1 className="text-4xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>ClairMD</h1>
+        <p className="text-sm mb-3" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", color: MARIGOLD }}>Clarity in care</p>
         <p className="text-sm text-[#5B6B63] mb-10 text-center max-w-md">
           An AI-assisted EHR for small clinics — encrypted on your own device before it ever reaches us.
         </p>
 
         <div className="w-full max-w-3xl">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-            {MAIN_ROLES.map((r) => <RoleButton key={r.key} role={r} active={selectedRole === r.key} onClick={() => setSelectedRole(r.key)} />)}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            <RoleButton role={OTHERS_ROLE} active={selectedRole === OTHERS_ROLE.key} onClick={() => setSelectedRole(OTHERS_ROLE.key)} />
+          <div className="flex flex-col gap-3 mb-6 max-w-md mx-auto">
+            {[...MAIN_ROLES, OTHERS_ROLE].map((r) => <RoleButton key={r.key} role={r} active={selectedRole === r.key} onClick={() => setSelectedRole(r.key)} />)}
           </div>
 
           {selectedRole && (
