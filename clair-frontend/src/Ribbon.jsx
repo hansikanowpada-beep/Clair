@@ -256,7 +256,8 @@ const MODULE_SECTIONS = {
     { key: "followups", label: "Follow-ups", icon: ClipboardList },
     { key: "virtualOpd", label: "Virtual OPD", icon: GraduationCap },
     { key: "doctorProfile", label: "Doctor profile", icon: UserCircle2 },
-    { key: "feed", label: "Specialty feed", icon: Rss },
+    // "feed" (Specialty feed) deliberately NOT here — it has its own
+    // top-level ribbon tab below (kept-separate per explicit request).
   ],
   hospitalOps: [
     { key: "buildHospital", label: "Build a hospital", icon: Hammer },
@@ -273,15 +274,18 @@ const MODULE_SECTIONS = {
 };
 
 // ---------------------------------------------------------------------------
-// Default example config — Home / Insert / Review / Library /
-// Special Situations / Administration, sized for an EHR's own note-taking
-// needs rather than a copy of Word's tab set. Library, Special Situations,
-// and Administration all mirror ClairMD's real sections (see
+// Default example config — Administration / Home / Insert / Review /
+// Library / Special Situations / Specialty Feed, sized for an EHR's own
+// note-taking needs rather than a copy of Word's tab set. Library, Special
+// Situations, and Administration all mirror ClairMD's real sections (see
 // LIBRARY_SECTIONS/SPECIAL_SITUATION_SECTIONS/MODULE_SECTIONS above) so
 // this isn't placeholder content — it's the app's actual reference
-// library, clinical-scenario pickers, and admin/module list.
+// library, clinical-scenario pickers, and admin/module list. Tabs are
+// defined below in a convenient order, then reordered by TAB_ORDER so
+// Administration renders first without needing to physically move the
+// (large) tab blocks around in the source.
 // ---------------------------------------------------------------------------
-export const DEFAULT_TABS = [
+const TAB_DEFINITIONS = [
   {
     id: "home",
     label: "Home",
@@ -473,7 +477,28 @@ export const DEFAULT_TABS = [
       },
     ],
   },
+  {
+    // Kept as its own tab, separate from Administration, per explicit
+    // request — same "mod-feed" id/action as before (setSidebarView),
+    // just its own top-level destination instead of living inside
+    // Administration's Clinical group.
+    id: "specialty-feed",
+    label: "Specialty Feed",
+    groups: [
+      {
+        id: "feed-actions",
+        label: "Feed",
+        commands: [
+          { id: "mod-feed", label: "Specialty feed", icon: Rss, tooltip: { title: "Specialty feed", description: "Open the specialty feed." } },
+        ],
+      },
+    ],
+  },
 ];
+
+// Administration first, then the rest in their original order.
+const TAB_ORDER = ["administration", "home", "insert", "review", "library", "special-situations", "specialty-feed"];
+export const DEFAULT_TABS = TAB_ORDER.map((id) => TAB_DEFINITIONS.find((t) => t.id === id)).filter(Boolean);
 
 const DEFAULT_QUICK_ACCESS = [
   { id: "save", icon: Save, tooltip: { title: "Save", description: "Save changes (Ctrl+S)." } },

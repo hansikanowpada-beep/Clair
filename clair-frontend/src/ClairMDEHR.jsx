@@ -15170,7 +15170,7 @@ function AutoExpandingTextarea({ value, onChange, placeholder }) {
   );
 }
 
-function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examSpace: externalExamSpace, setExamSpace: externalSetExamSpace, disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, ssValues: externalSsValues, setSsValues: externalSetSsValues, envValues: externalEnvValues, setEnvValues: externalSetEnvValues }) {
+function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examSpace: externalExamSpace, setExamSpace: externalSetExamSpace, disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, ssValues: externalSsValues, setSsValues: externalSetSsValues, envValues: externalEnvValues, setEnvValues: externalSetEnvValues, traumaOpen: externalTraumaOpen, setTraumaOpen: externalSetTraumaOpen, disasterOpen: externalDisasterOpen, setDisasterOpen: externalSetDisasterOpen, poisoningOpen: externalPoisoningOpen, setPoisoningOpen: externalSetPoisoningOpen, envOpen: externalEnvOpen, setEnvOpen: externalSetEnvOpen, ssOpen: externalSsOpen, setSsOpen: externalSetSsOpen }) {
   const [internalDraftHpi, setInternalDraftHpi] = useState("");
   const draftHpi = externalDraftHpi !== undefined ? externalDraftHpi : internalDraftHpi;
   const setDraftHpi = externalSetDraftHpi !== undefined ? externalSetDraftHpi : setInternalDraftHpi;
@@ -15211,11 +15211,11 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
             )}
 
             <ExaminationPicker examSpace={isDraft ? externalExamSpace : undefined} setExamSpace={isDraft ? externalSetExamSpace : undefined} />
-            <TraumaPicker />
-            <DisasterManagementPicker disasterValues={isDraft ? externalDisasterValues : undefined} setDisasterValues={isDraft ? externalSetDisasterValues : undefined} />
-            <PoisoningPicker poisoningValues={isDraft ? externalPoisoningValues : undefined} setPoisoningValues={isDraft ? externalSetPoisoningValues : undefined} />
-            <EnvironmentalInjuriesPicker envValues={isDraft ? externalEnvValues : undefined} setEnvValues={isDraft ? externalSetEnvValues : undefined} />
-            <SpecialSituationsPicker ssValues={isDraft ? externalSsValues : undefined} setSsValues={isDraft ? externalSetSsValues : undefined} />
+            <TraumaPicker open={isDraft ? externalTraumaOpen : undefined} setOpen={isDraft ? externalSetTraumaOpen : undefined} />
+            <DisasterManagementPicker disasterValues={isDraft ? externalDisasterValues : undefined} setDisasterValues={isDraft ? externalSetDisasterValues : undefined} open={isDraft ? externalDisasterOpen : undefined} setOpen={isDraft ? externalSetDisasterOpen : undefined} />
+            <PoisoningPicker poisoningValues={isDraft ? externalPoisoningValues : undefined} setPoisoningValues={isDraft ? externalSetPoisoningValues : undefined} open={isDraft ? externalPoisoningOpen : undefined} setOpen={isDraft ? externalSetPoisoningOpen : undefined} />
+            <EnvironmentalInjuriesPicker envValues={isDraft ? externalEnvValues : undefined} setEnvValues={isDraft ? externalSetEnvValues : undefined} open={isDraft ? externalEnvOpen : undefined} setOpen={isDraft ? externalSetEnvOpen : undefined} />
+            <SpecialSituationsPicker ssValues={isDraft ? externalSsValues : undefined} setSsValues={isDraft ? externalSetSsValues : undefined} open={isDraft ? externalSsOpen : undefined} setOpen={isDraft ? externalSetSsOpen : undefined} />
           </div>
         );
       })}
@@ -17731,8 +17731,10 @@ function OrthopaedicInjuriesToggle() {
   );
 }
 
-function TraumaPicker() {
-  const [collapsibleOpen, setCollapsibleOpen] = useState(false);
+function TraumaPicker({ open: externalOpen, setOpen: externalSetOpen } = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const collapsibleOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setCollapsibleOpen = externalSetOpen !== undefined ? externalSetOpen : setInternalOpen;
   return (
     <div className="mt-4 pt-4 border-t-2 border-[#B34A3C]">
       <button
@@ -17893,8 +17895,10 @@ function DisasterResponseReference() {
   );
 }
 
-function DisasterManagementPicker({ disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues }) {
-  const [moduleOn, setModuleOn] = useState(false);
+function DisasterManagementPicker({ disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, open: externalOpen, setOpen: externalSetOpen }) {
+  const [internalModuleOn, setInternalModuleOn] = useState(false);
+  const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
+  const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
   const isExternallyControlled = externalDisasterValues !== undefined;
   const setTopicValues = (topicId, updater) => {
     if (!isExternallyControlled) return; // topic cards fall back to their own internal state when not externally controlled
@@ -18090,8 +18094,10 @@ function PoisoningManagementReference() {
   );
 }
 
-function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues }) {
-  const [moduleOn, setModuleOn] = useState(false);
+function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, open: externalOpen, setOpen: externalSetOpen }) {
+  const [internalModuleOn, setInternalModuleOn] = useState(false);
+  const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
+  const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
   const isExternallyControlled = externalPoisoningValues !== undefined;
   const setTopicValues = (topicId, updater) => {
     if (!isExternallyControlled) return;
@@ -18276,8 +18282,10 @@ function EnvGeneralApproachReference() {
   );
 }
 
-function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValues: externalSetEnvValues }) {
-  const [moduleOn, setModuleOn] = useState(false);
+function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValues: externalSetEnvValues, open: externalOpen, setOpen: externalSetOpen }) {
+  const [internalModuleOn, setInternalModuleOn] = useState(false);
+  const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
+  const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
   const isExternallyControlled = externalEnvValues !== undefined;
   const setTopicValues = (topicId, updater) => {
     if (!isExternallyControlled) return;
@@ -18461,8 +18469,10 @@ function SSAdminOverview() {
   );
 }
 
-function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: externalSetSsValues }) {
-  const [moduleOn, setModuleOn] = useState(false);
+function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: externalSetSsValues, open: externalOpen, setOpen: externalSetOpen }) {
+  const [internalModuleOn, setInternalModuleOn] = useState(false);
+  const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
+  const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
   const isExternallyControlled = externalSsValues !== undefined;
   const setTopicValues = (topicId, updater) => {
     if (!isExternallyControlled) return;
@@ -24539,6 +24549,16 @@ export default function ClairMDEHR() {
   const [draftPoisoningValues, setDraftPoisoningValues] = useState({});
   const [draftSsValues, setDraftSsValues] = useState({});
   const [draftEnvValues, setDraftEnvValues] = useState({});
+  // Each special-situation picker's own on/off section toggle (TraumaPicker's
+  // collapsibleOpen, the other four's moduleOn) — lifted the same way
+  // examSpace/disasterValues etc. already are, so the Ribbon's Special
+  // Situations buttons can actually open the section, not just seed data
+  // that would otherwise stay hidden behind a closed toggle.
+  const [draftTraumaOpen, setDraftTraumaOpen] = useState(false);
+  const [draftDisasterOpen, setDraftDisasterOpen] = useState(false);
+  const [draftPoisoningOpen, setDraftPoisoningOpen] = useState(false);
+  const [draftEnvOpen, setDraftEnvOpen] = useState(false);
+  const [draftSsOpen, setDraftSsOpen] = useState(false);
   const [draftDdxSpace, setDraftDdxSpace] = useState([]);
   const [draftDdxSpaceNotes, setDraftDdxSpaceNotes] = useState("");
   const [draftWorkupSpace, setDraftWorkupSpace] = useState([]);
@@ -24962,14 +24982,15 @@ export default function ClairMDEHR() {
                   // buildExamSpaceEntry so a ribbon click and the picker's
                   // own "+" button build the identical shape. Special
                   // Situations (Trauma/Disaster Management/Poisoning/
-                  // Environmental Injuries/Special Situations) are NOT
-                  // wired yet — each picker's own open/closed toggle is
-                  // local state inside RecordsTab's own picker instances,
-                  // not lifted up like examSpace was, so reaching it from
-                  // here needs its own scoped pass. Same for Home/Review
-                  // (Bold, Insert Table, etc.) — OpdBuilderTab and the
-                  // ICU/Ward wizard's other fields are structured inputs,
-                  // not a shared rich-text surface.
+                  // Environmental Injuries/Special Situations) route into
+                  // ICU/Ward only, via the same open-toggle lifting pattern
+                  // (draftTraumaOpen etc. above) — OPD's OpdBuilderTab never
+                  // mounted these 5 pickers at all (only Examination), so
+                  // there's nothing to open there; clicking one while an
+                  // OPD note is open is a deliberate no-op, not a bug. Same
+                  // for Home/Review (Bold, Insert Table, etc.) — OpdBuilderTab
+                  // and the ICU/Ward wizard's other fields are structured
+                  // inputs, not a shared rich-text surface.
                   if (command.id?.startsWith("lib-")) {
                     setLibraryModalKey(command.id.slice(4));
                     setLibraryModalMinimized(false);
@@ -24985,6 +25006,26 @@ export default function ClairMDEHR() {
                         const entry = buildExamSpaceEntry(key);
                         return entry ? [...prev, entry] : prev;
                       });
+                    }
+                  } else if (command.id?.startsWith("situ-")) {
+                    // Only ICU/Ward has these 5 pickers mounted at all —
+                    // RecordsTab is where TraumaPicker/DisasterManagementPicker/
+                    // PoisoningPicker/EnvironmentalInjuriesPicker/
+                    // SpecialSituationsPicker live; OPD's OpdBuilderTab never
+                    // included them, so there's nothing to open there. Sets
+                    // each picker's own on/off toggle true (see
+                    // draftTraumaOpen etc. above) — same section a doctor
+                    // would reveal by clicking the picker's own header.
+                    if (newEntryMode === "icuward") {
+                      const key = command.id.slice(5);
+                      const opener = {
+                        trauma: setDraftTraumaOpen,
+                        disasterManagement: setDraftDisasterOpen,
+                        poisoning: setDraftPoisoningOpen,
+                        environmentalInjuries: setDraftEnvOpen,
+                        specialSituations: setDraftSsOpen,
+                      }[key];
+                      opener?.(true);
                     }
                   }
                 }}
@@ -25044,7 +25085,7 @@ export default function ClairMDEHR() {
                       />
                     </div>
                     <div style={{ display: tab === "records" ? "block" : "none" }}>
-                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} examSpace={draftExamSpace} setExamSpace={setDraftExamSpace} disasterValues={draftDisasterValues} setDisasterValues={setDraftDisasterValues} poisoningValues={draftPoisoningValues} setPoisoningValues={setDraftPoisoningValues} ssValues={draftSsValues} setSsValues={setDraftSsValues} envValues={draftEnvValues} setEnvValues={setDraftEnvValues} />
+                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} examSpace={draftExamSpace} setExamSpace={setDraftExamSpace} disasterValues={draftDisasterValues} setDisasterValues={setDraftDisasterValues} poisoningValues={draftPoisoningValues} setPoisoningValues={setDraftPoisoningValues} ssValues={draftSsValues} setSsValues={setDraftSsValues} envValues={draftEnvValues} setEnvValues={setDraftEnvValues} traumaOpen={draftTraumaOpen} setTraumaOpen={setDraftTraumaOpen} disasterOpen={draftDisasterOpen} setDisasterOpen={setDraftDisasterOpen} poisoningOpen={draftPoisoningOpen} setPoisoningOpen={setDraftPoisoningOpen} envOpen={draftEnvOpen} setEnvOpen={setDraftEnvOpen} ssOpen={draftSsOpen} setSsOpen={setDraftSsOpen} />
                     </div>
                     <div style={{ display: tab === "workup" ? "block" : "none" }}>
                       <DifferentialWorkupTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} ddxSpace={draftDdxSpace} setDdxSpace={setDraftDdxSpace} ddxSpaceNotes={draftDdxSpaceNotes} setDdxSpaceNotes={setDraftDdxSpaceNotes} workupSpace={draftWorkupSpace} setWorkupSpace={setDraftWorkupSpace} workupNotes={draftWorkupNotes} setWorkupNotes={setDraftWorkupNotes} />
