@@ -17,7 +17,7 @@
 import React, { useState } from "react";
 import {
   Stethoscope, Users2, HeartPulse, GraduationCap, Briefcase, ShieldCheck,
-  ArrowRight, X, Loader2, Mail,
+  ArrowRight, Loader2, Mail, Heart,
 } from "lucide-react";
 import { backendLogin, backendSignup } from "./api.js";
 
@@ -230,7 +230,10 @@ function OthersContact() {
   );
 }
 
-const FOOTER_MODALS = {
+// Each of these used to open as a popup modal — now every one is its own
+// full page (same treatment as the Admin login screen below), reached by
+// navigating away from the role-selection view rather than overlaying it.
+const FOOTER_PAGES = {
   about: {
     title: "About Us",
     body: "ClairMD is an AI-assisted EHR built for small Indian clinics — quick OPD notes, a full ICU/Ward workflow, and clinical reference tools, all with patient record content encrypted on your own device before it ever reaches our servers. Built by Ayodhya.",
@@ -245,25 +248,85 @@ const FOOTER_MODALS = {
   },
 };
 
-// Admin isn't a modal like the other three — it's a real login screen
-// (founder-admin / staff account_type, gated server-side, see
+// Admin isn't a plain info page like the other three — it's a real login
+// screen (founder-admin / staff account_type, gated server-side, see
 // ClairMDEHR.jsx's AdminDashboardView) that this button navigates to,
 // same handoff mechanism as the Hospital staff / Patient roles above.
 const FOOTER_LINKS = [{ key: "admin", title: "Admin", enterMode: "admin" }];
 
-function FooterModal({ modalKey, onClose }) {
-  const m = FOOTER_MODALS[modalKey];
-  if (!m) return null;
+// A generic full-page shell for the plain info pages (About Us / Contact
+// Us / Affiliations) — same lockup as the Admin login landing page (logo,
+// back link, centered card) so every footer destination reads as one
+// consistent "separate landing page," not a mix of styles.
+function FooterPageShell({ onBack, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(22,36,31,0.4)" }} onClick={onClose}>
-      <div className="bg-white rounded-md shadow-xl max-w-md w-full p-5" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>{m.title}</h3>
-          <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={18} /></button>
+    <div className="min-h-screen flex flex-col items-center px-6 py-16" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="w-full max-w-md">
+        <button type="button" onClick={onBack} className="text-xs text-[#5B6B63] mb-8 hover:text-[#16241F]">← Back to ClairMD</button>
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: TEAL, fontFamily: "'Fraunces', serif" }}>C</div>
+          <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>ClairMD</h1>
         </div>
-        <p className="text-sm text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{m.body}</p>
+        {children}
       </div>
     </div>
+  );
+}
+
+function FooterInfoPage({ pageKey, onBack }) {
+  const p = FOOTER_PAGES[pageKey];
+  if (!p) return null;
+  return (
+    <FooterPageShell onBack={onBack}>
+      <div className="bg-white border rounded-md p-5" style={{ borderColor: HAIRLINE }}>
+        <h2 className="text-lg mb-3" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>{p.title}</h2>
+        <p className="text-sm text-[#5B6B63]">{p.body}</p>
+      </div>
+    </FooterPageShell>
+  );
+}
+
+// Donations aren't live yet — no payment processing is wired up, and
+// ClairMD's Section 8 nonprofit registration (the vehicle for a real
+// patient financial-assistance program) hasn't happened yet either. Same
+// honesty pattern as MedicalStudentForm/OthersContact: collect interest,
+// say plainly what stage this is at, don't fake a payment flow.
+function DonateForm() {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  if (submitted) {
+    return (
+      <div className="rounded-sm p-4 text-sm" style={{ background: "#FBF6EC", border: `1px solid #F0DDB0`, color: INK }}>
+        Thanks — we'll email {email} the moment donations open.
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="space-y-3">
+      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your email" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      <button type="submit" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white" style={{ background: MARIGOLD }}>
+        <Heart size={15} /> Notify me when donations open
+      </button>
+      <p className="text-[11px] text-[#8A958E]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+    </form>
+  );
+}
+
+function DonatePage({ onBack }) {
+  return (
+    <FooterPageShell onBack={onBack}>
+      <div className="bg-white border rounded-md p-5" style={{ borderColor: "#F0DDB0" }}>
+        <div className="flex items-center gap-2 mb-3">
+          <Heart size={18} style={{ color: MARIGOLD }} />
+          <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>Donate</h2>
+        </div>
+        <p className="text-sm text-[#5B6B63] mb-4">
+          ClairMD is working toward Section 8 nonprofit registration to run a patient financial-assistance program alongside the clinical product — helping cover care costs for patients who can't afford them. Public donations aren't open yet; we'd rather build that properly than take money before the structure exists to use it responsibly.
+        </p>
+        <DonateForm />
+      </div>
+    </FooterPageShell>
   );
 }
 
@@ -288,19 +351,26 @@ function RoleButton({ role, active, onClick }) {
   );
 }
 
-// Merged, alphabetized once at module scope rather than every render —
-// the footer's four buttons (About Us / Admin / Affiliations / Contact Us)
-// come from two different sources (modals vs. a real navigation link) but
-// render as one alphabetically-ordered row.
+// Merged, alphabetized once at module scope rather than every render — the
+// footer's five buttons (About Us / Admin / Affiliations / Contact Us /
+// Donate) come from two different sources (plain info pages vs. a real
+// navigation link into ClairMDEHR's admin login) but render as one
+// alphabetically-ordered row. "donate" is a "page" kind like the info
+// pages — it's just visually highlighted separately in the footer below,
+// not treated differently in the ordering.
 const FOOTER_ITEMS = [
-  ...Object.keys(FOOTER_MODALS).map((key) => ({ key, title: FOOTER_MODALS[key].title, kind: "modal" })),
+  ...Object.keys(FOOTER_PAGES).map((key) => ({ key, title: FOOTER_PAGES[key].title, kind: "page" })),
+  { key: "donate", title: "Donate", kind: "page" },
   ...FOOTER_LINKS.map((l) => ({ key: l.key, title: l.title, kind: "link", enterMode: l.enterMode })),
 ].sort((a, b) => a.title.localeCompare(b.title));
 
 export default function LandingPage({ onEnter }) {
   const [started, setStarted] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
-  const [openModal, setOpenModal] = useState(null);
+  const [footerPage, setFooterPage] = useState(null); // null | "about" | "contact" | "affiliations" | "donate"
+
+  if (footerPage === "donate") return <DonatePage onBack={() => setFooterPage(null)} />;
+  if (footerPage) return <FooterInfoPage pageKey={footerPage} onBack={() => setFooterPage(null)} />;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -350,21 +420,31 @@ export default function LandingPage({ onEnter }) {
             <ShieldCheck size={13} /> © 2026 ClairMD (Ayodhya). All rights reserved.
           </div>
           <div className="flex items-center gap-4">
-            {FOOTER_ITEMS.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => (item.kind === "modal" ? setOpenModal(item.key) : onEnter(item.enterMode))}
-                className="hover:text-[#16241F] underline decoration-dotted"
-              >
-                {item.title}
-              </button>
-            ))}
+            {FOOTER_ITEMS.map((item) =>
+              item.key === "donate" ? (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setFooterPage("donate")}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-white font-medium"
+                  style={{ background: MARIGOLD }}
+                >
+                  <Heart size={11} /> {item.title}
+                </button>
+              ) : (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => (item.kind === "page" ? setFooterPage(item.key) : onEnter(item.enterMode))}
+                  className="hover:text-[#16241F] underline decoration-dotted"
+                >
+                  {item.title}
+                </button>
+              )
+            )}
           </div>
         </div>
       </footer>
-
-      <FooterModal modalKey={openModal} onClose={() => setOpenModal(null)} />
     </div>
   );
 }
