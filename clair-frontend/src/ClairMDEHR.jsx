@@ -14093,6 +14093,13 @@ async function loadAdminBackupHealth() {
 async function loadAdminNotificationHealth() {
   return apiRequest("/admin/notification-health");
 }
+// Same ICD-10 harvest progress the browser-console polling script checks
+// manually (see db/harvestIcd10.js) — surfaced here too since it's a real,
+// currently-running platform feature worth a founder/admin glancing at
+// alongside accounts/billing/backup, not just something to check by hand.
+async function loadAdminIcd10HarvestStatus() {
+  return apiRequest("/admin/harvest-icd10/status");
+}
 
 // Compact, reusable connect/status widget — email+password only (matches
 // the real backend's actual signup/login fields; the license-number field
@@ -24405,7 +24412,7 @@ function AdminDashboardView({ onBack, backLabel = "Back to clinic view" }) {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState(null);
-  const [data, setData] = useState({ overview: null, risk: null, backup: null, notif: null });
+  const [data, setData] = useState({ overview: null, risk: null, backup: null, notif: null, icd10: null });
   const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -24421,8 +24428,8 @@ function AdminDashboardView({ onBack, backLabel = "Back to clinic view" }) {
   const loadDashboard = () => {
     setLoading(true);
     setLoadError(null);
-    Promise.all([loadAdminOverview(), loadAdminHospitalsAtRisk(), loadAdminBackupHealth(), loadAdminNotificationHealth()])
-      .then(([overview, risk, backup, notif]) => setData({ overview, risk, backup, notif }))
+    Promise.all([loadAdminOverview(), loadAdminHospitalsAtRisk(), loadAdminBackupHealth(), loadAdminNotificationHealth(), loadAdminIcd10HarvestStatus()])
+      .then(([overview, risk, backup, notif, icd10]) => setData({ overview, risk, backup, notif, icd10 }))
       .catch((err) => setLoadError(err.message))
       .finally(() => setLoading(false));
   };
@@ -24454,57 +24461,177 @@ function AdminDashboardView({ onBack, backLabel = "Back to clinic view" }) {
     }
   };
 
+  const disconnect = () => {
+    backendLogout();
+    setConnectedAccount(null);
+    setData({ overview: null, risk: null, backup: null, notif: null, icd10: null });
+  };
+
+  if (!isAdmin) {
+    return (
+      <AdminLoginLanding
+        onBack={onBack}
+        backLabel={backLabel}
+        connectedAccount={connectedAccount}
+        loginForm={loginForm}
+        setLoginForm={setLoginForm}
+        submitLogin={submitLogin}
+        loginBusy={loginBusy}
+        loginError={loginError}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#F7F9F7] p-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-      <div className="max-w-4xl mx-auto">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
-        <div className="flex items-center gap-2 mb-1">
-          <ShieldCheck size={18} className="text-[#0F5C56]" />
-          <h1 className="text-xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD — Founder admin</h1>
+    <AdminDashboardScreen
+      onBack={onBack}
+      backLabel={backLabel}
+      connectedAccount={connectedAccount}
+      data={data}
+      loading={loading}
+      loadError={loadError}
+      onRefresh={loadDashboard}
+      onDisconnect={disconnect}
+    />
+  );
+}
+
+// The "separate landing page for admin login details" — same visual
+// language as LandingPage.jsx (centered logo lockup, marigold caption,
+// white bordered card) rather than the plain dashboard-panel look the
+// login form used to sit inside, so a founder/admin/staff visitor lands
+// somewhere that reads as its own page, not a buried form. Still the same
+// real login (no signup tab — /api/auth/signup has no 'admin' option; see
+// AdminDashboardView's own comment above).
+function AdminLoginLanding({ onBack, backLabel, connectedAccount, loginForm, setLoginForm, submitLogin, loginBusy, loginError }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center px-6 py-16" style={{ background: "#EFF3F0", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="w-full max-w-sm">
+        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-8 hover:text-[#16241F]">← {backLabel}</button>
+
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: "#0F5C56", fontFamily: "'Fraunces', serif" }}>C</div>
+          <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD</h1>
+          <p className="text-sm mb-3" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", color: "#E8A33D" }}>Founder &amp; staff access</p>
+          <p className="text-xs text-[#5B6B63] max-w-xs">
+            Platform-wide monitoring for the people who run ClairMD — not a clinic or patient account. Admin accounts are provisioned directly against the database, never through public signup.
+          </p>
+        </div>
+
+        <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+          {connectedAccount && (
+            <p className="text-xs text-[#B34A3C] mb-3">Connected as {connectedAccount.email}, which is not a founder-admin account.</p>
+          )}
+          <form onSubmit={submitLogin} className="space-y-2">
+            <input type="email" required value={loginForm.email} onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} placeholder="Admin email" className="w-full px-3 py-2.5 border border-[#D8DED9] rounded-sm text-sm" />
+            <input type="password" required value={loginForm.password} onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} placeholder="Password" className="w-full px-3 py-2.5 border border-[#D8DED9] rounded-sm text-sm" />
+            <button type="submit" disabled={loginBusy} className="w-full py-2.5 rounded-sm text-sm font-medium text-white" style={{ backgroundColor: "#0F5C56" }}>
+              {loginBusy ? "Connecting…" : "Log in"}
+            </button>
+            {loginError && <p className="text-xs text-[#B34A3C]">{loginError}</p>}
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// The "another landing page" shown post-login — a standard monitoring
+// dashboard built around the platform's actual features, not a generic
+// admin-panel template: account growth/revenue, hospital billing risk,
+// on-device-encrypted backup reliability, notification delivery, and the
+// ICD-10 terminology harvest (the one background job this platform runs
+// that's worth a founder glancing at, alongside accounts/billing/backup).
+// Every number here comes from clairmd-backend's /api/admin routes —
+// nothing fabricated, and never patient clinical content (this backend
+// has none to show; see routes/admin.js).
+function AdminDashboardScreen({ onBack, backLabel, connectedAccount, data, loading, loadError, onRefresh, onDisconnect }) {
+  const totalAccounts = data.overview ? data.overview.accountsByType.reduce((sum, r) => sum + Number(r.count), 0) : null;
+  const countFor = (types) => data.overview ? data.overview.accountsByType.filter((r) => types.includes(r.account_type)).reduce((sum, r) => sum + Number(r.count), 0) : null;
+
+  return (
+    <div className="min-h-screen p-8" style={{ background: "#F7F9F7", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="max-w-5xl mx-auto">
+        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]">← {backLabel}</button>
+
+        <div className="flex items-start justify-between gap-4 mb-1">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={18} className="text-[#0F5C56]" />
+            <h1 className="text-xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD — Founder admin</h1>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-[#5B6B63] whitespace-nowrap pt-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0F5C56]" />
+            {connectedAccount.email}
+            <button onClick={onRefresh} disabled={loading} className="text-[#0F5C56] underline decoration-dotted">{loading ? "Refreshing…" : "Refresh"}</button>
+            <button onClick={onDisconnect} className="text-[#8A958E] underline decoration-dotted hover:text-[#B34A3C]">Disconnect</button>
+          </div>
         </div>
         <p className="text-xs text-[#8A958E] mb-5 max-w-2xl">
-          Platform-wide, read-only aggregates from clairmd-backend's /api/admin routes — account counts, plan tiers, hospitals restricted for overage billing, backup reliability, and notification delivery. Never patient clinical content; this backend has none to show (see routes/admin.js).
+          Platform-wide, read-only aggregates from clairmd-backend's /api/admin routes — account counts, plan tiers, hospitals restricted for overage billing, backup reliability, notification delivery, and ICD-10 terminology harvest progress.
         </p>
 
-        {!isAdmin ? (
-          <div className="bg-white border border-[#D8DED9] rounded-md p-5 max-w-sm">
-            {connectedAccount && (
-              <p className="text-xs text-[#B34A3C] mb-3">Connected as {connectedAccount.email}, which is not a founder-admin account.</p>
-            )}
-            <form onSubmit={submitLogin} className="space-y-2">
-              <input type="email" required value={loginForm.email} onChange={(e) => setLoginForm((f) => ({ ...f, email: e.target.value }))} placeholder="Admin email" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" />
-              <input type="password" required value={loginForm.password} onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} placeholder="Password" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" />
-              <button type="submit" disabled={loginBusy} className="text-xs px-3 py-2 rounded-sm text-white font-medium" style={{ backgroundColor: "#0F5C56" }}>
-                {loginBusy ? "Connecting…" : "Log in"}
-              </button>
-              {loginError && <p className="text-xs text-[#B34A3C]">{loginError}</p>}
-            </form>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-2 mb-4 text-xs text-[#5B6B63]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0F5C56]" />
-              Connected as {connectedAccount.email}
-              <button onClick={loadDashboard} disabled={loading} className="text-[#0F5C56] underline decoration-dotted">{loading ? "Refreshing…" : "Refresh"}</button>
-              <button
-                onClick={() => { backendLogout(); setConnectedAccount(null); setData({ overview: null, risk: null, backup: null, notif: null }); }}
-                className="text-[#8A958E] underline decoration-dotted hover:text-[#B34A3C]"
-              >
-                Disconnect
-              </button>
-            </div>
-            {loadError && (
-              <div className="bg-[#FBEFEC] border border-[#E3B3A8] rounded-sm p-3 text-xs text-[#7A2F25] mb-4">Couldn't load dashboard data: {loadError}</div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <AdminOverviewCard overview={data.overview} />
-              <AdminHospitalsAtRiskCard risk={data.risk} />
-              <AdminBackupHealthCard backup={data.backup} />
-              <AdminNotificationHealthCard notif={data.notif} />
-            </div>
-          </>
+        {loadError && (
+          <div className="bg-[#FBEFEC] border border-[#E3B3A8] rounded-sm p-3 text-xs text-[#7A2F25] mb-4">Couldn't load dashboard data: {loadError}</div>
         )}
+
+        <div className="grid grid-cols-4 gap-3 mb-4">
+          <AdminStatTile label="Total accounts" value={totalAccounts} />
+          <AdminStatTile label="Doctors" value={countFor(["individual_doctor", "hospital_doctor"])} />
+          <AdminStatTile label="Hospitals" value={countFor(["hospital"])} />
+          <AdminStatTile label="Patients" value={countFor(["patient"])} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <AdminOverviewCard overview={data.overview} />
+          <AdminIcd10HarvestCard icd10={data.icd10} />
+          <AdminHospitalsAtRiskCard risk={data.risk} />
+          <AdminBackupHealthCard backup={data.backup} />
+          <AdminNotificationHealthCard notif={data.notif} />
+        </div>
       </div>
+    </div>
+  );
+}
+
+function AdminStatTile({ label, value }) {
+  return (
+    <div className="bg-white border border-[#D8DED9] rounded-md p-3 text-center">
+      <div className="text-[10px] text-[#8A958E] uppercase">{label}</div>
+      <div className="text-lg font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>{value === null ? "—" : value}</div>
+    </div>
+  );
+}
+
+function AdminIcd10HarvestCard({ icd10 }) {
+  return (
+    <div className="bg-white border border-[#D8DED9] rounded-md p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <BookOpen size={15} className="text-[#0F5C56]" />
+        <h2 className="text-sm font-medium">ICD-10 terminology harvest</h2>
+      </div>
+      {!icd10 ? (
+        <p className="text-xs text-[#8A958E]">Loading…</p>
+      ) : (
+        <>
+          <div className="flex items-center gap-2 mb-2 text-xs">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: icd10.running ? "#0F5C56" : "#8A958E" }} />
+            {icd10.running ? "Harvest running" : "Idle — not currently running"}
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-center">
+            <div>
+              <div className="text-[10px] text-[#8A958E] uppercase">Codes stored</div>
+              <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{icd10.codesStored.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="text-[10px] text-[#8A958E] uppercase">Subtrees complete</div>
+              <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{icd10.subtreesComplete}</div>
+            </div>
+          </div>
+          {!icd10.running && (
+            <p className="text-[10px] text-[#8A958E] mt-2">On Render's free tier the harvest stops when the service spins down and needs re-triggering — see routes/admin.js's POST /admin/harvest-icd10.</p>
+          )}
+        </>
+      )}
     </div>
   );
 }
