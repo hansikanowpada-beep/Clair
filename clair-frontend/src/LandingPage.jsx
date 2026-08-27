@@ -298,6 +298,7 @@ const FOOTER_ITEMS = [
 ].sort((a, b) => a.title.localeCompare(b.title));
 
 export default function LandingPage({ onEnter }) {
+  const [started, setStarted] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [openModal, setOpenModal] = useState(null);
 
@@ -313,6 +314,18 @@ export default function LandingPage({ onEnter }) {
           An AI-assisted EHR for small clinics — encrypted on your own device before it ever reaches us.
         </p>
 
+        {!started && (
+          <button
+            type="button"
+            onClick={() => setStarted(true)}
+            className="px-8 py-2.5 rounded-sm text-sm font-medium text-white"
+            style={{ background: TEAL }}
+          >
+            Start
+          </button>
+        )}
+
+        {started && (
         <div className="w-full max-w-3xl">
           <div className="flex flex-col gap-3 mb-6 max-w-md mx-auto">
             {[...MAIN_ROLES, OTHERS_ROLE].map((r) => <RoleButton key={r.key} role={r} active={selectedRole === r.key} onClick={() => setSelectedRole(r.key)} />)}
@@ -328,6 +341,7 @@ export default function LandingPage({ onEnter }) {
             </div>
           )}
         </div>
+        )}
       </main>
 
       <footer className="border-t px-6 py-6" style={{ borderColor: HAIRLINE }}>
