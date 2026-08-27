@@ -3599,6 +3599,18 @@ const EXAM_TEMPLATES = {
   },
 };
 
+// Shared by ExaminationPicker's own "+" buttons and any external trigger
+// (the Ribbon's Examination Templates group) that adds a system to an
+// examSpace array — kept as one function so both build the identical shape
+// ({ key, notes: { [sectionTitle]: "" }, signs: {} }).
+function buildExamSpaceEntry(key) {
+  const t = EXAM_TEMPLATES[key];
+  if (!t) return null;
+  const notes = {};
+  t.sections.forEach((sec) => { notes[sec.title] = ""; });
+  return { key, notes, signs: {} };
+}
+
 // Differential diagnosis reference lists by presenting complaint. Original
 // content written from general medical knowledge — not extracted from any
 // textbook (including the uploaded Murtagh's General Practice, which was
@@ -16465,7 +16477,21 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
     return true;
   };
 
-  React.useImperativeHandle(ref, () => ({ attemptSave: handleSave }));
+  // Ribbon → Insert → Examination Templates targets this directly (same
+  // shape/dedupe rule as ExaminationPicker's own "+" button — see
+  // buildExamSpaceEntry) so a ribbon click and the picker's own button do
+  // the exact same thing to examSpace. Also turns on the "examination" tool
+  // card itself (addTool) — without that, the section stays hidden and
+  // buildOpdSlipText (which also gates on addedTools.includes("examination"))
+  // would silently drop it from the saved note.
+  const insertExamTemplate = (key) => {
+    addTool("examination");
+    if (examSpace.some((e) => e.key === key)) return;
+    const entry = buildExamSpaceEntry(key);
+    if (entry) setExamSpace((prev) => [...prev, entry]);
+  };
+
+  React.useImperativeHandle(ref, () => ({ attemptSave: handleSave, insertExamTemplate }));
 
   return (
     <div>
@@ -16980,10 +17006,8 @@ function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externa
 
   const addSystem = (key) => {
     if (examSpace.some((e) => e.key === key)) return;
-    const t = EXAM_TEMPLATES[key];
-    const notes = {};
-    t.sections.forEach((sec) => { notes[sec.title] = ""; });
-    setExamSpace((prev) => [...prev, { key, notes, signs: {} }]);
+    const entry = buildExamSpaceEntry(key);
+    if (entry) setExamSpace((prev) => [...prev, entry]);
   };
 
   const removeSystem = (key) => setExamSpace((prev) => prev.filter((e) => e.key !== key));
@@ -25017,17 +25041,34 @@ export default function ClairMDEHR() {
                   // Library and Modules commands map onto this same screen's
                   // real sidebar actions (setLibraryModalKey / setSidebarView
                   // — the exact functions the sidebar's own Library/Modules
-                  // buttons call). Everything else on the ribbon (Bold/Insert
-                  // Table/exam templates/etc.) isn't wired to note content
-                  // yet — OpdBuilderTab and the ICU/Ward wizard are
-                  // structured forms, not a shared rich-text surface, so
-                  // wiring those needs its own scoped pass rather than a
-                  // guess here.
+                  // buttons call). Examination Templates route into whichever
+                  // note is actually open — OPD via OpdBuilderTab's own
+                  // examSpace (through its ref, same as attemptSave), ICU/Ward
+                  // via draftExamSpace directly (already lifted up here, same
+                  // state RecordsTab's ExaminationPicker reads/writes). Both
+                  // use buildExamSpaceEntry so a ribbon click and the
+                  // picker's own "+" button build the identical shape.
+                  // Everything else on the ribbon (Bold, Insert Table, etc.)
+                  // isn't wired to note content yet — OpdBuilderTab and the
+                  // ICU/Ward wizard's other fields are structured inputs,
+                  // not a shared rich-text surface, so wiring those needs
+                  // its own scoped pass rather than a guess here.
                   if (command.id?.startsWith("lib-")) {
                     setLibraryModalKey(command.id.slice(4));
                     setLibraryModalMinimized(false);
                   } else if (command.id?.startsWith("mod-")) {
                     setSidebarView(command.id.slice(4));
+                  } else if (command.id?.startsWith("exam-")) {
+                    const key = command.id.slice(5);
+                    if (newEntryMode === "opd") {
+                      opdBuilderRef.current?.insertExamTemplate(key);
+                    } else if (newEntryMode === "icuward") {
+                      setDraftExamSpace((prev) => {
+                        if (prev.some((e) => e.key === key)) return prev;
+                        const entry = buildExamSpaceEntry(key);
+                        return entry ? [...prev, entry] : prev;
+                      });
+                    }
                   }
                 }}
               />
