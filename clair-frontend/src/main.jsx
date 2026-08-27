@@ -11,6 +11,7 @@ const ACCOUNT_TYPE_TO_APP_MODE = {
   hospital: "clinic",
   patient: "patient",
   care_team_member: "careTeam",
+  admin: "admin",
 };
 
 // LandingPage is the real front door now; ClairMDEHR (the "working page")

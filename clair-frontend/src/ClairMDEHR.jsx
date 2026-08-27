@@ -24400,7 +24400,7 @@ function FreeTierBanner() {
 // browser-wide auth token as every other backend-sync surface in this
 // prototype (see the module comment above getApiBase()), so logging in
 // here replaces whatever doctor/patient session token was active before.
-function AdminDashboardView({ onBack }) {
+function AdminDashboardView({ onBack, backLabel = "Back to clinic view" }) {
   const [connectedAccount, setConnectedAccount] = useState(null); // null | { email, accountType }
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [loginBusy, setLoginBusy] = useState(false);
@@ -24457,7 +24457,7 @@ function AdminDashboardView({ onBack }) {
   return (
     <div className="min-h-screen bg-[#F7F9F7] p-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="max-w-4xl mx-auto">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to clinic view</button>
+        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
         <div className="flex items-center gap-2 mb-1">
           <ShieldCheck size={18} className="text-[#0F5C56]" />
           <h1 className="text-xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD — Founder admin</h1>
@@ -24834,7 +24834,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   }
 
   if (appMode === "admin") {
-    return <AdminDashboardView onBack={() => setAppMode("clinic")} />;
+    return <AdminDashboardView onBack={goBackFromExternalRole} backLabel={externalRoleBackLabel} />;
   }
 
   if (appMode === "careTeam") {

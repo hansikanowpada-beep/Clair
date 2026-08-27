@@ -245,6 +245,12 @@ const FOOTER_MODALS = {
   },
 };
 
+// Admin isn't a modal like the other three — it's a real login screen
+// (founder-admin / staff account_type, gated server-side, see
+// ClairMDEHR.jsx's AdminDashboardView) that this button navigates to,
+// same handoff mechanism as the Hospital staff / Patient roles above.
+const FOOTER_LINKS = [{ key: "admin", title: "Admin", enterMode: "admin" }];
+
 function FooterModal({ modalKey, onClose }) {
   const m = FOOTER_MODALS[modalKey];
   if (!m) return null;
@@ -281,6 +287,15 @@ function RoleButton({ role, active, onClick }) {
     </button>
   );
 }
+
+// Merged, alphabetized once at module scope rather than every render —
+// the footer's four buttons (About Us / Admin / Affiliations / Contact Us)
+// come from two different sources (modals vs. a real navigation link) but
+// render as one alphabetically-ordered row.
+const FOOTER_ITEMS = [
+  ...Object.keys(FOOTER_MODALS).map((key) => ({ key, title: FOOTER_MODALS[key].title, kind: "modal" })),
+  ...FOOTER_LINKS.map((l) => ({ key: l.key, title: l.title, kind: "link", enterMode: l.enterMode })),
+].sort((a, b) => a.title.localeCompare(b.title));
 
 export default function LandingPage({ onEnter }) {
   const [selectedRole, setSelectedRole] = useState(null);
@@ -323,9 +338,14 @@ export default function LandingPage({ onEnter }) {
             <ShieldCheck size={13} /> © 2026 ClairMD (Ayodhya). All rights reserved.
           </div>
           <div className="flex items-center gap-4">
-            {Object.keys(FOOTER_MODALS).map((key) => (
-              <button key={key} type="button" onClick={() => setOpenModal(key)} className="hover:text-[#16241F] underline decoration-dotted">
-                {FOOTER_MODALS[key].title}
+            {FOOTER_ITEMS.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => (item.kind === "modal" ? setOpenModal(item.key) : onEnter(item.enterMode))}
+                className="hover:text-[#16241F] underline decoration-dotted"
+              >
+                {item.title}
               </button>
             ))}
           </div>
