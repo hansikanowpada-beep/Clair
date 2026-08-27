@@ -4,8 +4,11 @@
 // dedicated login screen elsewhere) or is handed off into ClairMDEHR's
 // existing PatientPortalView / CareTeamPortalView, which already have their
 // own complete, real login/signup flows — this page doesn't duplicate those.
-// "Others" (companies/campaigns) has no backend account type yet, so it's a
-// simple, honest contact form instead of a fake login.
+// "Others" (companies/campaigns) and "Medical students" both have no backend
+// account type yet, so each is a simple, honest form instead of a fake login
+// — Medical students collects real signup-shaped details (name/institution/
+// email/password) since it's framed as an account, not just a contact form,
+// but is equally upfront that it isn't backend-wired yet.
 //
 // Same brand tokens as ClairMDEHR.jsx (see that file's own design-tokens
 // comment) — teal primary, marigold accent — not a new arbitrary palette.
@@ -13,8 +16,8 @@
 
 import React, { useState } from "react";
 import {
-  Stethoscope, Users2, HeartPulse, Briefcase, ShieldCheck, ArrowRight, X,
-  Loader2, Mail,
+  Stethoscope, Users2, HeartPulse, GraduationCap, Briefcase, ShieldCheck,
+  ArrowRight, X, Loader2, Mail,
 } from "lucide-react";
 import { backendLogin, backendSignup } from "./api.js";
 
@@ -27,7 +30,10 @@ const HAIRLINE = "#D8DED9";
 const FONT_LINK =
   "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap";
 
-const ROLES = [
+// The four primary roles, shown in one row/grid. "Others" is deliberately
+// NOT in this list — it renders as its own row below all four, per explicit
+// request (medicalStudent took its old slot here).
+const MAIN_ROLES = [
   {
     key: "doctor",
     label: "Doctor",
@@ -47,12 +53,21 @@ const ROLES = [
     blurb: "Your own treatment summaries, billing, and emergency profile.",
   },
   {
-    key: "others",
-    label: "Others",
-    icon: Briefcase,
-    blurb: "Companies and organizations interested in running a campaign with ClairMD.",
+    key: "medicalStudent",
+    label: "Medical students",
+    icon: GraduationCap,
+    blurb: "For students and trainees. This is a new account type — not yet wired into the working app, but we want your details so we can reach out first.",
   },
 ];
+
+const OTHERS_ROLE = {
+  key: "others",
+  label: "Others",
+  icon: Briefcase,
+  blurb: "Companies and organizations interested in running a campaign with ClairMD.",
+};
+
+const ROLES = [...MAIN_ROLES, OTHERS_ROLE];
 
 const DOCTOR_TYPES = [
   { key: "individual_doctor", label: "Independent doctor" },
@@ -154,6 +169,38 @@ function HandoffContinue({ role, onEnter }) {
   );
 }
 
+// "Medical students" has no backend account type yet either — this collects
+// real signup-shaped details (framed as an account, not a generic contact
+// form) but is upfront that there's nothing to log back into yet, same
+// "local only for now" honesty as the app's own Feedback/Report panels.
+function MedicalStudentForm() {
+  const [name, setName] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  if (submitted) {
+    return (
+      <div className="rounded-sm p-4 text-sm" style={{ background: "#F2F7F5", border: `1px solid ${HAIRLINE}`, color: INK }}>
+        Thanks, {name.split(" ")[0] || "there"} — we'll email {email} once student accounts are live.
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="space-y-3">
+      <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      <input required value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="Medical college / institution" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Choose a password" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      <button type="submit" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white" style={{ background: TEAL }}>
+        <ArrowRight size={15} /> Request early access
+      </button>
+      <p className="text-[11px] text-[#8A958E]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+    </form>
+  );
+}
+
 // "Others" has no backend account type — an honest contact form, not a
 // fake login, same "local only for now" pattern as ClairMD's own
 // Feedback/Report panels.
@@ -214,6 +261,27 @@ function FooterModal({ modalKey, onClose }) {
   );
 }
 
+// Same look as the working page's sidebar Profile button — icon + label on
+// the left, a '>' on the right in the spot a collapse/expand indicator
+// usually sits, per explicit request (matches Profile's final treatment).
+function RoleButton({ role, active, onClick }) {
+  const Icon = role.icon;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-sm border text-sm text-left transition-colors"
+      style={active ? { borderColor: TEAL, background: "#F2F7F5" } : { borderColor: HAIRLINE, background: "#FFFFFF" }}
+    >
+      <span className="flex items-center gap-2.5" style={{ color: active ? TEAL : INK, fontWeight: active ? 500 : 400 }}>
+        <Icon size={16} style={{ color: active ? MARIGOLD : "#5B6B63" }} />
+        {role.label}
+      </span>
+      <span aria-hidden="true" style={{ color: active ? TEAL : "#8A958E" }}>&gt;</span>
+    </button>
+  );
+}
+
 export default function LandingPage({ onEnter }) {
   const [selectedRole, setSelectedRole] = useState(null);
   const [openModal, setOpenModal] = useState(null);
@@ -230,23 +298,11 @@ export default function LandingPage({ onEnter }) {
         </p>
 
         <div className="w-full max-w-3xl">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-            {ROLES.map((r) => {
-              const Icon = r.icon;
-              const active = selectedRole === r.key;
-              return (
-                <button
-                  key={r.key}
-                  type="button"
-                  onClick={() => setSelectedRole(r.key)}
-                  className="flex flex-col items-center gap-2 p-4 rounded-md border text-center transition-colors"
-                  style={active ? { borderColor: TEAL, background: "#F2F7F5" } : { borderColor: HAIRLINE, background: "#FFFFFF" }}
-                >
-                  <Icon size={24} style={{ color: active ? MARIGOLD : "#5B6B63" }} />
-                  <span className="text-sm font-medium" style={{ color: active ? TEAL : INK }}>{r.label}</span>
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+            {MAIN_ROLES.map((r) => <RoleButton key={r.key} role={r} active={selectedRole === r.key} onClick={() => setSelectedRole(r.key)} />)}
+          </div>
+          <div className="mb-6">
+            <RoleButton role={OTHERS_ROLE} active={selectedRole === OTHERS_ROLE.key} onClick={() => setSelectedRole(OTHERS_ROLE.key)} />
           </div>
 
           {selectedRole && (
@@ -254,6 +310,7 @@ export default function LandingPage({ onEnter }) {
               <p className="text-xs text-[#8A958E] mb-4">{ROLES.find((r) => r.key === selectedRole).blurb}</p>
               {selectedRole === "doctor" && <DoctorAuth onEnter={onEnter} />}
               {(selectedRole === "hospitalStaff" || selectedRole === "patient") && <HandoffContinue role={selectedRole} onEnter={onEnter} />}
+              {selectedRole === "medicalStudent" && <MedicalStudentForm />}
               {selectedRole === "others" && <OthersContact />}
             </div>
           )}
