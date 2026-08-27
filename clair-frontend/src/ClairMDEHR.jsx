@@ -6,7 +6,7 @@ import {
   MessagesSquare, Rss, Beaker, UserCircle2, CalendarDays,
   BarChart3, BedDouble, ClipboardList, Download, Printer, Send, X, Search,
   Users2, FileSignature, Mic, GraduationCap, ShieldAlert,
-  BookOpen, Bell, UserPlus, ArrowRightCircle, ArrowRight, ExternalLink, Bone,
+  BookOpen, Bell, UserPlus, ArrowRightCircle, ExternalLink, Bone,
   ChevronUp, Flame, Wind, Droplets, Radio, Activity,
   Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
@@ -25155,7 +25155,7 @@ export default function ClairMDEHR() {
             <button
               type="button"
               onClick={() => setSidebarView("hospitalAuth")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors border ${
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-sm text-sm text-left transition-colors border ${
                 sidebarView === "hospitalAuth" ? "font-medium" : "hover:bg-white"
               }`}
               style={{
@@ -25165,8 +25165,10 @@ export default function ClairMDEHR() {
                 fontFamily: "'IBM Plex Sans', sans-serif",
               }}
             >
-              <ArrowRight size={14} />
-              <Building2 size={16} />Profile
+              <span className="flex items-center gap-2.5">
+                <Building2 size={16} />Profile
+              </span>
+              <span aria-hidden="true">&gt;</span>
             </button>
           </div>
 
