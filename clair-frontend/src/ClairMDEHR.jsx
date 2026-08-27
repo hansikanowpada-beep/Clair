@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
+import Ribbon, { NoteTypeToolbar } from "./Ribbon.jsx";
 
 // ---------------------------------------------------------------------------
 // Design tokens
@@ -25010,25 +25011,42 @@ export default function ClairMDEHR() {
         <main className="flex-1 overflow-y-auto">
           {!patient ? (
             <>
-              <div className="border-b border-[#D8DED9] bg-white px-8 pt-6">
-                <div className="flex gap-1 overflow-x-auto">
-                  {!newEntryMode && (
-                    <>
-                      <Tab active={false} onClick={() => setNewEntryMode("opd")} icon={UserPlus}>OPD</Tab>
-                      <Tab active={false} onClick={() => setNewEntryMode("icuward")} icon={UserPlus}>ICU / Ward</Tab>
-                    </>
-                  )}
-                  {newEntryMode === "opd" && <Tab active={true} icon={UserPlus}>OPD note</Tab>}
-                  {newEntryMode === "icuward" && tabs.filter((t) => t.key !== "advanced").map((t, i) => (
-                    <Tab key={t.key} active={tab === t.key} onClick={() => attemptTabChange(t.key)} icon={t.icon}>{`Page ${i + 1} · ${t.label}`}</Tab>
-                  ))}
+              <Ribbon
+                documentLabel={newEntryMode === "opd" ? "OPD Note" : newEntryMode === "icuward" ? "ICU / Ward Note" : "No note open"}
+                onCommand={(command) => {
+                  // Library and Modules commands map onto this same screen's
+                  // real sidebar actions (setLibraryModalKey / setSidebarView
+                  // — the exact functions the sidebar's own Library/Modules
+                  // buttons call). Everything else on the ribbon (Bold/Insert
+                  // Table/exam templates/etc.) isn't wired to note content
+                  // yet — OpdBuilderTab and the ICU/Ward wizard are
+                  // structured forms, not a shared rich-text surface, so
+                  // wiring those needs its own scoped pass rather than a
+                  // guess here.
+                  if (command.id?.startsWith("lib-")) {
+                    setLibraryModalKey(command.id.slice(4));
+                    setLibraryModalMinimized(false);
+                  } else if (command.id?.startsWith("mod-")) {
+                    setSidebarView(command.id.slice(4));
+                  }
+                }}
+              />
+              <NoteTypeToolbar activeType={newEntryMode} onSelect={setNewEntryMode} />
+              {newEntryMode && (
+                <div className="border-b border-[#D8DED9] bg-white px-8 pt-6">
+                  <div className="flex gap-1 overflow-x-auto">
+                    {newEntryMode === "opd" && <Tab active={true} icon={UserPlus}>OPD note</Tab>}
+                    {newEntryMode === "icuward" && tabs.filter((t) => t.key !== "advanced").map((t, i) => (
+                      <Tab key={t.key} active={tab === t.key} onClick={() => attemptTabChange(t.key)} icon={t.icon}>{`Page ${i + 1} · ${t.label}`}</Tab>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               {!newEntryMode ? (
                 <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
                   <UserPlus size={32} className="text-[#B8C0BC] mb-3" />
                   <p className="text-sm text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No patient selected.</p>
-                  <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Click "OPD" for a quick, doctor-built note, or "ICU / Ward" for the full multi-page workflow — or open the Patients button in the sidebar.</p>
+                  <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Click "OPD Notes" above for a quick, doctor-built note, or "ICU / Ward Notes" for the full multi-page workflow — or open the Patients button in the sidebar.</p>
                 </div>
               ) : newEntryMode === "opd" ? (
                 <div className="p-8">
