@@ -23,6 +23,10 @@ import {
   AlignJustify, List, ListOrdered, Indent, Outdent, Type, Palette, Highlighter,
   Table, Image, Link2, Search, ClipboardPaste, Copy, Scissors,
   HelpCircle, Sparkles, Tag, ChevronRight, RemoveFormatting,
+  Stethoscope, BookOpen, Activity, Pill,
+  Hammer, Tent, Building2, BarChart3, BedDouble, Package, CreditCard,
+  Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss,
+  UserPlus,
 } from "lucide-react";
 
 // --- ClairMD brand tokens (see ClairMDEHR.jsx's own design-tokens comment)
@@ -205,9 +209,64 @@ function InRibbonGallery({ gallery, onRun }) {
   );
 }
 
+// The app's real 11-body-system physical examination checklist keys/labels
+// (mirrors EXAM_TEMPLATES in ClairMDEHR.jsx — same 11 systems, same order,
+// same key names — so `onCommand`'s id like "exam-cardiovascular" maps
+// directly onto that object's `cardiovascular` entry).
+const EXAM_SYSTEM_TEMPLATES = [
+  { key: "general", label: "General Examination" },
+  { key: "cardiovascular", label: "Cardiovascular System" },
+  { key: "respiratory", label: "Respiratory System" },
+  { key: "gastrointestinal", label: "Gastrointestinal / Abdominal" },
+  { key: "musculoskeletal", label: "Locomotor (Musculoskeletal)" },
+  { key: "nervous", label: "Nervous System" },
+  { key: "urogenital", label: "Urogenital System" },
+  { key: "endocrine", label: "Endocrine & Metabolic" },
+  { key: "skin", label: "Skin, Nails and Hair" },
+  { key: "eyes", label: "Eyes" },
+  { key: "ent", label: "Ear, Nose and Throat" },
+];
+
+// The app's real Library sections (mirrors LIBRARY_MODAL_CONFIG in
+// ClairMDEHR.jsx) and its real sidebar/module views (mirrors
+// SIDEBAR_VIEW_META there) — same keys, so onCommand ids like
+// "lib-drugDatabase" / "mod-doctorProfile" map directly onto those.
+const LIBRARY_SECTIONS = [
+  { key: "medicalCondition", label: "Medical Condition", icon: BookOpen },
+  { key: "symptoms", label: "Symptoms", icon: Activity },
+  { key: "aetiology", label: "Aetiology", icon: BookOpen },
+  { key: "drugDatabase", label: "Drug Database", icon: Pill },
+];
+
+const MODULE_SECTIONS = {
+  clinical: [
+    { key: "planner", label: "Planner", icon: CalendarDays },
+    { key: "followups", label: "Follow-ups", icon: ClipboardList },
+    { key: "virtualOpd", label: "Virtual OPD", icon: GraduationCap },
+    { key: "doctorProfile", label: "Doctor profile", icon: UserCircle2 },
+    { key: "feed", label: "Specialty feed", icon: Rss },
+  ],
+  hospitalOps: [
+    { key: "buildHospital", label: "Build a hospital", icon: Hammer },
+    { key: "campMode", label: "Camp / medical aid mode", icon: Tent },
+    { key: "beds", label: "Bed availability", icon: BedDouble },
+    { key: "inventory", label: "Inventory manager", icon: Package },
+    { key: "hospitalBilling", label: "Billing & payment", icon: CreditCard },
+    { key: "affiliatedDoctors", label: "Affiliated doctors", icon: Users2 },
+  ],
+  account: [
+    { key: "hospitalAuth", label: "Account access", icon: Building2 },
+    { key: "statistics", label: "Statistics", icon: BarChart3 },
+  ],
+};
+
 // ---------------------------------------------------------------------------
-// Default example config — Home / Insert / Review / View, sized for an
-// EHR's own note-taking needs rather than a copy of Word's tab set.
+// Default example config — Home / Insert / Review / Library / Modules,
+// sized for an EHR's own note-taking needs rather than a copy of Word's
+// tab set. Library and Modules mirror ClairMD's real sidebar sections
+// (see LIBRARY_SECTIONS/MODULE_SECTIONS above) so this isn't placeholder
+// content — it's the app's actual reference library and module list,
+// just reachable from the ribbon as well as the sidebar.
 // ---------------------------------------------------------------------------
 export const DEFAULT_TABS = [
   {
@@ -304,6 +363,19 @@ export const DEFAULT_TABS = [
           { id: "link", label: "Link", icon: Link2, tooltip: { title: "Link", description: "Insert a link to another record or reference." } },
         ],
       },
+      {
+        id: "exam-templates",
+        label: "Examination Templates",
+        hasDialogLauncher: true,
+        // The app's real 11-body-system physical examination checklists
+        // (EXAM_TEMPLATES in ClairMDEHR.jsx) — same 11 systems, same order.
+        commands: EXAM_SYSTEM_TEMPLATES.map((sys) => ({
+          id: `exam-${sys.key}`,
+          label: sys.label,
+          icon: Stethoscope,
+          tooltip: { title: sys.label, description: "Insert this system's examination template." },
+        })),
+      },
     ],
   },
   {
@@ -317,6 +389,58 @@ export const DEFAULT_TABS = [
           { id: "spelling", label: "Spelling", icon: Sparkles, tooltip: { title: "Check Spelling", description: "Check the note for spelling issues." } },
           { id: "find", label: "Find", icon: Search, hasMenu: true, tooltip: { title: "Find", description: "Search within this record (Ctrl+F)." } },
         ],
+      },
+    ],
+  },
+  {
+    id: "library",
+    label: "Library",
+    groups: [
+      {
+        id: "reference",
+        label: "Reference",
+        commands: LIBRARY_SECTIONS.map((sec) => ({
+          id: `lib-${sec.key}`,
+          label: sec.label,
+          icon: sec.icon,
+          tooltip: { title: sec.label, description: `Open the ${sec.label} library.` },
+        })),
+      },
+    ],
+  },
+  {
+    id: "modules",
+    label: "Modules",
+    groups: [
+      {
+        id: "mod-clinical",
+        label: "Clinical",
+        commands: MODULE_SECTIONS.clinical.map((m) => ({
+          id: `mod-${m.key}`,
+          label: m.label,
+          icon: m.icon,
+          tooltip: { title: m.label, description: `Open ${m.label}.` },
+        })),
+      },
+      {
+        id: "mod-hospital-ops",
+        label: "Hospital Operations",
+        commands: MODULE_SECTIONS.hospitalOps.map((m) => ({
+          id: `mod-${m.key}`,
+          label: m.label,
+          icon: m.icon,
+          tooltip: { title: m.label, description: `Open ${m.label}.` },
+        })),
+      },
+      {
+        id: "mod-account",
+        label: "Account",
+        commands: MODULE_SECTIONS.account.map((m) => ({
+          id: `mod-${m.key}`,
+          label: m.label,
+          icon: m.icon,
+          tooltip: { title: m.label, description: `Open ${m.label}.` },
+        })),
       },
     ],
   },
@@ -479,6 +603,54 @@ export default function Ribbon({
           <RibbonGroup key={group.id} group={group} onRun={onCommand} />
         ))}
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// NoteTypeToolbar — a separate, second-row sub-toolbar meant to sit directly
+// below <Ribbon />, for picking which kind of note is being worked on. This
+// is intentionally its own small component (not baked into Ribbon's tabs)
+// since it addresses a different question — "which record type" rather than
+// "which ribbon command" — the same way the reference image's document
+// itself sits below the ribbon rather than being another tab.
+//
+// Mirrors the app's real OPD / ICU-Ward entry points (see the `newEntryMode`
+// "OPD" / "ICU / Ward" tabs in ClairMDEHR.jsx, both icon={UserPlus}).
+//
+// Props:
+//   activeType   — "opd" | "icuward" | null
+//   onSelect(type) — called with "opd" or "icuward" when a button is clicked
+// ---------------------------------------------------------------------------
+export function NoteTypeToolbar({ activeType = null, onSelect }) {
+  const items = [
+    { type: "opd", label: "OPD Notes", icon: UserPlus },
+    { type: "icuward", label: "ICU / Ward Notes", icon: UserPlus },
+  ];
+  return (
+    <div
+      className="w-full flex items-center gap-1 px-2 py-1 border-b select-none"
+      style={{ background: "#FFFFFF", borderColor: HAIRLINE, fontFamily: "IBM Plex Sans, sans-serif" }}
+    >
+      {items.map((item) => {
+        const active = activeType === item.type;
+        return (
+          <button
+            key={item.type}
+            type="button"
+            onClick={() => onSelect?.(item.type)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-sm text-xs"
+            style={{
+              color: active ? TEAL : "#5B655F",
+              fontWeight: active ? 600 : 400,
+              background: active ? TEAL_SOFT : "transparent",
+            }}
+          >
+            <item.icon size={13} style={{ color: active ? TEAL : "#8A958E" }} />
+            {item.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
