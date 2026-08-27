@@ -11,7 +11,7 @@ import {
   Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
-  LifeBuoy, Wrench, CircleHelp, HelpCircle,
+  LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
@@ -22913,6 +22913,63 @@ function MailingsPanel({ onBack }) {
   );
 }
 
+// A real orientation tour of what's actually built — not generic
+// marketing copy. Each step names the real tab/feature it's describing,
+// in the order a new doctor would actually encounter them.
+const TUTORIAL_SECTIONS = [
+  {
+    title: "1. Starting a note",
+    body: "From the sidebar's Patients button, pick a patient (or start a new one). Then choose OPD Notes for a quick single-page outpatient note, or ICU/Ward Notes for the full four-page inpatient workflow (Overview, Records, Differential Diagnosis & Workup, Provisional Diagnosis & Treatment Plan).",
+  },
+  {
+    title: "2. The ribbon toolbar",
+    body: "Home has text formatting for the note itself. Insert has the 11 body-system Examination Templates — click one to drop that system's checklist straight into whichever note you have open. Review has spelling and find.",
+  },
+  {
+    title: "3. Library",
+    body: "Medical Condition, Symptoms, Aetiology, and Drug Database — reference lookups you can open at any time, independent of any specific note.",
+  },
+  {
+    title: "4. Special Situations",
+    body: "Trauma, Disaster Management, Poisoning, Environmental Injuries, and Special Situations — five clinical-scenario checklists. These only apply to ICU/Ward Notes; clicking one opens (or closes) that section on the note's Records page.",
+  },
+  {
+    title: "5. Administration",
+    body: "Planner, Follow-ups, Doctor profile, and — for hospital accounts — Build a hospital, Bed availability, Inventory, Billing, Affiliated doctors, and Statistics. Virtual OPD is a Premium-tier feature; it stays greyed out until your account is upgraded.",
+  },
+  {
+    title: "6. Mailings, Help, and Feedback",
+    body: "Mailings is where non-patient correspondence (companies, vendors, the public) reaches you. Help has this tutorial plus Troubleshooting, FAQs, and a way to report a problem. Feedback sends a suggestion straight to the ClairMD team.",
+  },
+  {
+    title: "7. Your data's privacy",
+    body: "Patient record content is encrypted on your own device before it's ever sent anywhere — ClairMD's backend stores only encrypted data and has no way to read it, even from the founder's own admin tools.",
+  },
+];
+
+function TutorialPanel({ onBack }) {
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-1">
+        <Compass size={18} className="text-[#0F5C56]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Tutorial — about ClairMD</h2>
+      </div>
+      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        A quick tour of what's here and where to find it.
+      </p>
+      <div className="space-y-3">
+        {TUTORIAL_SECTIONS.map((s, i) => (
+          <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
+            <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.title}</div>
+            <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.body}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Real, specific troubleshooting for things this app actually does — not
 // generic filler. Each entry describes a behavior that's really built this
 // way (spin-down cold starts, clipboard permission fallback, the premium
@@ -23098,6 +23155,7 @@ const SIDEBAR_VIEW_META = {
   doctorProfile: { label: "Doctor profile", icon: UserCircle2 },
   feed: { label: "Specialty feed", icon: Rss },
   mailings: { label: "Mailings", icon: Mail },
+  tutorial: { label: "Tutorial (About App)", icon: Compass },
   troubleshooting: { label: "Troubleshooting", icon: Wrench },
   faqs: { label: "FAQs", icon: CircleHelp },
   report: { label: "Report a problem", icon: Bug },
@@ -25165,6 +25223,8 @@ export default function ClairMDEHR() {
               <CmeFeedPanel onBack={() => setSidebarView("patients")} />
             ) : sidebarView === "mailings" ? (
               <MailingsPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "tutorial" ? (
+              <TutorialPanel onBack={() => setSidebarView("patients")} />
             ) : sidebarView === "troubleshooting" ? (
               <TroubleshootingPanel onBack={() => setSidebarView("patients")} />
             ) : sidebarView === "faqs" ? (

@@ -28,7 +28,7 @@ import {
   Hammer, Tent, Building2, BarChart3, BedDouble, Package, CreditCard,
   Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss,
   UserPlus, ShieldAlert, AlertTriangle, Wind,
-  Mail, Wrench, CircleHelp, Bug, MessagesSquare, LifeBuoy,
+  Mail, Wrench, CircleHelp, Bug, MessagesSquare, LifeBuoy, Compass,
 } from "lucide-react";
 
 // --- ClairMD brand tokens (see ClairMDEHR.jsx's own design-tokens comment)
@@ -155,7 +155,7 @@ function RibbonButton({ command, size = "small", active, onRun }) {
         <CommandTooltip command={command} visible={hovered && !menuOpen} />
         {command.menuItems && menuOpen && menuRect && createPortal(
           <div
-            className="fixed z-50 w-48 rounded-md border shadow-lg py-1 text-left"
+            className="fixed z-50 w-56 rounded-md border shadow-lg py-1 text-left"
             style={{ background: "#FFFFFF", borderColor: HAIRLINE, top: menuRect.top, left: menuRect.left }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -589,9 +589,9 @@ const TAB_DEFINITIONS = [
     ],
   },
   {
-    // A real dropdown (menuItems), not three separate ribbon buttons —
-    // Troubleshooting / FAQs / Report a problem stack one below the other
-    // when the Help button is clicked, per explicit request.
+    // A real dropdown (menuItems), not four separate ribbon buttons —
+    // Tutorial / Troubleshooting / FAQs / Report a problem stack one below
+    // the other when the Help button is clicked, per explicit request.
     id: "help",
     label: "Help",
     groups: [
@@ -604,6 +604,7 @@ const TAB_DEFINITIONS = [
             label: "Help",
             icon: LifeBuoy,
             menuItems: [
+              { id: "mod-tutorial", label: "Tutorial (About App)", icon: Compass },
               { id: "mod-troubleshooting", label: "Troubleshooting", icon: Wrench },
               { id: "mod-faqs", label: "FAQs", icon: CircleHelp },
               { id: "mod-report", label: "Report a problem", icon: Bug },
