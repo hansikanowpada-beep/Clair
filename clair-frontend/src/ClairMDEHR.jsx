@@ -25147,6 +25147,28 @@ export default function ClairMDEHR() {
             )}
           </div>
 
+          {/* Profile gets its own colored strip, separate from the
+              Patients nav below — a distinct space, not just another
+              nav-list item, per explicit request. Marigold matches the
+              accent this app already used for its old Admin group. */}
+          <div className="px-3 py-3 border-b border-[#D8DED9]" style={{ backgroundColor: "#FBF6EC" }}>
+            <button
+              type="button"
+              onClick={() => setSidebarView("hospitalAuth")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors border ${
+                sidebarView === "hospitalAuth" ? "font-medium" : "hover:bg-white"
+              }`}
+              style={{
+                backgroundColor: sidebarView === "hospitalAuth" ? "#FFFFFF" : "transparent",
+                borderColor: "#F0DDB0",
+                color: "#7A5A19",
+                fontFamily: "'IBM Plex Sans', sans-serif",
+              }}
+            >
+              <Building2 size={16} />Profile
+            </button>
+          </div>
+
           <style>{`
             .sidebar-nav-scroll::-webkit-scrollbar { width: 6px; }
             .sidebar-nav-scroll::-webkit-scrollbar-track { background: transparent; }
@@ -25172,23 +25194,6 @@ export default function ClairMDEHR() {
               style={sidebarView === "patients" ? { backgroundColor: `${theme.color}14`, color: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
             >
               <Users size={16} />Patients
-            </button>
-
-            {/* Profile (the account-access/login panel — SIDEBAR_VIEW_META
-                key "hospitalAuth") is the one item kept on the sidebar
-                itself rather than folded into the ribbon's Administration
-                tab, per explicit request — everything else that trio used
-                to hold (Library, doctorProfile, feed) is still reachable
-                from the ribbon only (see the Ribbon's onCommand handler). */}
-            <button
-              type="button"
-              onClick={() => setSidebarView("hospitalAuth")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors ${
-                sidebarView === "hospitalAuth" ? "font-medium" : "text-[#5B6B63] hover:bg-[#F7F9F7]"
-              }`}
-              style={sidebarView === "hospitalAuth" ? { backgroundColor: `${theme.color}14`, color: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
-            >
-              <Building2 size={16} />Profile
             </button>
           </nav>
 
