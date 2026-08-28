@@ -18531,6 +18531,203 @@ function rxMatchEnzymeConcerns(drug, currentPrescriptionDrugs) {
   return concerns;
 }
 
+// ---------------------------------------------------------------------------
+// Floating "clinical quick-check" mascot — a bouncing stethoscope character
+// pinned to the working page's lower-right corner. Clicking it reads
+// whatever diagnoses/drugs are actually on the currently open patient (no
+// AI, no live lookups) and surfaces complications, adverse drug events, and
+// drug-drug interactions straight out of ClairMD's own existing reference
+// data (DIAGNOSIS_META / RX_DRUG_DATABASE — the exact same data the Library
+// tab and PrescriptionAlertPicker already use), plus each entry's own
+// already-curated source links (WHO / National Health Portal / PubMed /
+// NLM DailyMed) and an outbound "search open-access literature" link. It
+// never invents a citation — everything shown either comes from this data
+// file or is a link the visitor opens themselves on a real site.
+//
+// v1 scope: works for an existing (seeded) patient — encounters carry a
+// real diagnosisKey slug, and prescriptions are real structured data — and
+// for a live ICU/Ward draft note, where draftDiagnosisPlanEntries' free-text
+// diagnosis is fuzzy-matched against DIAGNOSIS_LABEL (best-effort: doctor
+// shorthand like "HTN" won't match "Hypertension"). OPD notes aren't wired
+// yet — OpdBuilderTab keeps its diagnosis/plan entries in local state not
+// exposed to a sibling (see its useImperativeHandle) — so the popup just
+// reports nothing found there for now, same as an empty draft.
+
+// Doctor-typed free text -> DIAGNOSIS_META slugs it plausibly names.
+// Substring-only (typed text containing a known label), not the reverse,
+// to avoid a short label spuriously matching unrelated free text.
+function matchDiagnosisSlugsFromText(freeText) {
+  if (!freeText) return [];
+  const norm = freeText.toLowerCase();
+  return Object.entries(DIAGNOSIS_LABEL)
+    .filter(([, label]) => norm.includes(label.toLowerCase()))
+    .map(([slug]) => slug);
+}
+
+// Free-text prescription strings (e.g. "Azithromycin 500mg") -> the
+// RX_DRUG_DATABASE entries they name, deduped by drug name.
+function matchDrugsFromPrescriptionText(drugStrings) {
+  const matched = [];
+  const seen = new Set();
+  (drugStrings || []).forEach((raw) => {
+    if (!raw) return;
+    const norm = raw.toLowerCase();
+    const hit = RX_DRUG_DATABASE.find((d) => !seen.has(d.name) && norm.includes(d.name.toLowerCase().split(" (")[0]));
+    if (hit) { seen.add(hit.name); matched.push(hit); }
+  });
+  return matched;
+}
+
+// Outbound-only — no API call, no fetched results to fabricate or get
+// wrong. Europe PMC's own search UI, pre-filtered to its open-access
+// subset so whatever the visitor finds there is legitimately reusable
+// (most carry CC-BY/CC0; Europe PMC's own license column shows which).
+function europePmcOpenAccessSearchUrl(term) {
+  return `https://europepmc.org/search?query=${encodeURIComponent(`${term} AND OPEN_ACCESS:Y`)}`;
+}
+
+// Gathers the diagnoses/drugs actually present on the currently open
+// patient — real diagnosisKey + prescriptions for a seeded patient, fuzzy-
+// matched free text for a live ICU/Ward draft — and resolves each against
+// ClairMD's own reference data. Nothing here is invented: a diagnosis or
+// drug that doesn't resolve to a known entry is simply left out.
+function buildClinicalQuickCheck({ patient, isDraftIcuWard, draftDiagnosisPlanEntries }) {
+  const diagnosisSlugs = isDraftIcuWard
+    ? [...new Set((draftDiagnosisPlanEntries || []).flatMap((e) => matchDiagnosisSlugsFromText(e.diagnosis)))]
+    : [...new Set((patient?.encounters || []).map((e) => e.diagnosisKey).filter(Boolean))];
+
+  const diagnoses = diagnosisSlugs
+    .map((slug) => ({ slug, label: DIAGNOSIS_LABEL[slug], meta: DIAGNOSIS_META[slug] }))
+    .filter((d) => d.meta);
+
+  const drugs = isDraftIcuWard ? [] : matchDrugsFromPrescriptionText((patient?.prescriptions || []).map((rx) => rx.drug));
+  const drugNames = drugs.map((d) => d.name);
+  const drugAssessments = drugs.map((drug) => ({
+    drug,
+    interactions: rxMatchInteractions(drug, drugNames.filter((n) => n !== drug.name)),
+  }));
+
+  return { diagnoses, drugAssessments };
+}
+
+function StethoscopeMascotIcon({ size = 34 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22 8 C22 8 20 20 20 26 C20 33 25 38 32 38 C39 38 44 33 44 26 C44 20 42 8 42 8"
+        stroke="#F5F5F5" strokeWidth="4" strokeLinecap="round" fill="none" />
+      <circle cx="22" cy="8" r="3.5" fill="#F5F5F5" />
+      <circle cx="42" cy="8" r="3.5" fill="#F5F5F5" />
+      <path d="M32 38 L32 47" stroke="#F5F5F5" strokeWidth="4" strokeLinecap="round" />
+      <circle cx="32" cy="53" r="7" fill="#E8E8E8" stroke="#C7CDC9" strokeWidth="1.5" />
+      <circle cx="32" cy="53" r="3" fill="#0F5C56" />
+      <ellipse cx="24" cy="20" rx="6.5" ry="5" fill="#FFFFFF" stroke="#16241F" strokeWidth="1.4" />
+      <ellipse cx="40" cy="20" rx="6.5" ry="5" fill="#FFFFFF" stroke="#16241F" strokeWidth="1.4" />
+      <circle cx="25" cy="20" r="2.4" fill="#16241F" />
+      <circle cx="41" cy="20" r="2.4" fill="#16241F" />
+      <path d="M18 13 Q22 10 26 12" stroke="#16241F" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path d="M38 12 Q42 10 46 13" stroke="#16241F" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function StethoscopeMascot({ onOpen }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      title="Clinical quick-check — complications, adverse effects, interactions & references for what's on this page"
+      className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+      style={{ background: "#0F5C56", animation: "mascotBounce 3s ease-in-out infinite" }}
+    >
+      <StethoscopeMascotIcon size={32} />
+    </button>
+  );
+}
+
+function ClinicalQuickCheckPopup({ onClose, assessment }) {
+  const { diagnoses, drugAssessments } = assessment;
+  const hasNothing = diagnoses.length === 0 && drugAssessments.length === 0;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(22,36,31,0.45)" }} onClick={onClose}>
+      <div className="bg-white rounded-md shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#D8DED9] sticky top-0 bg-white">
+          <div className="flex items-center gap-2">
+            <Stethoscope size={18} className="text-[#0F5C56]" />
+            <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>Clinical quick-check</h2>
+          </div>
+          <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={18} /></button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          <p className="text-xs text-[#8A958E]">
+            Built from what's entered on this page, checked against ClairMD's own reference library — complications, adverse drug events, and interactions, not AI-generated. Reference links are either already-curated sources or an outbound search you open yourself.
+          </p>
+
+          {hasNothing && (
+            <p className="text-sm text-[#5B6B63]">Nothing to check yet — add a diagnosis (and, for an existing patient, a prescription) and open this again.</p>
+          )}
+
+          {diagnoses.map((d) => (
+            <div key={d.slug} className="border border-[#D8DED9] rounded-md p-3.5">
+              <h3 className="text-sm font-semibold mb-2" style={{ color: "#16241F" }}>{d.label}</h3>
+              {d.meta.complications?.length > 0 && (
+                <div className="mb-2.5">
+                  <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1">Complications to watch for</div>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {d.meta.complications.map((c, i) => <li key={i} className="text-xs text-[#5B6B63]">{c}</li>)}
+                  </ul>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                {(d.meta.sources || []).map((s, i) => (
+                  <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#0F5C56] hover:underline">
+                    <ExternalLink size={10} /> {s.org}
+                  </a>
+                ))}
+                <a href={europePmcOpenAccessSearchUrl(d.label)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#0F5C56] hover:underline">
+                  <ExternalLink size={10} /> Search open-access literature
+                </a>
+              </div>
+            </div>
+          ))}
+
+          {drugAssessments.map(({ drug, interactions }) => (
+            <div key={drug.name} className="border border-[#D8DED9] rounded-md p-3.5">
+              <h3 className="text-sm font-semibold mb-2" style={{ color: "#16241F" }}>{drug.name}</h3>
+              {drug.adverseEffects?.length > 0 && (
+                <div className="mb-2.5">
+                  <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1">Adverse drug events</div>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {drug.adverseEffects.map((a, i) => <li key={i} className="text-xs text-[#5B6B63]">{a}</li>)}
+                  </ul>
+                </div>
+              )}
+              {interactions.length > 0 && (
+                <div className="mb-2.5">
+                  <div className="text-[10px] uppercase tracking-wide text-[#B34A3C] mb-1">Drug-drug interactions — with others on this patient's list</div>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {interactions.map((i, idx) => <li key={idx} className="text-xs text-[#7A2F25]">{i.withClass}: {i.effect}</li>)}
+                  </ul>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                {drug.citation && (
+                  <a href={drug.citation.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#0F5C56] hover:underline">
+                    <ExternalLink size={10} /> {drug.citation.label}
+                  </a>
+                )}
+                <a href={europePmcOpenAccessSearchUrl(drug.name)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#0F5C56] hover:underline">
+                  <ExternalLink size={10} /> Search open-access literature
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RXAdminWorkflow() {
   const [open, setOpen] = useState(false);
   return (
@@ -24881,6 +25078,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [newEntryMode, setNewEntryMode] = useState(null); // null | "opd" | "icuward"
   const [backConfirm, setBackConfirm] = useState(null); // null | "opd" | "icuward"
   const opdBuilderRef = useRef(null);
+  const [quickCheckOpen, setQuickCheckOpen] = useState(false);
   // Backend-sync status shared across save flows that don't stay mounted
   // long enough to show their own inline message (e.g. ICU/Ward's "Save
   // and go back" immediately navigates away) — rendered as a fixed toast
@@ -25571,6 +25769,17 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           )}
         </main>
       </div>
+      <StethoscopeMascot onOpen={() => setQuickCheckOpen(true)} />
+      {quickCheckOpen && (
+        <ClinicalQuickCheckPopup
+          onClose={() => setQuickCheckOpen(false)}
+          assessment={buildClinicalQuickCheck({
+            patient,
+            isDraftIcuWard: !patient && newEntryMode === "icuward",
+            draftDiagnosisPlanEntries,
+          })}
+        />
+      )}
       {globalSyncMessage && (
         <div
           className="fixed bottom-4 right-4 max-w-xs px-3 py-2 rounded-sm shadow-xl text-xs bg-white border"

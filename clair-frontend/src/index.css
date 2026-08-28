@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+/* Stethoscope mascot — a full jump cycle every 3 seconds, at rest in
+   between (not a continuous bob), matching the classic Office-assistant
+   "occasional idle animation" feel rather than a constant wiggle. */
+@keyframes mascotBounce {
+  0%, 76%, 100% { transform: translateY(0) scaleY(1); }
+  82% { transform: translateY(2px) scaleY(0.92); }
+  88% { transform: translateY(-16px) scaleY(1.05); }
+  94% { transform: translateY(0) scaleY(0.96); }
+}
