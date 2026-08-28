@@ -270,10 +270,10 @@ const FOOTER_LINKS = [{ key: "admin", title: "Admin", enterMode: "admin" }];
 // Us / Affiliations) — same lockup as the Admin login landing page (logo,
 // back link, centered card) so every footer destination reads as one
 // consistent "separate landing page," not a mix of styles.
-function FooterPageShell({ onBack, children }) {
+function FooterPageShell({ onBack, children, maxWidth = "max-w-md" }) {
   return (
     <div className="min-h-screen flex flex-col items-center px-6 py-16" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', sans-serif" }}>
-      <div className="w-full max-w-md">
+      <div className={`w-full ${maxWidth}`}>
         <button type="button" onClick={onBack} className="text-xs text-[#5B6B63] mb-8 hover:text-[#16241F]">← Back to ClairMD</button>
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: TEAL, fontFamily: "'Fraunces', serif" }}>C</div>
@@ -410,9 +410,20 @@ function MockDonateCheckout() {
   );
 }
 
+// A fixed-height, independently-scrolling column for one donation type —
+// so Domestic and International can sit side by side at equal height
+// regardless of how much content either one holds, per explicit request.
+function DonateColumn({ borderColor, children }) {
+  return (
+    <div className="bg-white border rounded-md p-5 h-[420px] overflow-y-auto" style={{ borderColor }}>
+      {children}
+    </div>
+  );
+}
+
 function DonatePage({ onBack }) {
   return (
-    <FooterPageShell onBack={onBack}>
+    <FooterPageShell onBack={onBack} maxWidth="max-w-3xl">
       <div className="bg-white border rounded-md p-5 mb-4" style={{ borderColor: "#F0DDB0" }}>
         <div className="flex items-center gap-2 mb-3">
           <Heart size={18} style={{ color: MARIGOLD }} />
@@ -428,20 +439,22 @@ function DonatePage({ onBack }) {
         </div>
       </div>
 
-      <div className="bg-white border rounded-md p-5 mb-4" style={{ borderColor: HAIRLINE }}>
-        <h3 className="text-sm font-medium mb-1" style={{ color: INK }}>Domestic donations (India) — preview</h3>
-        <p className="text-xs text-[#8A958E] mb-3">A walkthrough of what the real flow will look like once it's live. Nothing on this screen is a real transaction.</p>
-        <MockDonateCheckout />
-      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <DonateColumn borderColor={HAIRLINE}>
+          <h3 className="text-sm font-medium mb-1" style={{ color: INK }}>Domestic donations (India) — preview</h3>
+          <p className="text-xs text-[#8A958E] mb-3">A walkthrough of what the real flow will look like once it's live. Nothing on this screen is a real transaction.</p>
+          <MockDonateCheckout />
+        </DonateColumn>
 
-      <div className="bg-white border rounded-md p-5" style={{ borderColor: HAIRLINE }}>
-        <div className="flex items-center gap-2 mb-2">
-          <AlertTriangle size={15} style={{ color: "#B34A3C" }} />
-          <h3 className="text-sm font-medium" style={{ color: INK }}>International donations</h3>
-        </div>
-        <p className="text-xs text-[#5B6B63]">
-          Not available, even as a preview. Indian law (the Foreign Contribution Regulation Act, FCRA) requires an Indian entity to hold separate FCRA registration before it can legally accept donations from outside India — an approval that typically can't even be applied for until well after Section 8 registration and a track record of activity. We're not building a foreign-donation flow, mocked or otherwise, until that's genuinely in place.
-        </p>
+        <DonateColumn borderColor={HAIRLINE}>
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle size={15} style={{ color: "#B34A3C" }} />
+            <h3 className="text-sm font-medium" style={{ color: INK }}>International donations</h3>
+          </div>
+          <p className="text-xs text-[#5B6B63]">
+            Not available, even as a preview. Indian law (the Foreign Contribution Regulation Act, FCRA) requires an Indian entity to hold separate FCRA registration before it can legally accept donations from outside India — an approval that typically can't even be applied for until well after Section 8 registration and a track record of activity. We're not building a foreign-donation flow, mocked or otherwise, until that's genuinely in place.
+          </p>
+        </DonateColumn>
       </div>
     </FooterPageShell>
   );
