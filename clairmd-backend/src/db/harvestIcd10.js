@@ -26,6 +26,25 @@
 // re-running this after an interruption (e.g. Render's free tier
 // spinning the service down) only redoes the branch it was cut off on,
 // not the whole tree.
+//
+// LICENSING (confirmed 28 August 2026, from WHO's own copyright page —
+// who.int/about/policies/publishing/copyright, "Licensing of WHO
+// Classifications" section — Hansika read it directly since this sandbox
+// can't reach who.int): ICD, hosted on this same icd.who.int platform, is
+// licensed CC BY-ND 3.0 IGO and "may be used for commercial and
+// non-commercial purposes, provided there is no adaptation of the codes
+// and the work is appropriately cited." Two conditions this harvester and
+// its consumers must keep holding: (1) no adaptation — store/display
+// WHO's codes and titles verbatim, exactly as harvested, never reworded
+// or restructured; this job already does that by design, just don't let
+// anything downstream "clean up" a title; (2) citation — every UI surface
+// that shows ICD-10 results must credit WHO (see Icd10CodeSearch's
+// citation line in ClairMDEHR.jsx). The full "ICD-11 Terms of Use and
+// License Agreement" (linked from that same copyright page) is the
+// authoritative document if any edge case beyond these two conditions
+// comes up — worth a direct read before anything beyond straightforward
+// display/embedding is built on this data (e.g. any transformation,
+// re-export, or third-party redistribution).
 
 const pool = require("./pool");
 const { getAccessToken, whoIcdGet, getCurrentIcd10Release } = require("../services/whoIcd");

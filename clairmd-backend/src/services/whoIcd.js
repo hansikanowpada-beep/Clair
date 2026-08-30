@@ -161,6 +161,10 @@ async function icd11Search(term, opts = {}) {
 // be inspected before the full multi-hour harvest runs against guessed
 // field names. Once confirmed, tighten this comment and the harvester's
 // parsing to match.
+//
+// Licensing for commercial use of this data IS confirmed, unlike the
+// response shape above — see db/harvestIcd10.js's header comment for the
+// details (CC BY-ND 3.0 IGO, commercial use permitted, verbatim + cited).
 // ---------------------------------------------------------------------------
 
 // CONFIRMED LIVE, 26 August 2026 (Hansika ran icd10Probe below from her
