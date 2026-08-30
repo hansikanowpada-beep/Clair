@@ -15461,6 +15461,10 @@ function Icd10CodeSearch({ initialTerm, onSelect, onClose }) {
           </button>
         )}
       </div>
+
+      <p className="text-[9px] text-[#8A958E] mt-2.5 pt-2 border-t border-[#D8DED9] leading-snug">
+        ICD-10 codes reproduced from the World Health Organization, unmodified — Licence: CC BY-ND 3.0 IGO.
+      </p>
     </div>
   );
 }
