@@ -11,7 +11,7 @@ import {
   Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
-  LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass,
+  LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass, Calculator,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
@@ -18732,6 +18732,242 @@ function ClinicalQuickCheckPopup({ onClose, assessment }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Calculators — pure arithmetic, reachable from the ribbon's Calculators
+// dropdown. No model call, nothing leaves the device, and no result is ever
+// auto-filled into a note or prescription — every number here is for the
+// doctor to read and act on themselves, same principle as the Decision
+// Support tab's scoring-system flags just being flagged, not calculated.
+// Prefilled from whatever's already been entered on the current draft
+// (age/sex from Overview) where the app actually has that field — weight,
+// height, and serum creatinine aren't collected anywhere yet, so those
+// start blank rather than inventing a number nobody entered.
+// ---------------------------------------------------------------------------
+
+// The Overview tab's gender field is free text ("F", "Female", "m", …), not
+// a fixed selector — so this just checks the first letter rather than an
+// exact-match against one assumed spelling.
+function genderTextToSex(genderText) {
+  const first = (genderText || "").trim().toLowerCase()[0];
+  if (first === "f") return "female";
+  if (first === "m") return "male";
+  return "";
+}
+
+function CalcField({ label, unit, value, onChange, placeholder }) {
+  return (
+    <div className="mb-2.5">
+      <label className="block text-[11px] text-[#5B6B63] mb-1">{label}{unit ? ` (${unit})` : ""}</label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        inputMode="decimal"
+        className="w-full px-2.5 py-2 border border-[#D8DED9] rounded-sm text-sm"
+      />
+    </div>
+  );
+}
+
+function CalcSexToggle({ sex, setSex }) {
+  return (
+    <div className="mb-2.5">
+      <label className="block text-[11px] text-[#5B6B63] mb-1">Sex</label>
+      <div className="flex gap-1.5">
+        {["male", "female"].map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setSex(s)}
+            className="flex-1 py-1.5 text-xs capitalize rounded-sm border"
+            style={sex === s ? { background: "#0F5C56", color: "#FFFFFF", borderColor: "#0F5C56" } : { background: "#FFFFFF", color: "#5B6B63", borderColor: "#D8DED9" }}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CalcResult({ label, value, note }) {
+  if (value === null || value === undefined) return null;
+  return (
+    <div className="mt-1 p-3 rounded-sm border" style={{ background: "#F2F7F5", borderColor: "#0F5C56" }}>
+      <div className="text-xs text-[#5B6B63]">{label}</div>
+      <div className="text-xl font-semibold" style={{ color: "#0F5C56" }}>{value}</div>
+      {note && <div className="text-[11px] text-[#8A958E] mt-0.5">{note}</div>}
+    </div>
+  );
+}
+
+function BMICalcBody() {
+  const [weight, setWeight] = useState("");
+  const [height, setHeight] = useState("");
+  const result = useMemo(() => {
+    const w = parseFloat(weight), h = parseFloat(height) / 100;
+    if (!w || !h) return null;
+    const bmi = w / (h * h);
+    let band = "Normal";
+    if (bmi < 18.5) band = "Underweight";
+    else if (bmi >= 25 && bmi < 30) band = "Overweight";
+    else if (bmi >= 30) band = "Obese";
+    return { bmi: bmi.toFixed(1), band };
+  }, [weight, height]);
+  return (
+    <>
+      <CalcField label="Weight" unit="kg" value={weight} onChange={setWeight} placeholder="e.g. 68" />
+      <CalcField label="Height" unit="cm" value={height} onChange={setHeight} placeholder="e.g. 158" />
+      <CalcResult label="Body Mass Index" value={result?.bmi} note={result?.band} />
+    </>
+  );
+}
+
+function IBWCalcBody({ prefillSex }) {
+  const [height, setHeight] = useState("");
+  const [sex, setSex] = useState(prefillSex || "male");
+  const result = useMemo(() => {
+    const hCm = parseFloat(height);
+    if (!hCm) return null;
+    const hIn = hCm / 2.54;
+    if (hIn < 60) return null; // Devine formula only defined above 5 ft
+    const base = sex === "female" ? 45.5 : 50;
+    const ibw = base + 2.3 * (hIn - 60);
+    return ibw.toFixed(1);
+  }, [height, sex]);
+  return (
+    <>
+      <CalcSexToggle sex={sex} setSex={setSex} />
+      <CalcField label="Height" unit="cm" value={height} onChange={setHeight} placeholder="e.g. 158" />
+      <CalcResult label="Ideal Body Weight (Devine)" value={result ? `${result} kg` : null} note="Useful for drug dosing where actual weight would overdose an obese patient" />
+      {height && parseFloat(height) / 2.54 < 60 && (
+        <p className="text-[11px] mt-1.5" style={{ color: "#B34A3C" }}>Devine formula is defined for height &ge; 152 cm (5 ft).</p>
+      )}
+    </>
+  );
+}
+
+function PBWCalcBody({ prefillSex }) {
+  const [height, setHeight] = useState("");
+  const [sex, setSex] = useState(prefillSex || "male");
+  const [tidalPerKg, setTidalPerKg] = useState("6");
+  const result = useMemo(() => {
+    const hCm = parseFloat(height);
+    if (!hCm) return null;
+    const base = sex === "female" ? 45.5 : 50;
+    const pbw = base + 0.91 * (hCm - 152.4);
+    const tv = parseFloat(tidalPerKg);
+    const tidalVolume = tv && pbw > 0 ? (pbw * tv).toFixed(0) : null;
+    return { pbw: pbw.toFixed(1), tidalVolume };
+  }, [height, sex, tidalPerKg]);
+  return (
+    <>
+      <CalcSexToggle sex={sex} setSex={setSex} />
+      <CalcField label="Height" unit="cm" value={height} onChange={setHeight} placeholder="e.g. 158" />
+      <CalcResult label="Predicted Body Weight" value={result ? `${result.pbw} kg` : null} note="Used for lung-protective ventilation, not actual body weight" />
+      {result?.pbw && (
+        <>
+          <div className="mt-3 mb-1">
+            <label className="block text-[11px] text-[#5B6B63] mb-1">Tidal volume target (mL/kg PBW)</label>
+            <div className="flex gap-1.5">
+              {["4", "6", "8"].map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setTidalPerKg(v)}
+                  className="flex-1 py-1.5 text-xs rounded-sm border"
+                  style={tidalPerKg === v ? { background: "#0F5C56", color: "#FFFFFF", borderColor: "#0F5C56" } : { background: "#FFFFFF", color: "#5B6B63", borderColor: "#D8DED9" }}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          </div>
+          <CalcResult label={`Tidal volume at ${tidalPerKg} mL/kg PBW`} value={result.tidalVolume ? `${result.tidalVolume} mL` : null} note="ARDSNet lung-protective strategy typically targets 6 mL/kg PBW" />
+        </>
+      )}
+    </>
+  );
+}
+
+function CrClCalcBody({ prefillAge, prefillSex }) {
+  const [age, setAge] = useState(prefillAge || "");
+  const [weight, setWeight] = useState("");
+  const [creatinine, setCreatinine] = useState("");
+  const [sex, setSex] = useState(prefillSex || "male");
+  const result = useMemo(() => {
+    const a = parseFloat(age), w = parseFloat(weight), cr = parseFloat(creatinine);
+    if (!a || !w || !cr) return null;
+    let crcl = ((140 - a) * w) / (72 * cr);
+    if (sex === "female") crcl *= 0.85;
+    let band = "Normal";
+    if (crcl < 15) band = "Kidney failure — dose adjustment critical";
+    else if (crcl < 30) band = "Severe impairment — many drugs need dose reduction";
+    else if (crcl < 60) band = "Moderate impairment — check renally-cleared drugs";
+    else if (crcl < 90) band = "Mild impairment";
+    return { crcl: crcl.toFixed(1), band };
+  }, [age, weight, creatinine, sex]);
+  return (
+    <>
+      <CalcField label="Age" unit="years" value={age} onChange={setAge} placeholder="e.g. 58" />
+      <CalcSexToggle sex={sex} setSex={setSex} />
+      <CalcField label="Weight" unit="kg" value={weight} onChange={setWeight} placeholder="e.g. 68" />
+      <CalcField label="Serum creatinine" unit="mg/dL" value={creatinine} onChange={setCreatinine} placeholder="e.g. 1.3" />
+      <CalcResult label="Creatinine Clearance (Cockcroft-Gault)" value={result ? `${result.crcl} mL/min` : null} note={result?.band} />
+    </>
+  );
+}
+
+function BSACalcBody() {
+  const [weight, setWeight] = useState("");
+  const [height, setHeight] = useState("");
+  const result = useMemo(() => {
+    const w = parseFloat(weight), h = parseFloat(height);
+    if (!w || !h) return null;
+    return Math.sqrt((w * h) / 3600).toFixed(2); // Mosteller formula
+  }, [weight, height]);
+  return (
+    <>
+      <CalcField label="Weight" unit="kg" value={weight} onChange={setWeight} placeholder="e.g. 68" />
+      <CalcField label="Height" unit="cm" value={height} onChange={setHeight} placeholder="e.g. 158" />
+      <CalcResult label="Body Surface Area (Mosteller)" value={result ? `${result} m²` : null} note="Commonly used for chemotherapy and paediatric dosing" />
+    </>
+  );
+}
+
+const CALCULATORS_CONFIG = {
+  bmi: { title: "BMI", Body: BMICalcBody },
+  ibw: { title: "Ideal Body Weight (IBW)", Body: IBWCalcBody },
+  pbw: { title: "Predicted Body Weight (PBW)", Body: PBWCalcBody },
+  crcl: { title: "Creatinine Clearance", Body: CrClCalcBody },
+  bsa: { title: "Body Surface Area (BSA)", Body: BSACalcBody },
+};
+
+function CalculatorModal({ calcId, onClose, prefillAge, prefillSex }) {
+  const config = CALCULATORS_CONFIG[calcId];
+  if (!config) return null;
+  const { title, Body } = config;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(22,36,31,0.45)" }} onClick={onClose}>
+      <div className="bg-white rounded-md shadow-xl max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#D8DED9]">
+          <div className="flex items-center gap-2">
+            <Calculator size={17} className="text-[#0F5C56]" />
+            <h2 className="text-base font-semibold" style={{ color: "#16241F" }}>{title}</h2>
+          </div>
+          <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={18} /></button>
+        </div>
+        <div className="p-5">
+          <Body prefillAge={prefillAge} prefillSex={prefillSex} />
+          <p className="text-[11px] text-[#8A958E] mt-3">
+            Every field here is editable and pre-filled only where the chart already has the value — nothing is calculated automatically into the note or prescription.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RXAdminWorkflow() {
   const [open, setOpen] = useState(false);
   return (
@@ -25083,6 +25319,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [backConfirm, setBackConfirm] = useState(null); // null | "opd" | "icuward"
   const opdBuilderRef = useRef(null);
   const [quickCheckOpen, setQuickCheckOpen] = useState(false);
+  const [openCalcId, setOpenCalcId] = useState(null); // null | "bmi" | "ibw" | "pbw" | "crcl" | "bsa"
   // Backend-sync status shared across save flows that don't stay mounted
   // long enough to show their own inline message (e.g. ICU/Ward's "Save
   // and go back" immediately navigates away) — rendered as a fixed toast
@@ -25608,6 +25845,8 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       }[key];
                       opener?.((prev) => !prev);
                     }
+                  } else if (command.id?.startsWith("calc-")) {
+                    setOpenCalcId(command.id.slice(5));
                   }
                 }}
               />
@@ -25782,6 +26021,14 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
             isDraftIcuWard: !patient && newEntryMode === "icuward",
             draftDiagnosisPlanEntries,
           })}
+        />
+      )}
+      {openCalcId && (
+        <CalculatorModal
+          calcId={openCalcId}
+          onClose={() => setOpenCalcId(null)}
+          prefillAge={newEntryMode === "icuward" ? draftDetails.age : ""}
+          prefillSex={newEntryMode === "icuward" ? genderTextToSex(draftDetails.gender) : ""}
         />
       )}
       {globalSyncMessage && (

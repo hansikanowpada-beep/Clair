@@ -29,6 +29,7 @@ import {
   Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss,
   UserPlus, ShieldAlert, AlertTriangle, Wind,
   Mail, Wrench, CircleHelp, Bug, MessagesSquare, LifeBuoy, Compass,
+  Calculator, Scale, Ruler, Droplet,
 } from "lucide-react";
 
 // --- ClairMD brand tokens (see ClairMDEHR.jsx's own design-tokens comment)
@@ -591,6 +592,36 @@ const TAB_DEFINITIONS = [
     ],
   },
   {
+    // Same real-dropdown pattern as Help below — five medical calculators
+    // stack one below the other under a single Calculators button, per
+    // explicit request. Each opens straight to that one calculator (see
+    // onCommand's "calc-" routing in ClairMDEHR.jsx) rather than an
+    // accordion of all five, matching how Help's own items each open one
+    // specific destination.
+    id: "calculators",
+    label: "Calculators",
+    groups: [
+      {
+        id: "calculators-actions",
+        label: "Calculators",
+        commands: [
+          {
+            id: "calculators-menu",
+            label: "Calculators",
+            icon: Calculator,
+            menuItems: [
+              { id: "calc-bmi", label: "BMI", icon: Scale },
+              { id: "calc-ibw", label: "Ideal Body Weight (IBW)", icon: Scale },
+              { id: "calc-pbw", label: "Predicted Body Weight (PBW)", icon: Droplet },
+              { id: "calc-crcl", label: "Creatinine Clearance", icon: Droplet },
+              { id: "calc-bsa", label: "Body Surface Area (BSA)", icon: Ruler },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     // A real dropdown (menuItems), not four separate ribbon buttons —
     // Tutorial / Troubleshooting / FAQs / Report a problem stack one below
     // the other when the Help button is clicked, per explicit request.
@@ -632,7 +663,7 @@ const TAB_DEFINITIONS = [
 ];
 
 // Administration first, then the rest in their original order.
-const TAB_ORDER = ["administration", "home", "insert", "review", "library", "special-situations", "specialty-feed", "mailings", "help", "feedback"];
+const TAB_ORDER = ["administration", "home", "insert", "review", "library", "calculators", "special-situations", "specialty-feed", "mailings", "help", "feedback"];
 export const DEFAULT_TABS = TAB_ORDER.map((id) => TAB_DEFINITIONS.find((t) => t.id === id)).filter(Boolean);
 
 const DEFAULT_QUICK_ACCESS = [
