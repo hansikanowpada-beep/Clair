@@ -14100,6 +14100,9 @@ async function loadAdminNotificationHealth() {
 async function loadAdminIcd10HarvestStatus() {
   return apiRequest("/admin/harvest-icd10/status");
 }
+async function loadAdminAccountingSummary() {
+  return apiRequest("/admin/accounting-summary");
+}
 
 // Compact, reusable connect/status widget — email+password only (matches
 // the real backend's actual signup/login fields; the license-number field
@@ -24849,7 +24852,7 @@ function AdminDashboardView({ onBack, backLabel = "Back to clinic view" }) {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [loginBusy, setLoginBusy] = useState(false);
   const [loginError, setLoginError] = useState(null);
-  const [data, setData] = useState({ overview: null, risk: null, backup: null, notif: null, icd10: null });
+  const [data, setData] = useState({ overview: null, risk: null, backup: null, notif: null, icd10: null, accounting: null });
   const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -24865,8 +24868,8 @@ function AdminDashboardView({ onBack, backLabel = "Back to clinic view" }) {
   const loadDashboard = () => {
     setLoading(true);
     setLoadError(null);
-    Promise.all([loadAdminOverview(), loadAdminHospitalsAtRisk(), loadAdminBackupHealth(), loadAdminNotificationHealth(), loadAdminIcd10HarvestStatus()])
-      .then(([overview, risk, backup, notif, icd10]) => setData({ overview, risk, backup, notif, icd10 }))
+    Promise.all([loadAdminOverview(), loadAdminHospitalsAtRisk(), loadAdminBackupHealth(), loadAdminNotificationHealth(), loadAdminIcd10HarvestStatus(), loadAdminAccountingSummary()])
+      .then(([overview, risk, backup, notif, icd10, accounting]) => setData({ overview, risk, backup, notif, icd10, accounting }))
       .catch((err) => setLoadError(err.message))
       .finally(() => setLoading(false));
   };
@@ -24901,7 +24904,7 @@ function AdminDashboardView({ onBack, backLabel = "Back to clinic view" }) {
   const disconnect = () => {
     backendLogout();
     setConnectedAccount(null);
-    setData({ overview: null, risk: null, backup: null, notif: null, icd10: null });
+    setData({ overview: null, risk: null, backup: null, notif: null, icd10: null, accounting: null });
     onBack();
   };
 
@@ -24983,13 +24986,24 @@ function AdminLoginLanding({ onBack, backLabel, connectedAccount, loginForm, set
 // Every number here comes from clairmd-backend's /api/admin routes —
 // nothing fabricated, and never patient clinical content (this backend
 // has none to show; see routes/admin.js).
+const ADMIN_NAV_SECTIONS = [
+  { id: "overview", label: "Overview", icon: BarChart3 },
+  { id: "icd10", label: "ICD-10 Harvest", icon: BookOpen },
+  { id: "hospitals-risk", label: "Hospitals at Risk", icon: AlertTriangle },
+  { id: "backup", label: "Backup Health", icon: ShieldCheck },
+  { id: "notifications", label: "Notifications", icon: Bell },
+];
+
 function AdminDashboardScreen({ onBack, backLabel, connectedAccount, data, loading, loadError, onRefresh, onDisconnect }) {
+  const [activeSection, setActiveSection] = useState("overview");
+  const [showRevenue, setShowRevenue] = useState(false);
+  const [showAccounting, setShowAccounting] = useState(false);
   const totalAccounts = data.overview ? data.overview.accountsByType.reduce((sum, r) => sum + Number(r.count), 0) : null;
   const countFor = (types) => data.overview ? data.overview.accountsByType.filter((r) => types.includes(r.account_type)).reduce((sum, r) => sum + Number(r.count), 0) : null;
 
   return (
     <div className="min-h-screen p-8" style={{ background: "#F7F9F7", fontFamily: "'IBM Plex Sans', sans-serif" }}>
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]">← {backLabel}</button>
 
         <div className="flex items-start justify-between gap-4 mb-1">
@@ -25012,20 +25026,225 @@ function AdminDashboardScreen({ onBack, backLabel, connectedAccount, data, loadi
           <div className="bg-[#FBEFEC] border border-[#E3B3A8] rounded-sm p-3 text-xs text-[#7A2F25] mb-4">Couldn't load dashboard data: {loadError}</div>
         )}
 
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          <AdminStatTile label="Total accounts" value={totalAccounts} />
-          <AdminStatTile label="Doctors" value={countFor(["individual_doctor", "hospital_doctor"])} />
-          <AdminStatTile label="Hospitals" value={countFor(["hospital"])} />
-          <AdminStatTile label="Patients" value={countFor(["patient"])} />
+        <div className="flex gap-5 items-start">
+          <nav className="w-44 shrink-0 bg-white border border-[#D8DED9] rounded-md p-2 sticky top-8">
+            {ADMIN_NAV_SECTIONS.map((section) => {
+              const Icon = section.icon;
+              const active = activeSection === section.id;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-sm mb-0.5 last:mb-0 transition-colors ${
+                    active ? "bg-[#0F5C56] text-white" : "text-[#5B6B63] hover:bg-[#EFF3F0]"
+                  }`}
+                >
+                  <Icon size={14} className={active ? "text-white" : "text-[#8A958E]"} />
+                  {section.label}
+                </button>
+              );
+            })}
+            <div className="border-t border-[#D8DED9] my-1.5" />
+            <button
+              onClick={() => setShowRevenue(true)}
+              className="w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-sm text-[#5B6B63] hover:bg-[#EFF3F0]"
+            >
+              <CreditCard size={14} className="text-[#8A958E]" />
+              Revenue
+            </button>
+            <button
+              onClick={() => setShowAccounting(true)}
+              className="w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-sm mt-0.5 text-[#5B6B63] hover:bg-[#EFF3F0]"
+            >
+              <FileText size={14} className="text-[#8A958E]" />
+              Accounting
+            </button>
+          </nav>
+
+          <div className="flex-1 min-w-0">
+            {activeSection === "overview" && (
+              <>
+                <div className="grid grid-cols-4 gap-3 mb-4">
+                  <AdminStatTile label="Total accounts" value={totalAccounts} />
+                  <AdminStatTile label="Doctors" value={countFor(["individual_doctor", "hospital_doctor"])} />
+                  <AdminStatTile label="Hospitals" value={countFor(["hospital"])} />
+                  <AdminStatTile label="Patients" value={countFor(["patient"])} />
+                </div>
+                <AdminOverviewCard overview={data.overview} />
+              </>
+            )}
+            {activeSection === "icd10" && <AdminIcd10HarvestCard icd10={data.icd10} />}
+            {activeSection === "hospitals-risk" && <AdminHospitalsAtRiskCard risk={data.risk} />}
+            {activeSection === "backup" && <AdminBackupHealthCard backup={data.backup} />}
+            {activeSection === "notifications" && <AdminNotificationHealthCard notif={data.notif} />}
+          </div>
+        </div>
+      </div>
+
+      {showRevenue && <RevenueDetailsPopup overview={data.overview} risk={data.risk} onClose={() => setShowRevenue(false)} />}
+      {showAccounting && <AccountingSummaryPopup accounting={data.accounting} onClose={() => setShowAccounting(false)} />}
+    </div>
+  );
+}
+
+// Same full-page shell style as LandingPage.jsx's FooterPageShell (public
+// About/Contact/Donate pages) — back link + centered "C" badge header over
+// a white content card — reused here so this reads as one consistent
+// pop-up-page pattern across the app rather than a one-off modal.
+function RevenueDetailsPopup({ overview, risk, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col items-center px-6 py-16" style={{ background: "#EFF3F0", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="w-full max-w-2xl">
+        <button type="button" onClick={onClose} className="text-xs text-[#5B6B63] mb-8 hover:text-[#16241F]">← Back to dashboard</button>
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: "#0F5C56", fontFamily: "'Fraunces', serif" }}>C</div>
+          <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>Billing &amp; revenue</h1>
+          <p className="text-xs text-[#8A958E] max-w-md">Platform-wide billing detail — this month's revenue, signups, plan-tier mix, and uncollected hospital overage.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <AdminOverviewCard overview={data.overview} />
-          <AdminIcd10HarvestCard icd10={data.icd10} />
-          <AdminHospitalsAtRiskCard risk={data.risk} />
-          <AdminBackupHealthCard backup={data.backup} />
-          <AdminNotificationHealthCard notif={data.notif} />
+        {!overview ? (
+          <div className="bg-white border border-[#D8DED9] rounded-md p-5 text-center text-xs text-[#8A958E]">Loading…</div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+              <h2 className="text-sm font-medium mb-3">This month</h2>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <div className="text-[10px] text-[#8A958E] uppercase">Revenue</div>
+                  <div className="text-lg font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>₹{(overview.revenueThisMonthPaise / 100).toFixed(2)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-[#8A958E] uppercase">Signups</div>
+                  <div className="text-lg font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>{overview.signupsThisMonth}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-[#8A958E] uppercase">Signups last mo.</div>
+                  <div className="text-lg font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>{overview.signupsLastMonth}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+              <h2 className="text-sm font-medium mb-3">Doctor plan tiers</h2>
+              {overview.doctorPlanTiers.length === 0 ? (
+                <p className="text-xs text-[#8A958E]">No doctor accounts yet.</p>
+              ) : (
+                <div className="space-y-1">
+                  {overview.doctorPlanTiers.map((row) => (
+                    <div key={row.plan_tier} className="flex justify-between text-xs">
+                      <span className="text-[#5B6B63] capitalize">{row.plan_tier || "unset"}</span>
+                      <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+              <h2 className="text-sm font-medium mb-3">Hospital plan tiers</h2>
+              {overview.hospitalPlanTiers.length === 0 ? (
+                <p className="text-xs text-[#8A958E]">No hospital accounts yet.</p>
+              ) : (
+                <div className="space-y-1">
+                  {overview.hospitalPlanTiers.map((row) => (
+                    <div key={row.hospital_plan_tier} className="flex justify-between text-xs">
+                      <span className="text-[#5B6B63] capitalize">{row.hospital_plan_tier || "unset"}</span>
+                      <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+              <h2 className="text-sm font-medium mb-3">Uncollected hospital overage</h2>
+              {!risk ? (
+                <p className="text-xs text-[#8A958E]">Loading…</p>
+              ) : risk.pendingOverageByHospital.length === 0 ? (
+                <p className="text-xs text-[#8A958E]">Nothing outstanding right now.</p>
+              ) : (
+                <>
+                  <div className="space-y-1 mb-2">
+                    {risk.pendingOverageByHospital.map((row, i) => (
+                      <div key={i} className="flex justify-between text-xs">
+                        <span className="text-[#5B6B63] capitalize">{row.hospital_account_id} · {row.charge_status}</span>
+                        <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-[#8A958E]">{risk.restrictedHospitals.length} hospital(s) currently restricted for overage billing — see the Hospitals at Risk section for detail.</p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const ACCOUNTING_MONTH_LABEL = (yearMonth) => {
+  const [y, m] = yearMonth.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+};
+
+// Same page-shell pop-up pattern as RevenueDetailsPopup/LandingPage.jsx's
+// footer pages. Shows the current Indian financial year (1 April - 31
+// March) broken down month by month — what a founder actually needs on
+// hand for ITR filing, not just "this calendar month" like the Revenue
+// popup. See routes/admin.js's /accounting-summary for what's included
+// (plan-subscription billing_events only; overage charges aren't
+// collected yet, so there's nothing real to add there).
+function AccountingSummaryPopup({ accounting, onClose }) {
+  const fyLabel = accounting
+    ? (() => {
+        const startYear = new Date(accounting.financialYearStart).getFullYear();
+        return `FY ${startYear}–${String(startYear + 1).slice(2)}`;
+      })()
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col items-center px-6 py-16" style={{ background: "#EFF3F0", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="w-full max-w-2xl">
+        <button type="button" onClick={onClose} className="text-xs text-[#5B6B63] mb-8 hover:text-[#16241F]">← Back to dashboard</button>
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: "#0F5C56", fontFamily: "'Fraunces', serif" }}>C</div>
+          <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>Accounting</h1>
+          <p className="text-xs text-[#8A958E] max-w-md">
+            {fyLabel ? `${fyLabel} revenue, month by month — a record-keeping aid for ITR filing.` : "Revenue by month for the current financial year — a record-keeping aid for ITR filing."}
+          </p>
         </div>
+
+        {!accounting ? (
+          <div className="bg-white border border-[#D8DED9] rounded-md p-5 text-center text-xs text-[#8A958E]">Loading…</div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-white border border-[#D8DED9] rounded-md p-5 text-center">
+              <div className="text-[10px] text-[#8A958E] uppercase">{fyLabel} total revenue</div>
+              <div className="text-2xl font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>₹{(accounting.totalPaise / 100).toFixed(2)}</div>
+            </div>
+
+            <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+              <h2 className="text-sm font-medium mb-3">Month by month</h2>
+              {accounting.monthly.length === 0 ? (
+                <p className="text-xs text-[#8A958E]">No billing events recorded yet this financial year.</p>
+              ) : (
+                <div className="space-y-1">
+                  {accounting.monthly.map((row) => (
+                    <div key={row.yearMonth} className="flex justify-between text-xs">
+                      <span className="text-[#5B6B63]">{ACCOUNTING_MONTH_LABEL(row.yearMonth)}</span>
+                      <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>₹{(row.totalPaise / 100).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <p className="text-[10px] text-[#8A958E] px-1">
+              Raw revenue figures from ClairMD's own billing records — not a filed return. Confirm GST treatment, deductions, and final figures with a chartered accountant before filing.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -72,6 +72,44 @@ router.get("/harvest-icd10/status", requireAuth, async (req, res) => {
   });
 });
 
+// Revenue for the current Indian financial year (1 April - 31 March),
+// broken down month by month — the shape an ITR filing actually needs,
+// unlike /overview's single "this calendar month" figure. Only covers
+// billing_events (doctor/hospital plan subscriptions); hospital overage
+// charges aren't included since overage_entries has no amount column yet
+// and services/hospitalBilling.js's Razorpay charge isn't wired up (see
+// its own header comment) — so there's no real collected overage revenue
+// to report yet. This is a raw record-keeping aid, not a filed return —
+// still needs a CA's review for GST treatment, deductions, etc.
+router.get("/accounting-summary", requireAuth, requireAccountType("admin"), async (req, res) => {
+  const fyStartResult = await pool.query(`
+    SELECT (CASE WHEN EXTRACT(MONTH FROM now()) >= 4
+      THEN make_date(EXTRACT(YEAR FROM now())::int, 4, 1)
+      ELSE make_date(EXTRACT(YEAR FROM now())::int - 1, 4, 1)
+    END) AS fy_start
+  `);
+  const fyStart = fyStartResult.rows[0].fy_start;
+  const [monthly, total] = await Promise.all([
+    pool.query(
+      `SELECT to_char(occurred_at, 'YYYY-MM') AS year_month, COALESCE(SUM(amount_paise), 0) AS total_paise
+       FROM billing_events
+       WHERE occurred_at >= $1 AND occurred_at < $1::date + interval '1 year'
+       GROUP BY year_month ORDER BY year_month`,
+      [fyStart]
+    ),
+    pool.query(
+      `SELECT COALESCE(SUM(amount_paise), 0) AS total_paise FROM billing_events
+       WHERE occurred_at >= $1 AND occurred_at < $1::date + interval '1 year'`,
+      [fyStart]
+    ),
+  ]);
+  res.json({
+    financialYearStart: fyStart,
+    monthly: monthly.rows.map((r) => ({ yearMonth: r.year_month, totalPaise: Number(r.total_paise) })),
+    totalPaise: Number(total.rows[0].total_paise),
+  });
+});
+
 // Hospitals currently restricted for unresolved overage billing, plus
 // how much overage revenue is sitting uncollected across the platform —
 // this is the "who needs a phone call" view.
