@@ -24902,6 +24902,7 @@ function AdminDashboardView({ onBack, backLabel = "Back to clinic view" }) {
     backendLogout();
     setConnectedAccount(null);
     setData({ overview: null, risk: null, backup: null, notif: null, icd10: null });
+    onBack();
   };
 
   if (!isAdmin) {
@@ -25000,7 +25001,7 @@ function AdminDashboardScreen({ onBack, backLabel, connectedAccount, data, loadi
             <span className="w-1.5 h-1.5 rounded-full bg-[#0F5C56]" />
             {connectedAccount.email}
             <button onClick={onRefresh} disabled={loading} className="text-[#0F5C56] underline decoration-dotted">{loading ? "Refreshing…" : "Refresh"}</button>
-            <button onClick={onDisconnect} className="text-[#8A958E] underline decoration-dotted hover:text-[#B34A3C]">Disconnect</button>
+            <button onClick={onDisconnect} className="text-[#8A958E] underline decoration-dotted hover:text-[#B34A3C]">Log out</button>
           </div>
         </div>
         <p className="text-xs text-[#8A958E] mb-5 max-w-2xl">
