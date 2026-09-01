@@ -3440,6 +3440,200 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Preeclampsia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK570611/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 19: Seizure / status epilepticus ────────────────────────────────
+  {
+    id: "med-seizure-entry",
+    condition: "Seizure (entry pathway)",
+    region: "HEAD",
+    synonyms: ["seizure", "fit", "convulsion", "first seizure", "seizure activity"],
+    status: "cited",
+    redFlags: [
+      "Seizure lasting 5 minutes or longer, or repeated seizures without recovery in between",
+      "Failure to regain consciousness after the seizure stops",
+      "Fever with the seizure, especially in an adult or a child outside the typical febrile-seizure age range",
+      "A focal neurological deficit after the seizure that does not resolve",
+      "Head injury, pregnancy, or known malignancy",
+    ],
+    algorithm: [
+      {
+        id: "ci1",
+        stage: "Presentation",
+        title: "Seizure — establish whether it is ongoing, how long it has lasted, and whether consciousness has been regained between or after episodes",
+        next: ["ci2"],
+      },
+      {
+        id: "ci2",
+        stage: "Differentiate",
+        title: "Use duration and recovery to identify which pathway this is",
+        branches: [
+          { label: "Ongoing seizure activity 5 minutes or longer, or recurrent seizures without recovery between them", to: "med-status-epilepticus" },
+          { label: "A single, brief, self-terminating seizure with a return to baseline", to: "med-first-unprovoked-seizure" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Epilepsy and Seizures", publisher: "National Institute of Neurological Disorders and Stroke (NINDS), NIH, USA", url: "https://www.ninds.nih.gov/health-information/disorders/epilepsy-and-seizures", licence: "US Government work — public domain" },
+      { title: "Seizure", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430765/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-status-epilepticus",
+    condition: "Status epilepticus",
+    region: "HEAD",
+    synonyms: ["status epilepticus", "prolonged seizure", "continuous seizure"],
+    status: "cited",
+    redFlags: [
+      "Ongoing convulsive activity beyond 5 minutes",
+      "Hypoxia or airway compromise during the seizure",
+      "Recurrent seizures without full recovery of consciousness between them",
+      "Seizure activity continuing despite first- and second-line treatment (refractory status epilepticus)",
+    ],
+    algorithm: [
+      {
+        id: "cj1",
+        stage: "Confirm",
+        title: "A seizure lasting 5 minutes or more, or recurrent seizures without recovery of consciousness in between, defines status epilepticus and needs immediate treatment",
+        detail: "Do not wait for a fixed time cut-off if activity is clearly ongoing and not self-terminating.",
+        next: ["cj2"],
+      },
+      {
+        id: "cj2",
+        stage: "Decision",
+        title: "Protect the airway, give oxygen, check glucose, and treat with a benzodiazepine first, escalating to a second-line anti-seizure medication if seizures continue",
+        detail: "ClairMD does not select or dose anti-seizure medication — this is set by the clinician following a stepwise emergency protocol.",
+        next: ["cj3"],
+      },
+      {
+        id: "cj3",
+        stage: "Note",
+        title: "Seizures continuing despite first- and second-line treatment need urgent anaesthesia or intensive care involvement",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Status Epilepticus", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430686/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Epilepsy and Seizures", publisher: "National Institute of Neurological Disorders and Stroke (NINDS), NIH, USA", url: "https://www.ninds.nih.gov/health-information/disorders/epilepsy-and-seizures", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-first-unprovoked-seizure",
+    condition: "First unprovoked seizure",
+    region: "HEAD",
+    synonyms: ["first unprovoked seizure", "first seizure", "new onset seizure"],
+    status: "cited",
+    redFlags: [
+      "Incomplete recovery of consciousness or a persistent focal deficit",
+      "Fever or signs of infection",
+      "Head injury preceding the seizure",
+      "Pregnancy",
+    ],
+    algorithm: [
+      {
+        id: "ck1",
+        stage: "Confirm",
+        title: "A single seizure with no clear provoking cause (e.g. fever, hypoglycaemia, alcohol withdrawal, drug toxicity), after the episode has fully resolved",
+        next: ["ck2"],
+      },
+      {
+        id: "ck2",
+        stage: "Decision",
+        title: "Look for risk factors that predict recurrence — abnormal brain imaging, an abnormal EEG, or nocturnal seizures",
+        detail: "These inform, but do not replace, an individualised discussion about starting anti-seizure medication. ClairMD does not select or dose anti-seizure medication — this decision is made by the clinician together with the patient.",
+        next: ["ck3"],
+      },
+      {
+        id: "ck3",
+        stage: "Note",
+        title: "A provoked seizure needs the underlying cause identified and treated, rather than anti-seizure medication",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Seizure", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430765/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Epilepsy and Seizures", publisher: "National Institute of Neurological Disorders and Stroke (NINDS), NIH, USA", url: "https://www.ninds.nih.gov/health-information/disorders/epilepsy-and-seizures", licence: "US Government work — public domain" },
+    ],
+  },
+
+  // ── Adrenal crisis and febrile neutropenia (standalone additions) ──────────
+  {
+    id: "med-adrenal-crisis",
+    condition: "Adrenal crisis (Addisonian crisis)",
+    region: "ABDOMEN",
+    synonyms: ["adrenal crisis", "addisonian crisis", "acute adrenal insufficiency", "adrenal insufficiency crisis"],
+    status: "cited",
+    redFlags: [
+      "Hypotension or shock unresponsive to fluids",
+      "Hypoglycaemia",
+      "Hyperkalaemia with ECG changes",
+      "Reduced consciousness",
+      "Severe abdominal pain, vomiting or diarrhoea",
+    ],
+    algorithm: [
+      {
+        id: "cl1",
+        stage: "Confirm",
+        title: "Sudden deterioration in someone with known or unrecognised adrenal insufficiency, often triggered by infection, trauma, surgery or missed steroid doses",
+        next: ["cl2"],
+      },
+      {
+        id: "cl2",
+        stage: "Decision",
+        title: "Treat before biochemical confirmation if adrenal crisis is suspected — do not delay hydrocortisone while awaiting cortisol results",
+        detail: "ClairMD does not select or dose hydrocortisone or IV fluids — these are set by the clinician. A random cortisol and ACTH sample is ideally taken before the first dose, but treatment should never be delayed for this.",
+        next: ["cl3"],
+      },
+      {
+        id: "cl3",
+        stage: "Note",
+        title: "Look for and treat the precipitant, and arrange same-day endocrinology input for ongoing steroid dosing and a sick-day plan",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Definition & Facts of Adrenal Insufficiency & Addison's Disease", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/endocrine-diseases/adrenal-insufficiency-addisons-disease/definition-facts", licence: "US Government work — public domain" },
+      { title: "Adrenal Crisis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK499968/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-febrile-neutropenia",
+    condition: "Febrile neutropenia",
+    region: "SYSTEMIC",
+    synonyms: ["febrile neutropenia", "neutropenic fever", "neutropenic sepsis"],
+    status: "cited",
+    redFlags: [
+      "Hypotension or signs of septic shock",
+      "Reduced consciousness",
+      "Severe mucositis or an obvious focus of infection",
+      "Very low neutrophil count (profound neutropenia)",
+    ],
+    algorithm: [
+      {
+        id: "cm1",
+        stage: "Confirm",
+        title: "Fever in someone with chemotherapy-induced or other significant neutropenia is a medical emergency until proven otherwise, even without an obvious source of infection",
+        next: ["cm2"],
+      },
+      {
+        id: "cm2",
+        stage: "Decision",
+        title: "Empirical broad-spectrum antibiotics are given within one hour of recognition, after cultures are taken — do not wait for the neutrophil count or a source to be confirmed",
+        detail: "ClairMD does not select or dose antibiotics — this is set by the clinician per local protocol. A risk-stratification tool such as the MASCC score may be used by the clinician to help guide the safety of outpatient management in stable patients; ClairMD does not calculate this score.",
+        next: ["cm3"],
+      },
+      {
+        id: "cm3",
+        stage: "Note",
+        title: "Reassess closely — clinical deterioration in neutropenic sepsis can be rapid and may lack the usual signs of infection",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Febrile Neutropenia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK541102/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Infection and Neutropenia During Cancer Treatment", publisher: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/about-cancer/treatment/side-effects/infection", licence: "US Government work — public domain" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
