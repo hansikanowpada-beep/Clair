@@ -2609,6 +2609,609 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Epiglottitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430960/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 13: Hyperglycaemic emergencies ────────────────────────────────
+  {
+    id: "med-hyperglycaemic-emergency-entry",
+    condition: "Hyperglycaemic emergency (entry pathway)",
+    region: "ABDOMEN",
+    synonyms: ["hyperglycaemic emergency", "hyperglycemic emergency", "very high blood sugar", "dka", "hhs"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or coma",
+      "Severe dehydration or haemodynamic instability",
+      "Very low pH or bicarbonate on blood gas",
+      "Significant hypokalaemia or hyperkalaemia",
+    ],
+    algorithm: [
+      {
+        id: "bm1",
+        stage: "Presentation",
+        title: "Very high blood glucose — assess conscious level, hydration status and vital signs urgently",
+        next: ["bm2"],
+      },
+      {
+        id: "bm2",
+        stage: "Stabilise first",
+        title: "Secure IV access, begin fluid resuscitation, and check blood ketones and pH promptly",
+        detail: "Named diagnostic criteria exist for both DKA and HHS. ClairMD does not apply the criteria itself — the clinician uses glucose, ketones, pH/bicarbonate and osmolality together to differentiate the two.",
+        next: ["bm3"],
+      },
+      {
+        id: "bm3",
+        stage: "Differentiate",
+        title: "Use the ketone and acid-base picture to distinguish DKA from HHS",
+        branches: [
+          { label: "Significant ketosis and acidosis (low pH/bicarbonate)", to: "med-diabetic-ketoacidosis" },
+          { label: "Very high glucose and osmolality without significant ketosis or acidosis", to: "med-hyperosmolar-hyperglycaemic-state" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Hyperglycemia", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/hyperglycemia.html", licence: "US Government work — public domain" },
+      { title: "Hyperglycemia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430900/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-diabetic-ketoacidosis",
+    condition: "Diabetic ketoacidosis",
+    region: "ABDOMEN",
+    synonyms: ["diabetic ketoacidosis", "dka", "ketoacidosis"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness",
+      "Severe acidosis (very low pH or bicarbonate)",
+      "Hypokalaemia or hyperkalaemia — potassium needs urgent monitoring throughout treatment",
+    ],
+    algorithm: [
+      {
+        id: "bn1",
+        stage: "Confirm",
+        title: "Hyperglycaemia, ketosis (blood or urine ketones), and acidosis (low pH/bicarbonate) together confirm the diagnosis",
+        next: ["bn2"],
+      },
+      {
+        id: "bn2",
+        stage: "Decision",
+        title: "Fluid resuscitation, fixed-rate intravenous insulin, and close potassium monitoring and replacement",
+        detail: "ClairMD does not calculate fluid or insulin rates — these are set and titrated by the clinician per local protocol. Look for and treat the precipitant (infection, missed insulin, new-onset diabetes).",
+        next: ["bn3"],
+      },
+      {
+        id: "bn3",
+        stage: "Monitor",
+        title: "Recheck glucose, ketones and potassium regularly until resolution criteria are met",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Diabetic ketoacidosis", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000320.htm", licence: "US Government work — public domain" },
+      { title: "Adult Diabetic Ketoacidosis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK560723/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-hyperosmolar-hyperglycaemic-state",
+    condition: "Hyperosmolar hyperglycaemic state",
+    region: "ABDOMEN",
+    synonyms: ["hyperosmolar hyperglycaemic state", "hhs", "hyperosmolar hyperglycemic state", "hyperosmolar coma"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or coma",
+      "Significant haemodynamic instability from profound dehydration",
+      "Thromboembolic complications — HHS carries a high risk of venous thromboembolism",
+    ],
+    algorithm: [
+      {
+        id: "bo1",
+        stage: "Confirm",
+        title: "Very high glucose and high serum osmolality, without significant ketosis or acidosis",
+        next: ["bo2"],
+      },
+      {
+        id: "bo2",
+        stage: "Decision",
+        title: "Cautious, slower fluid replacement than DKA",
+        detail: "Insulin is often started only once glucose stops falling with fluids alone. ClairMD does not calculate fluid or insulin rates — correcting the profound fluid deficit too quickly risks cerebral oedema and other complications, so the clinician titrates carefully.",
+        next: ["bo3"],
+      },
+      {
+        id: "bo3",
+        stage: "Note",
+        title: "Consider prophylactic anticoagulation given the significant thromboembolic risk in HHS",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Diabetic hyperglycemic hyperosmolar syndrome", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000304.htm", licence: "US Government work — public domain" },
+      { title: "Hyperosmolar Hyperglycemic Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482142/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+
+  // ── Cluster 14: Red eye ────────────────────────────────────────────────────
+  {
+    id: "med-red-eye-entry",
+    condition: "Red eye (entry pathway)",
+    region: "HEAD",
+    synonyms: ["red eye", "eye redness", "painful eye", "conjunctival injection"],
+    status: "cited",
+    redFlags: [
+      "Severe eye pain, especially with haloes around lights or a fixed, mid-dilated pupil",
+      "Reduced visual acuity",
+      "Photophobia with a small, irregular pupil",
+      "A corneal opacity or infiltrate, particularly in a contact lens wearer",
+      "Recent eye trauma or a penetrating injury",
+    ],
+    algorithm: [
+      {
+        id: "bp1",
+        stage: "Presentation",
+        title: "Red eye — establish pain severity, vision, discharge pattern, and any history of trauma or contact lens use",
+        detail: "Vision-threatening causes need urgent same-day ophthalmology assessment; most causes of red eye are benign, but the exceptions matter.",
+        next: ["bp2"],
+      },
+      {
+        id: "bp2",
+        stage: "Characterise it",
+        title: "Use the pattern of symptoms and examination findings to narrow the cause",
+        branches: [
+          { label: "Discharge, mild irritation, normal vision", to: "med-conjunctivitis" },
+          { label: "Severe pain, haloes around lights, a fixed mid-dilated pupil", to: "med-acute-angle-closure-glaucoma" },
+          { label: "Photophobia, ciliary flush, a small or irregular pupil", to: "med-anterior-uveitis" },
+          { label: "Corneal opacity or infiltrate, especially with contact lens use", to: "med-microbial-keratitis" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Conjunctivitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK541034/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Subconjunctival Hemorrhage", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK551666/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-conjunctivitis",
+    condition: "Conjunctivitis",
+    region: "HEAD",
+    synonyms: ["conjunctivitis", "pink eye", "viral conjunctivitis", "bacterial conjunctivitis"],
+    status: "cited",
+    redFlags: [
+      "Reduced vision, significant pain, or a corneal abnormality — reconsider the diagnosis",
+    ],
+    algorithm: [
+      {
+        id: "bq1",
+        stage: "History and examination",
+        title: "Discharge (watery for viral, purulent for bacterial), mild irritation, normal vision",
+        detail: "Viral conjunctivitis is highly contagious and often accompanies an upper respiratory infection.",
+        next: ["bq2"],
+      },
+      {
+        id: "bq2",
+        stage: "Decision",
+        title: "Supportive care for viral conjunctivitis; topical antibiotics for confirmed or clinically likely bacterial conjunctivitis",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Conjunctivitis (Pink Eye)", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/conjunctivitis/index.html", licence: "US Government work — public domain" },
+      { title: "Pink Eye", publisher: "National Eye Institute (NEI), NIH, USA", url: "https://www.nei.nih.gov/eye-health-information/eye-conditions-and-diseases/pink-eye", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-acute-angle-closure-glaucoma",
+    condition: "Acute angle-closure glaucoma",
+    region: "HEAD",
+    synonyms: ["acute angle-closure glaucoma", "angle closure glaucoma", "acute glaucoma"],
+    status: "cited",
+    redFlags: [
+      "Any delay in treatment risks permanent vision loss — this is an ophthalmic emergency",
+    ],
+    algorithm: [
+      {
+        id: "br1",
+        stage: "History and examination",
+        title: "Severe eye pain, headache, nausea and vomiting, haloes around lights, and a red eye with a hazy cornea",
+        next: ["br2"],
+      },
+      {
+        id: "br2",
+        stage: "Examine",
+        title: "A fixed, mid-dilated pupil and a firm eye on gentle palpation support the diagnosis",
+        next: ["br3"],
+      },
+      {
+        id: "br3",
+        stage: "Decision",
+        title: "Urgent intraocular pressure reduction and same-day ophthalmology referral",
+        detail: "ClairMD does not select specific medications or doses — treatment is directed by the treating clinician/ophthalmologist.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Types of Glaucoma", publisher: "National Eye Institute (NEI), NIH, USA", url: "https://www.nei.nih.gov/eye-health-information/eye-conditions-and-diseases/glaucoma/types-glaucoma", licence: "US Government work — public domain" },
+      { title: "Acute Angle-Closure Glaucoma", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430857/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-anterior-uveitis",
+    condition: "Anterior uveitis (iritis)",
+    region: "HEAD",
+    synonyms: ["anterior uveitis", "iritis", "uveitis"],
+    status: "cited",
+    redFlags: [
+      "Reduced vision or hypopyon (pus in the anterior chamber) — needs urgent assessment",
+    ],
+    algorithm: [
+      {
+        id: "bs1",
+        stage: "History and examination",
+        title: "Photophobia, aching eye pain, and a red eye especially around the cornea (ciliary flush)",
+        next: ["bs2"],
+      },
+      {
+        id: "bs2",
+        stage: "Examine",
+        title: "A small or irregularly shaped pupil supports the diagnosis",
+        detail: "Consider an association with systemic inflammatory or autoimmune conditions, particularly with recurrent episodes.",
+        next: ["bs3"],
+      },
+      {
+        id: "bs3",
+        stage: "Decision",
+        title: "Urgent ophthalmology referral for slit-lamp examination and treatment",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Uveitis", publisher: "National Eye Institute (NEI), NIH, USA", url: "https://www.nei.nih.gov/eye-health-information/eye-conditions-and-diseases/uveitis", licence: "US Government work — public domain" },
+      { title: "Iritis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430909/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-microbial-keratitis",
+    condition: "Microbial keratitis (corneal ulcer)",
+    region: "HEAD",
+    synonyms: ["microbial keratitis", "corneal ulcer", "bacterial keratitis", "contact lens keratitis"],
+    status: "cited",
+    redFlags: [
+      "Rapidly progressive symptoms, especially in a contact lens wearer — same-day ophthalmology assessment is needed",
+    ],
+    algorithm: [
+      {
+        id: "bt1",
+        stage: "History and examination",
+        title: "Eye pain, redness, discharge, and reduced vision",
+        detail: "Often with a history of contact lens use or corneal trauma.",
+        next: ["bt2"],
+      },
+      {
+        id: "bt2",
+        stage: "Examine",
+        title: "Fluorescein staining highlights a corneal defect; a visible corneal infiltrate or opacity supports the diagnosis",
+        next: ["bt3"],
+      },
+      {
+        id: "bt3",
+        stage: "Decision",
+        title: "Urgent ophthalmology referral for corneal scraping and targeted antimicrobial therapy",
+        detail: "Avoid topical steroids until infection has been excluded or is being treated — steroids can worsen an untreated infective keratitis.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Corneal Conditions", publisher: "National Eye Institute (NEI), NIH, USA", url: "https://www.nei.nih.gov/eye-health-information/eye-conditions-and-diseases/corneal-conditions", licence: "US Government work — public domain" },
+      { title: "Bacterial Keratitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK574509/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+
+  // ── Cluster 15: Fever in the returning traveller ───────────────────────────
+  {
+    id: "med-fever-returning-traveller-entry",
+    condition: "Fever in the returning traveller (entry pathway)",
+    region: "SYSTEMIC",
+    synonyms: ["fever in the returning traveller", "fever after travel", "fever in returning traveler", "travel-related fever", "post-travel fever"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness, confusion or seizures",
+      "Signs of shock or marked hypotension",
+      "Bleeding or widespread bruising",
+      "Jaundice with marked abdominal pain",
+      "Breathlessness or hypoxia",
+    ],
+    algorithm: [
+      {
+        id: "bu1",
+        stage: "Presentation",
+        title: "Fever within weeks of travel — establish exact itinerary, dates, malaria prophylaxis and vaccination history, and any high-risk exposures",
+        detail: "Ask specifically about mosquito bites, unsafe food or water, freshwater contact, and animal or insect bites.",
+        next: ["bu2"],
+      },
+      {
+        id: "bu2",
+        stage: "Stabilise and test",
+        title: "Actively exclude malaria first in anyone with fever after travel to an endemic area — request thick and thin blood films or a rapid antigen test urgently, alongside routine blood tests",
+        detail: "Several tropical fevers overlap closely in their early presentation; a specific travel and exposure history is what narrows the differential most.",
+        next: ["bu3"],
+      },
+      {
+        id: "bu3",
+        stage: "Differentiate",
+        title: "Use exposure pattern and fever character to narrow the likely cause",
+        branches: [
+          { label: "Travel to a malaria-endemic area, cyclical fever with rigors", to: "med-malaria" },
+          { label: "Contaminated food or water exposure, stepwise fever with relative bradycardia", to: "med-typhoid-fever" },
+          { label: "Mosquito-endemic area, severe headache with retro-orbital pain, myalgia and rash", to: "med-dengue-fever" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Features of Malaria", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/malaria/hcp/clinical-features/index.html", licence: "US Government work — public domain" },
+      { title: "Clinical Features of Dengue", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/dengue/hcp/clinical-signs/index.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-malaria",
+    condition: "Malaria",
+    region: "SYSTEMIC",
+    synonyms: ["malaria", "plasmodium falciparum", "plasmodium vivax", "cyclical fever with rigors"],
+    status: "cited",
+    redFlags: [
+      "Impaired consciousness or seizures (cerebral malaria)",
+      "Severe anaemia",
+      "Jaundice or acute kidney injury",
+      "Hypoglycaemia",
+      "Respiratory distress or acidosis",
+      "High parasitaemia — used by the clinician, alongside the features above, to help distinguish uncomplicated from severe disease",
+    ],
+    algorithm: [
+      {
+        id: "bv1",
+        stage: "Confirm",
+        title: "Thick and thin blood films, or a rapid diagnostic test, confirm the diagnosis and identify the Plasmodium species",
+        next: ["bv2"],
+      },
+      {
+        id: "bv2",
+        stage: "Decision",
+        title: "Malaria is a medical emergency — species and severity determine treatment",
+        detail: "ClairMD does not select or dose antimalarial therapy — this is set by the clinician per current national or WHO guidance. Any feature of severe malaria warrants urgent parenteral treatment and same-day escalation.",
+        next: ["bv3"],
+      },
+      {
+        id: "bv3",
+        stage: "Note",
+        title: "P. vivax and P. ovale can relapse from dormant liver-stage parasites — the clinician manages radical cure separately",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Features of Malaria", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/malaria/hcp/clinical-features/index.html", licence: "US Government work — public domain" },
+      { title: "Malaria", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK551711/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-typhoid-fever",
+    condition: "Typhoid fever",
+    region: "SYSTEMIC",
+    synonyms: ["typhoid fever", "enteric fever", "paratyphoid fever", "salmonella typhi"],
+    status: "cited",
+    redFlags: [
+      "Severe abdominal pain or peritonism — possible intestinal perforation",
+      "Gastrointestinal bleeding",
+      "Marked abdominal distension",
+      "Altered consciousness (the 'typhoid state')",
+    ],
+    algorithm: [
+      {
+        id: "bw1",
+        stage: "Confirm",
+        title: "Sustained high fever, headache and malaise, often with relative bradycardia and abdominal discomfort; blood culture is the key confirmatory test",
+        detail: "Ask specifically about a rash of rose-coloured spots and any household history of typhoid or a chronic carrier state.",
+        next: ["bw2"],
+      },
+      {
+        id: "bw2",
+        stage: "Decision",
+        title: "Empirical antibiotics are started once cultures are sent, guided by local resistance patterns",
+        detail: "ClairMD does not select antibiotic choice or dose — this is set by the clinician.",
+        next: ["bw3"],
+      },
+      {
+        id: "bw3",
+        stage: "Monitor",
+        title: "Watch closely for intestinal perforation and gastrointestinal bleeding, which typically appear in the second to third week of untreated illness",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Overview of Typhoid Fever and Paratyphoid Fever", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/typhoid-fever/hcp/clinical-overview/index.html", licence: "US Government work — public domain" },
+      { title: "Typhoid Fever", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK557513/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-dengue-fever",
+    condition: "Dengue fever",
+    region: "SYSTEMIC",
+    synonyms: ["dengue fever", "dengue", "breakbone fever"],
+    status: "cited",
+    redFlags: [
+      "Abdominal pain or tenderness",
+      "Persistent vomiting",
+      "Mucosal bleeding",
+      "Lethargy or restlessness",
+      "Liver enlargement",
+      "Rising haematocrit with a rapidly falling platelet count — dengue warning signs, named by the WHO classification; ClairMD does not calculate the classification itself",
+    ],
+    algorithm: [
+      {
+        id: "bx1",
+        stage: "Confirm",
+        title: "Fever with severe headache, retro-orbital pain, myalgia/arthralgia and a macular or maculopapular rash, in someone from or recently in a dengue-endemic area",
+        next: ["bx2"],
+      },
+      {
+        id: "bx2",
+        stage: "Decision",
+        title: "Watch closely for warning signs, especially around defervescence — this is when the critical, high-risk phase of plasma leakage often begins",
+        detail: "There is no specific antiviral treatment; management is supportive. ClairMD does not select or titrate fluid regimens — this is set by the clinician.",
+        next: ["bx3"],
+      },
+      {
+        id: "bx3",
+        stage: "Note",
+        title: "Avoid NSAIDs and other drugs that increase bleeding risk once dengue is suspected",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Features of Dengue", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/dengue/hcp/clinical-signs/index.html", licence: "US Government work — public domain" },
+      { title: "Dengue Fever", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430732/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+
+  // ── Cluster 16: Acute vertigo ───────────────────────────────────────────────
+  {
+    id: "med-acute-vertigo-entry",
+    condition: "Acute vertigo (entry pathway)",
+    region: "NEURO",
+    synonyms: ["vertigo", "acute vertigo", "dizziness", "spinning sensation", "room spinning"],
+    status: "cited",
+    redFlags: [
+      "New-onset severe headache or neck pain",
+      "New diplopia, dysarthria, dysphagia, facial weakness or numbness",
+      "Limb weakness, numbness or ataxia",
+      "Inability to stand or walk unsupported",
+      "Direction-changing or purely vertical nystagmus",
+      "Cardiovascular risk factors (hypertension, atrial fibrillation, prior stroke) in someone with acute continuous vertigo",
+    ],
+    algorithm: [
+      {
+        id: "by1",
+        stage: "Presentation",
+        title: "Vertigo — establish onset (sudden vs gradual), duration and triggers (positional vs continuous), and any associated hearing loss, headache or neurological symptoms",
+        next: ["by2"],
+      },
+      {
+        id: "by2",
+        stage: "Screen for central causes",
+        title: "Any red flag needs urgent neuroimaging and stroke-pathway assessment",
+        detail: "A bedside test such as the HINTS exam may be used by the clinician to help distinguish a peripheral from a central cause in acute continuous vertigo with nystagmus — ClairMD does not perform or score this examination.",
+        next: ["by3"],
+      },
+      {
+        id: "by3",
+        stage: "Characterise it",
+        title: "Use the pattern of onset, duration and associated features to narrow the cause",
+        branches: [
+          { label: "Brief, positional episodes triggered by head movement, lasting seconds", to: "med-bppv" },
+          { label: "Continuous vertigo over days, often with nausea and unsteady gait, following a viral illness", to: "med-vestibular-neuritis" },
+          { label: "Continuous vertigo with any red flag or new focal neurological sign", to: "med-central-vertigo" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Balance Disorders", publisher: "National Institute on Deafness and Other Communication Disorders (NIDCD), NIH, USA", url: "https://www.nidcd.nih.gov/health/balance-disorders", licence: "US Government work — public domain" },
+      { title: "Peripheral Vertigo", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430797/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-bppv",
+    condition: "Benign paroxysmal positional vertigo (BPPV)",
+    region: "NEURO",
+    synonyms: ["bppv", "benign paroxysmal positional vertigo", "positional vertigo"],
+    status: "cited",
+    redFlags: [
+      "Any associated new neurological deficit — atypical for BPPV, reassess for a central cause",
+      "Hearing loss or tinnitus — atypical for BPPV, reconsider the diagnosis",
+    ],
+    algorithm: [
+      {
+        id: "bz1",
+        stage: "Confirm",
+        title: "Brief (seconds) episodes of vertigo triggered by specific head movements such as rolling over in bed or looking up",
+        detail: "The Dix-Hallpike test is the standard bedside diagnostic manoeuvre. ClairMD names it for reference only — it is performed and interpreted by the clinician, not by the app.",
+        next: ["bz2"],
+      },
+      {
+        id: "bz2",
+        stage: "Decision",
+        title: "Canalith repositioning manoeuvres (e.g. the Epley manoeuvre) are first-line treatment and are usually curative",
+        detail: "Vestibular sedatives are not routinely needed and can slow central compensation.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Benign Paroxysmal Positional Vertigo", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470308/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Epley Maneuver", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK563287/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-vestibular-neuritis",
+    condition: "Vestibular neuritis",
+    region: "NEURO",
+    synonyms: ["vestibular neuritis", "vestibular neuronitis", "labyrinthitis"],
+    status: "cited",
+    redFlags: [
+      "New hearing loss — suggests labyrinthitis or an alternative diagnosis rather than isolated vestibular neuritis",
+      "Any focal neurological deficit — reassess for a central cause",
+      "Inability to walk even with support",
+    ],
+    algorithm: [
+      {
+        id: "ca1",
+        stage: "Confirm",
+        title: "Continuous vertigo over days with nausea, vomiting and unsteady gait, often preceded by a viral illness",
+        detail: "Examination typically shows a unidirectional horizontal nystagmus that suppresses with visual fixation.",
+        next: ["ca2"],
+      },
+      {
+        id: "ca2",
+        stage: "Decision",
+        title: "Treatment is supportive — short courses of vestibular sedatives for the first day or two only, followed by early mobilisation",
+        detail: "ClairMD does not select or dose medication — this is set by the clinician. Vestibular rehabilitation exercises encourage central compensation.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Vestibular Neuronitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK549866/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Vestibular Rehabilitation", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK572153/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-central-vertigo",
+    condition: "Central vertigo (posterior circulation stroke)",
+    region: "NEURO",
+    synonyms: ["central vertigo", "posterior circulation stroke", "cerebellar stroke", "vertebrobasilar stroke"],
+    status: "cited",
+    redFlags: [
+      "Severe imbalance — inability to stand or walk unsupported",
+      "New diplopia, dysarthria, dysphagia, or facial or limb weakness or numbness",
+      "Direction-changing or purely vertical nystagmus",
+      "Sudden severe headache or neck pain",
+    ],
+    algorithm: [
+      {
+        id: "cb1",
+        stage: "Confirm",
+        title: "Continuous vertigo with any red flag raises concern for a posterior circulation stroke",
+        detail: "Urgent neuroimaging (with sequences that reliably show early cerebellar or brainstem infarcts) and stroke team involvement are needed.",
+        next: ["cb2"],
+      },
+      {
+        id: "cb2",
+        stage: "Decision",
+        title: "Manage on the acute stroke pathway once confirmed or strongly suspected",
+        detail: "ClairMD does not select thrombolysis or thrombectomy eligibility or dosing — this is a time-critical clinician decision.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Central Vertigo", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK441861/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Cerebellar Infarction", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470416/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
