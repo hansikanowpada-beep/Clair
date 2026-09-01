@@ -1287,6 +1287,235 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Categorization of the Likelihood of Drug Induced Liver Injury", publisher: "LiverTox, NIDDK/National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK548392/", licence: "US Government work — public domain" },
     ],
   },
+
+  // ── Cluster 6: Palpitations ────────────────────────────────────────────────
+  {
+    id: "med-palpitations-entry",
+    condition: "Palpitations (entry pathway)",
+    region: "CHEST",
+    synonyms: ["palpitations", "heart racing", "irregular heartbeat", "fluttering heart"],
+    status: "cited",
+    redFlags: [
+      "Syncope or presyncope with the palpitations",
+      "Chest pain or breathlessness accompanying the palpitations",
+      "A pulse rate too fast or too irregular to count reliably",
+      "Known structural heart disease or a family history of sudden cardiac death",
+    ],
+    algorithm: [
+      {
+        id: "ad1",
+        stage: "Presentation",
+        title: "Palpitations — establish onset, duration and any associated symptoms",
+        detail: "Ask the patient to tap out the rhythm they felt if possible — regular vs irregular is often more informative than the rate alone.",
+        next: ["ad2"],
+      },
+      {
+        id: "ad2",
+        stage: "Stabilise first",
+        title: "Assess haemodynamic stability; obtain a 12-lead ECG as soon as possible, ideally during symptoms",
+        next: ["ad3"],
+      },
+      {
+        id: "ad3",
+        stage: "Characterise the rhythm",
+        title: "Use the ECG (or a rhythm strip during symptoms) to classify the rhythm",
+        branches: [
+          { label: "Irregularly irregular pulse and ECG", to: "med-atrial-fibrillation" },
+          { label: "Regular narrow-complex tachycardia", to: "med-supraventricular-tachycardia" },
+          { label: "Regular broad-complex tachycardia", to: "med-ventricular-tachycardia" },
+          { label: "Slow pulse or a conduction abnormality on ECG", to: "med-bradyarrhythmia" },
+          { label: "Normal ECG, situational trigger, no red flags", to: "med-anxiety-palpitations" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Arrhythmia", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/arrhythmia.html", licence: "US Government work — public domain" },
+      { title: "Evaluation of Suspected Cardiac Arrhythmia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK585054/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-atrial-fibrillation",
+    condition: "Atrial fibrillation",
+    region: "CHEST",
+    synonyms: ["atrial fibrillation", "af", "afib", "irregular heart rhythm"],
+    status: "cited",
+    redFlags: [
+      "Haemodynamic instability — needs urgent rhythm control",
+      "Signs of an acute stroke or systemic embolism",
+    ],
+    algorithm: [
+      {
+        id: "ae1",
+        stage: "History and examination",
+        title: "Irregularly irregular pulse",
+        detail: "Ask about the duration of symptoms (relevant to anticoagulation decisions) and precipitants — alcohol, thyrotoxicosis, sepsis, hypoxia.",
+        next: ["ae2"],
+      },
+      {
+        id: "ae2",
+        stage: "ECG",
+        title: "Diagnostic — absent P waves, irregularly irregular QRS complexes",
+        next: ["ae3"],
+      },
+      {
+        id: "ae3",
+        stage: "Decision",
+        title: "Rate or rhythm control, and thromboembolism risk assessment",
+        detail: "Named stroke-risk and bleeding-risk scoring tools exist (e.g. CHA2DS2-VASc). ClairMD does not compute them — the clinician calculates the score and decides on anticoagulation.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Atrial Fibrillation - Diagnosis", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/atrial-fibrillation/diagnosis", licence: "US Government work — public domain" },
+      { title: "Atrial Fibrillation - Treatment", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/atrial-fibrillation/treatment", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-supraventricular-tachycardia",
+    condition: "Supraventricular tachycardia",
+    region: "CHEST",
+    synonyms: ["svt", "supraventricular tachycardia", "paroxysmal svt", "psvt"],
+    status: "cited",
+    redFlags: [
+      "Haemodynamic instability — needs urgent synchronised cardioversion rather than medical treatment",
+    ],
+    algorithm: [
+      {
+        id: "af1",
+        stage: "History",
+        title: "Sudden-onset, sudden-offset rapid regular palpitations",
+        detail: "Ask about prior similar episodes and how they were terminated previously.",
+        next: ["af2"],
+      },
+      {
+        id: "af2",
+        stage: "ECG",
+        title: "Regular narrow-complex tachycardia, usually without clearly visible P waves",
+        next: ["af3"],
+      },
+      {
+        id: "af3",
+        stage: "Decision",
+        title: "Vagal manoeuvres first if the patient is stable; intravenous adenosine if vagal manoeuvres fail",
+        detail: "Synchronised cardioversion is reserved for the haemodynamically unstable patient.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Paroxysmal Supraventricular Tachycardia (PSVT)", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000183.htm", licence: "US Government work — public domain" },
+      { title: "Supraventricular Tachycardia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK441972/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-ventricular-tachycardia",
+    condition: "Ventricular tachycardia",
+    region: "CHEST",
+    synonyms: ["vt", "ventricular tachycardia", "wide complex tachycardia"],
+    status: "cited",
+    redFlags: [
+      "Pulseless VT — treat as cardiac arrest, following resuscitation protocols",
+      "Haemodynamic instability with a pulse — needs urgent synchronised cardioversion",
+    ],
+    algorithm: [
+      {
+        id: "ag1",
+        stage: "Recognise it",
+        title: "Regular broad-complex tachycardia",
+        detail: "Treat any broad-complex tachycardia as VT until proven otherwise, especially with known structural heart disease.",
+        next: ["ag2"],
+      },
+      {
+        id: "ag2",
+        stage: "Assess stability",
+        title: "Check for a pulse and haemodynamic stability",
+        next: ["ag3"],
+      },
+      {
+        id: "ag3",
+        stage: "Decision",
+        title: "Synchronised cardioversion if haemodynamically unstable; antiarrhythmic therapy if stable, per local protocol",
+        detail: "Correct reversible causes in parallel — electrolyte disturbance, ischaemia, drug toxicity.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Arrhythmias - Types", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/arrhythmias/types", licence: "US Government work — public domain" },
+      { title: "Ventricular Tachycardia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK532954/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-bradyarrhythmia",
+    condition: "Bradyarrhythmia (heart block)",
+    region: "CHEST",
+    synonyms: ["bradyarrhythmia", "heart block", "bradycardia", "slow heart rate", "av block"],
+    status: "cited",
+    redFlags: [
+      "Haemodynamic instability, syncope or a very slow ventricular rate — needs urgent pacing",
+    ],
+    algorithm: [
+      {
+        id: "ah1",
+        stage: "History and examination",
+        title: "Slow pulse, with or without dizziness, fatigue or syncope",
+        next: ["ah2"],
+      },
+      {
+        id: "ah2",
+        stage: "ECG",
+        title: "Classify the conduction pattern",
+        detail: "Named degrees of AV block and other conduction abnormalities exist. ClairMD does not classify the block itself — the clinician interprets the ECG and applies the named classification.",
+        next: ["ah3"],
+      },
+      {
+        id: "ah3",
+        stage: "Decision",
+        title: "Identify and correct a reversible cause; temporary or permanent pacing if symptomatic or high-risk",
+        detail: "Reversible causes include medication effect, electrolyte disturbance, ischaemia, and hypothyroidism.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Arrhythmias - Conduction Disorders", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/conduction-disorders", licence: "US Government work — public domain" },
+      { title: "Atrioventricular Block", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK459147/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-anxiety-palpitations",
+    condition: "Anxiety-related palpitations",
+    region: "CHEST",
+    synonyms: ["anxiety palpitations", "panic attack palpitations", "stress palpitations"],
+    status: "cited",
+    redFlags: [
+      "Any red flag feature from the palpitations entry pathway should prompt reconsidering this diagnosis",
+    ],
+    algorithm: [
+      {
+        id: "ai1",
+        stage: "History",
+        title: "Palpitations associated with a situational trigger, often with other anxiety symptoms",
+        detail: "Sweating, trembling, or a sense of impending doom commonly accompany the palpitations.",
+        next: ["ai2"],
+      },
+      {
+        id: "ai2",
+        stage: "Investigate",
+        title: "12-lead ECG and basic bloods (thyroid function, full blood count) to exclude an organic cause",
+        detail: "A normal ECG during symptoms is reassuring, but a normal resting ECG between episodes does not fully exclude an arrhythmia — consider ambulatory monitoring if episodes recur.",
+        next: ["ai3"],
+      },
+      {
+        id: "ai3",
+        stage: "Decision",
+        title: "Reassurance, addressing the underlying anxiety, and treating any confirmed anxiety disorder",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Anxiety Disorders", publisher: "National Institute of Mental Health (NIMH), NIH, USA", url: "https://www.nimh.nih.gov/health/topics/anxiety-disorders", licence: "US Government work — public domain" },
+      { title: "Anxiety", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/anxiety.html", licence: "US Government work — public domain" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
