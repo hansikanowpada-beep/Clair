@@ -2057,6 +2057,198 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Mallory-Weiss Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK538190/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 10: Syncope / collapse ─────────────────────────────────────────
+  // Cardiac syncope branches into the existing med-ventricular-tachycardia
+  // and med-bradyarrhythmia entries from the palpitations cluster instead
+  // of duplicating them.
+  {
+    id: "med-syncope-entry",
+    condition: "Syncope (entry pathway)",
+    region: "HEAD",
+    synonyms: ["syncope", "fainting", "collapse", "passing out", "blackout", "loss of consciousness"],
+    status: "cited",
+    redFlags: [
+      "Syncope during exertion",
+      "Syncope while supine (lying down)",
+      "Chest pain or palpitations preceding the episode",
+      "A family history of sudden cardiac death, or known structural heart disease",
+      "An abnormal ECG",
+    ],
+    algorithm: [
+      {
+        id: "ax1",
+        stage: "Presentation",
+        title: "Transient loss of consciousness with spontaneous full recovery",
+        detail: "A witnessed account is invaluable — ask specifically about any warning symptoms, the duration of unconsciousness, and how the patient felt afterwards.",
+        next: ["ax2"],
+      },
+      {
+        id: "ax2",
+        stage: "Stabilise and investigate",
+        title: "12-lead ECG in every patient with syncope",
+        detail: "Named risk-stratification tools exist (e.g. San Francisco Syncope Rule). ClairMD does not calculate them — the clinician applies the named tool to help decide on admission and further workup.",
+        next: ["ax3"],
+      },
+      {
+        id: "ax3",
+        stage: "Characterise it",
+        title: "Use the history and ECG findings to identify the likely cause",
+        branches: [
+          { label: "Exertional or supine syncope, an abnormal ECG, or known structural heart disease", to: "med-cardiac-syncope" },
+          { label: "Typical prodrome (nausea, sweating, tunnel vision) with a clear trigger", to: "med-vasovagal-syncope" },
+          { label: "Occurs on standing, especially after a meal or with certain medications", to: "med-orthostatic-hypotension" },
+          { label: "Tongue biting, prolonged confusion afterwards, or a witnessed convulsion", to: "med-seizure-vs-syncope" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Syncope (Fainting)", publisher: "National Institute of Neurological Disorders and Stroke (NINDS), NIH, USA", url: "https://www.ninds.nih.gov/health-information/disorders/syncope-fainting", licence: "US Government work — public domain" },
+      { title: "Fainting", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/fainting.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-cardiac-syncope",
+    condition: "Cardiac syncope",
+    region: "HEAD",
+    synonyms: ["cardiac syncope", "arrhythmic syncope", "cardiogenic syncope"],
+    status: "cited",
+    redFlags: [
+      "Any red flag from the syncope entry pathway strengthens the case for urgent cardiac workup",
+    ],
+    algorithm: [
+      {
+        id: "ay1",
+        stage: "History",
+        title: "Syncope during exertion or while supine, sometimes with preceding palpitations or chest pain",
+        next: ["ay2"],
+      },
+      {
+        id: "ay2",
+        stage: "ECG",
+        title: "Look specifically for arrhythmia, a conduction abnormality, or signs of structural heart disease",
+        branches: [
+          { label: "Broad-complex tachycardia on the rhythm strip", to: "med-ventricular-tachycardia" },
+          { label: "Slow rate or a conduction abnormality", to: "med-bradyarrhythmia" },
+        ],
+        next: ["ay3"],
+      },
+      {
+        id: "ay3",
+        stage: "Decision",
+        title: "Admit for cardiac monitoring and further investigation if a cardiac cause is suspected",
+        detail: "Echocardiography and ambulatory ECG monitoring are commonly used to look for a structural or intermittent rhythm cause.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Arrhythmias", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/arrhythmias", licence: "US Government work — public domain" },
+      { title: "Cardiac Syncope", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK526027/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-vasovagal-syncope",
+    condition: "Vasovagal (reflex) syncope",
+    region: "HEAD",
+    synonyms: ["vasovagal syncope", "reflex syncope", "neurocardiogenic syncope"],
+    status: "cited",
+    redFlags: [
+      "Any atypical feature (no prodrome, injury from the fall, an exertional trigger) should prompt reconsidering this diagnosis",
+    ],
+    algorithm: [
+      {
+        id: "az1",
+        stage: "History",
+        title: "A typical prodrome — nausea, sweating, light-headedness, tunnel vision — followed by loss of consciousness",
+        detail: "Common triggers include prolonged standing, a hot environment, pain, fear, or the sight of blood.",
+        next: ["az2"],
+      },
+      {
+        id: "az2",
+        stage: "Decision",
+        title: "Reassurance and trigger avoidance for a typical, isolated episode",
+        detail: "Investigate further if episodes are frequent, atypical, or associated with injury.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Vasovagal Episode", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470277/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-orthostatic-hypotension",
+    condition: "Orthostatic hypotension",
+    region: "HEAD",
+    synonyms: ["orthostatic hypotension", "postural hypotension", "orthostatic syncope"],
+    status: "cited",
+    redFlags: [
+      "Persistent hypotension despite simple measures, or syncope causing significant injury",
+    ],
+    algorithm: [
+      {
+        id: "ba1",
+        stage: "History",
+        title: "Symptoms on standing — light-headedness, dimming vision, or syncope — often worse after meals or in the morning",
+        detail: "Review medications known to contribute (antihypertensives, diuretics, some psychiatric medications) and screen for dehydration and autonomic conditions.",
+        next: ["ba2"],
+      },
+      {
+        id: "ba2",
+        stage: "Confirm",
+        title: "Lying and standing blood pressure measurement",
+        detail: "A significant drop in blood pressure on standing, reproducing the patient's symptoms, supports the diagnosis.",
+        next: ["ba3"],
+      },
+      {
+        id: "ba3",
+        stage: "Decision",
+        title: "Address reversible contributors first — review medications, correct dehydration",
+        detail: "Consider specific pharmacological treatment only after simple measures have been tried.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Falls and Fractures in Older Adults: Causes and Prevention", publisher: "National Institute on Aging (NIA), NIH, USA", url: "https://www.nia.nih.gov/health/falls-and-falls-prevention/falls-and-fractures-older-adults-causes-and-prevention", licence: "US Government work — public domain" },
+      { title: "Orthostatic Hypotension", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK448192/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-seizure-vs-syncope",
+    condition: "Differentiating seizure from syncope",
+    region: "HEAD",
+    synonyms: ["seizure vs syncope", "convulsive syncope", "differentiating seizure from syncope"],
+    status: "cited",
+    redFlags: [
+      "A prolonged convulsion, or a first seizure in an adult — needs further neurological assessment regardless of the syncope/seizure distinction",
+    ],
+    algorithm: [
+      {
+        id: "bb1",
+        stage: "History",
+        title: "Use witness accounts and specific features to distinguish the two",
+        detail: "Tongue biting (especially lateral), prolonged post-ictal confusion, and a longer duration of abnormal movements favour seizure; a brief prodrome with rapid full recovery favours syncope.",
+        next: ["bb2"],
+      },
+      {
+        id: "bb2",
+        stage: "Note",
+        title: "Brief myoclonic jerks can occur in convulsive syncope too",
+        detail: "Jerking movements alone don't confirm seizure — the overall pattern matters more than any single feature.",
+        next: ["bb3"],
+      },
+      {
+        id: "bb3",
+        stage: "Decision",
+        title: "Refer for neurological assessment if seizure is suspected; refer for cardiac/syncope workup if syncope is more likely",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Epilepsy and Seizures", publisher: "National Institute of Neurological Disorders and Stroke (NINDS), NIH, USA", url: "https://www.ninds.nih.gov/health-information/disorders/epilepsy-and-seizures", licence: "US Government work — public domain" },
+      { title: "Syncope and Related Paroxysmal Spells", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK459292/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
