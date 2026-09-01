@@ -3461,6 +3461,754 @@ const DIAGNOSIS_META = {
       { title: "Inguinal Hernia", org: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/digestive-diseases/inguinal-hernia" },
     ],
   },
+
+  // ── ICD-10 Chapter I additions (1 September 2026) ──────────────────────
+  // 53 conditions sourced from real WHO ICD-10 / ICD-10-CM Chapter I (infectious
+  // and parasitic diseases) category names (icd10data.com), cross-checked against
+  // the existing entries above to avoid duplicates. Same schema as the rest of
+  // this object; independently written, not derived from any textbook.
+  salmonellosisNonTyphoidal: {
+    complications: ["Bacteraemia (especially in infants, elderly, immunocompromised)", "Reactive arthritis", "Dehydration from prolonged diarrhoea", "Focal infection (osteomyelitis, abscess — rare)"],
+    tests: {
+      blood: ["Blood culture (if invasive disease suspected)"],
+      urine: [],
+      radiological: [],
+      microbiological: ["Stool culture"],
+      immunological: [],
+    },
+    advances: "Antibiotic treatment is now reserved for severe or invasive disease and high-risk patients, since routine antibiotic use in uncomplicated non-typhoidal salmonellosis can prolong carriage without shortening illness.",
+    sources: [
+      { title: "Salmonella", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/salmonella-(non-typhoidal)" },
+    ],
+  },
+  anthrax: {
+    complications: ["Haemorrhagic meningitis (rare, severe)", "Sepsis and septic shock (systemic disease)", "Respiratory failure (inhalational form)", "Death if untreated (cutaneous form has low mortality treated; systemic forms much higher)"],
+    tests: {
+      blood: ["Blood culture"],
+      urine: [],
+      radiological: ["Chest X-ray (widened mediastinum in inhalational form)"],
+      microbiological: ["Gram stain and culture of lesion/blood/CSF"],
+      immunological: [],
+    },
+    advances: "PCR-based rapid diagnostics now allow much faster confirmation than traditional culture, important given how quickly systemic anthrax can progress.",
+    sources: [
+      { title: "Anthrax", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/anthrax/about/index.html" },
+    ],
+  },
+  melioidosis: {
+    complications: ["Sepsis and septic shock", "Pneumonia with abscess formation", "Disseminated abscesses (liver, spleen, prostate)", "High mortality if treatment delayed, especially in diabetics"],
+    tests: {
+      blood: ["Blood culture"],
+      urine: [],
+      radiological: ["CT/ultrasound to identify internal abscesses"],
+      microbiological: ["Culture of blood, sputum, or abscess material (organism identification critical — often misidentified)"],
+      immunological: [],
+    },
+    advances: "Growing recognition of melioidosis as an under-diagnosed cause of sepsis in India's coastal and monsoon-affected regions, particularly in patients with diabetes, is prompting more routine testing where previously it was rarely considered.",
+    sources: [
+      { title: "Melioidosis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/melioidosis/about/index.html" },
+    ],
+  },
+  ratBiteFever: {
+    complications: ["Endocarditis", "Septic arthritis", "Myocarditis", "Death if untreated (~10% mortality)"],
+    tests: {
+      blood: ["Blood culture"],
+      urine: [],
+      radiological: [],
+      microbiological: ["Culture of blood or joint fluid"],
+      immunological: [],
+    },
+    advances: "PCR testing is increasingly used given the fastidious, slow-growing nature of the causative organisms, which makes standard culture unreliable.",
+    sources: [
+      { title: "Rat-Bite Fever", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/rat-bite-fever/about/index.html" },
+    ],
+  },
+  erysipeloid: {
+    complications: ["Bacteraemia (rare, in the generalised form)", "Endocarditis (rare)", "Persistent localised skin infection if untreated"],
+    tests: {
+      blood: ["Blood culture (if systemic symptoms)"],
+      urine: [],
+      radiological: [],
+      microbiological: ["Skin biopsy culture (if diagnosis unclear)"],
+      immunological: [],
+    },
+    advances: "Recognition as an occupational disease (fish/meat handlers) continues to guide both diagnosis and prevention advice around protective equipment.",
+    sources: [
+      { title: "Erysipeloid", org: "StatPearls, National Center for Biotechnology Information (NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK560837/" },
+    ],
+  },
+  listeriosis: {
+    complications: ["Meningitis/meningoencephalitis", "Sepsis", "Miscarriage or stillbirth (pregnancy)", "Neonatal infection (early or late-onset)"],
+    tests: {
+      blood: ["Blood culture"],
+      urine: [],
+      radiological: [],
+      microbiological: ["CSF culture (if meningitis suspected)"],
+      immunological: [],
+    },
+    advances: "Pregnancy-specific food safety guidance (avoiding unpasteurised dairy and certain ready-to-eat foods) remains the primary prevention strategy, given the disproportionate severity of infection in pregnant women and neonates.",
+    sources: [
+      { title: "Listeria (Listeriosis)", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/listeria/about/index.html" },
+    ],
+  },
+  whoopingCough: {
+    complications: ["Pneumonia (most common serious complication)", "Seizures (severe cases, especially infants)", "Apnoea in infants", "Rib fracture from severe coughing paroxysms"],
+    tests: {
+      blood: ["CBC (marked lymphocytosis characteristic)"],
+      urine: [],
+      radiological: ["Chest X-ray if pneumonia suspected"],
+      microbiological: ["PCR or culture of nasopharyngeal swab"],
+      immunological: [],
+    },
+    advances: "Maternal vaccination during pregnancy is increasingly emphasised as the most effective way to protect infants in the vulnerable first months before their own vaccination series is complete.",
+    sources: [
+      { title: "Pertussis (Whooping Cough)", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/pertussis/about/index.html" },
+    ],
+  },
+  scarletFever: {
+    complications: ["Rheumatic fever (post-streptococcal)", "Post-streptococcal glomerulonephritis", "Peritonsillar abscess", "Otitis media"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["Throat culture or rapid streptococcal antigen test"],
+      immunological: [],
+    },
+    advances: "Reported scarlet fever cases have risen again in parts of the world in the past decade, prompting renewed attention to prompt antibiotic treatment specifically to prevent rheumatic fever, a serious concern in India.",
+    sources: [
+      { title: "Scarlet Fever: All You Need to Know", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/group-a-strep/about/scarlet-fever.html" },
+    ],
+  },
+  streptococcalSepsis: {
+    complications: ["Septic shock", "Streptococcal toxic shock syndrome", "Necrotising fasciitis (invasive group A strep)", "Multi-organ failure"],
+    tests: {
+      blood: ["Blood culture", "Lactate"],
+      urine: [],
+      radiological: ["Imaging to identify source/necrotising infection if suspected"],
+      microbiological: ["Culture from primary site plus blood"],
+      immunological: [],
+    },
+    advances: "Early surgical debridement combined with antibiotics is increasingly emphasised for invasive group A streptococcal infection with soft-tissue involvement, since antibiotics alone are often insufficient once necrotising infection is established.",
+    sources: [
+      { title: "Group A Strep Infection", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/group-a-strep/about/index.html" },
+    ],
+  },
+  nocardiosis: {
+    complications: ["Pulmonary abscess/cavitation", "Disseminated disease (CNS abscess particularly serious)", "Skin/soft tissue infection (cutaneous form)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["CT chest/brain depending on presentation"],
+      microbiological: ["Culture (modified acid-fast stain aids identification)"],
+      immunological: [],
+    },
+    advances: "Molecular identification methods now allow faster, more accurate species-level identification than traditional culture alone, which matters because treatment susceptibility varies by species.",
+    sources: [
+      { title: "Nocardiosis", org: "StatPearls, National Center for Biotechnology Information (NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK553120/" },
+    ],
+  },
+  bartonellosis: {
+    complications: ["Cat-scratch disease with lymphadenitis", "Bacillary angiomatosis (immunocompromised patients)", "Endocarditis (rare)", "Neuroretinitis (rare)"],
+    tests: {
+      blood: ["Bartonella serology"],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: ["Serology (primary diagnostic method, culture is difficult)"],
+    },
+    advances: "Serologic and PCR testing have largely replaced difficult, slow-growing culture as the practical route to diagnosis in most clinical settings.",
+    sources: [
+      { title: "Bartonella Infection", org: "StatPearls, National Center for Biotechnology Information (NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430874/" },
+    ],
+  },
+  erysipelas: {
+    complications: ["Recurrence (common, especially with chronic lymphoedema)", "Bacteraemia (uncommon but possible)", "Chronic lymphoedema (repeated episodes)", "Abscess formation (uncommon)"],
+    tests: {
+      blood: ["CBC", "CRP"],
+      urine: [],
+      radiological: [],
+      microbiological: ["Blood culture if systemically unwell"],
+      immunological: [],
+    },
+    advances: "Managing predisposing factors (chronic oedema, skin breaks, obesity) is increasingly emphasised alongside antibiotic treatment, since recurrence is common without addressing the underlying risk.",
+    sources: [
+      { title: "Erysipelas", org: "StatPearls, National Center for Biotechnology Information (NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK537300/" },
+    ],
+  },
+  lymphogranulomaVenereum: {
+    complications: ["Genital elephantiasis (chronic lymphatic obstruction)", "Rectal strictures (anorectal form)", "Fistula formation", "Chronic lymphadenopathy with abscess"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["NAAT (nucleic acid amplification test) on lesion/lymph node sample"],
+      immunological: [],
+    },
+    advances: "NAAT-based testing has improved detection over older serologic methods, particularly important given rising cases among specific risk groups internationally.",
+    sources: [
+      { title: "Lymphogranuloma Venereum (LGV)", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/std/treatment-guidelines/lgv.htm" },
+    ],
+  },
+  chancroid: {
+    complications: ["Inguinal bubo formation with possible rupture", "Phimosis (chronic untreated cases)", "Increased HIV transmission risk (genital ulceration)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["Culture (difficult) or PCR of ulcer swab"],
+      immunological: [],
+    },
+    advances: "PCR-based multiplex testing for genital ulcer disease increasingly allows chancroid to be distinguished from syphilis and herpes in a single test, since clinical appearance alone is unreliable.",
+    sources: [
+      { title: "Chancroid", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/std/treatment-guidelines/chancroid.htm" },
+    ],
+  },
+  granulomaInguinale: {
+    complications: ["Progressive genital tissue destruction if untreated", "Pseudo-elephantiasis (chronic lymphatic obstruction)", "Secondary bacterial infection of lesions"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["Tissue smear/biopsy showing Donovan bodies"],
+      immunological: [],
+    },
+    advances: "Though now rare in many parts of the world, it remains relevant in parts of India, and clinician awareness is increasingly emphasised since prolonged untreated disease causes significant tissue damage.",
+    sources: [
+      { title: "Granuloma Inguinale (Donovanosis)", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/std/treatment-guidelines/donovanosis.htm" },
+    ],
+  },
+  anogenitalHerpes: {
+    complications: ["Recurrent painful outbreaks", "Increased HIV acquisition/transmission risk", "Neonatal herpes (if active lesions at delivery)", "Aseptic meningitis (rare, primary infection)"],
+    tests: {
+      blood: ["Type-specific HSV serology (adjunctive)"],
+      urine: [],
+      radiological: [],
+      microbiological: ["PCR of lesion swab (preferred over culture)"],
+      immunological: [],
+    },
+    advances: "PCR testing has largely replaced viral culture for lesion diagnosis given significantly higher sensitivity, especially for healing lesions.",
+    sources: [
+      { title: "Genital Herpes", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/herpes/about/index.html" },
+    ],
+  },
+  relapsingFever: {
+    complications: ["Jarisch-Herxheimer reaction (on starting treatment)", "Splenic rupture (rare)", "Neurological involvement", "Death if untreated (louse-borne form especially)"],
+    tests: {
+      blood: ["Peripheral blood smear (spirochaetes visible during febrile episodes)"],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: [],
+    },
+    advances: "Awareness that treatment itself can trigger a significant Jarisch-Herxheimer reaction has led to recommendations for close monitoring and supportive care in the hours after starting antibiotics.",
+    sources: [
+      { title: "Relapsing Fever", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/relapsing-fever/about/index.html" },
+    ],
+  },
+  trachoma: {
+    complications: ["Trichiasis (inward-turning eyelashes from scarring)", "Corneal scarring and blindness (advanced disease)", "Chronic conjunctival scarring"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["PCR or clinical grading (WHO simplified grading system commonly used)"],
+      immunological: [],
+    },
+    advances: "The WHO's SAFE strategy (Surgery, Antibiotics, Facial cleanliness, Environmental improvement) continues to guide India's own elimination efforts in endemic districts.",
+    sources: [
+      { title: "Trachoma", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/trachoma" },
+    ],
+  },
+  scrubTyphus: {
+    complications: ["Acute respiratory distress syndrome", "Acute kidney injury", "Meningoencephalitis", "Multi-organ failure in severe/delayed-treatment cases"],
+    tests: {
+      blood: ["Renal and liver function tests", "CBC"],
+      urine: [],
+      radiological: ["Chest X-ray if respiratory involvement"],
+      microbiological: [],
+      immunological: ["Weil-Felix test or ELISA serology"],
+    },
+    advances: "Increasing recognition of scrub typhus as a significant, likely under-diagnosed cause of acute febrile illness across India has prompted broader empirical treatment in endemic-season presentations with compatible symptoms, given the eschar (if present) is a highly specific but easily missed clinical clue.",
+    sources: [
+      { title: "Scrub Typhus", org: "National Centre for Disease Control (NCDC), Government of India", url: "https://ncdc.mohfw.gov.in/index4.php?lang=1&level=0&linkid=488&lid=3762" },
+    ],
+  },
+  spottedFeverRickettsioses: {
+    complications: ["Vasculitis-related organ damage (severe cases)", "Neurological involvement", "Death if treatment delayed (varies by specific rickettsial species)"],
+    tests: {
+      blood: ["Platelet count (thrombocytopenia common)", "Liver function tests"],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: ["Serology (often retrospective — treatment is empirical based on clinical suspicion)"],
+    },
+    advances: "Given serology often only confirms diagnosis retrospectively, empirical treatment based on clinical suspicion (fever, rash, tick exposure history) without waiting for lab confirmation remains the standard approach to avoid treatment delay.",
+    sources: [
+      { title: "Spotted Fever Rickettsiosis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/rocky-mountain-spotted-fever/about/index.html" },
+    ],
+  },
+  qFever: {
+    complications: ["Chronic Q fever (endocarditis, most serious long-term complication)", "Hepatitis", "Pneumonia", "Complications in pregnancy (rare but serious)"],
+    tests: {
+      blood: ["Liver function tests"],
+      urine: [],
+      radiological: ["Chest X-ray if pneumonia suspected", "Echocardiography if chronic disease/endocarditis suspected"],
+      microbiological: [],
+      immunological: ["Phase I/II antibody serology"],
+    },
+    advances: "Distinguishing acute from chronic Q fever using phase-specific antibody patterns is increasingly emphasised, since chronic disease (particularly endocarditis) requires much longer treatment courses.",
+    sources: [
+      { title: "Q Fever", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/q-fever/about/index.html" },
+    ],
+  },
+  acutePoliomyelitis: {
+    complications: ["Permanent paralysis (a minority of infections)", "Post-polio syndrome (decades after initial infection)", "Respiratory failure (bulbar/respiratory muscle involvement)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["Stool viral culture/PCR (within 14 days of onset)"],
+      immunological: [],
+    },
+    advances: "India was certified polio-free in 2014 after a sustained national eradication campaign; ongoing acute flaccid paralysis surveillance remains essential to detect and respond to any imported cases.",
+    sources: [
+      { title: "Poliomyelitis (Polio)", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/poliomyelitis" },
+    ],
+  },
+  viralMeningitis: {
+    complications: ["Usually self-limiting, but can include: headache persisting for weeks", "Rare long-term cognitive effects (young infants especially)", "Recurrent meningitis (specific viral causes, e.g. HSV)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["CT head before lumbar puncture if red-flag features present"],
+      microbiological: ["CSF analysis with PCR for viral causes"],
+      immunological: [],
+    },
+    advances: "PCR-based CSF panels now allow rapid identification of the specific causative virus in hours rather than days, helping distinguish viral from bacterial meningitis faster and avoid unnecessary prolonged antibiotics.",
+    sources: [
+      { title: "Viral Meningitis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/meningitis/about/viral-meningitis.html" },
+    ],
+  },
+  herpesSimplexInfections: {
+    complications: ["Recurrent oral/genital outbreaks", "Herpetic whitlow (finger infection)", "Eczema herpeticum (in atopic dermatitis patients)", "Encephalitis (rare, serious)"],
+    tests: {
+      blood: ["Type-specific serology (adjunctive)"],
+      urine: [],
+      radiological: [],
+      microbiological: ["PCR of lesion swab"],
+      immunological: [],
+    },
+    advances: "Suppressive antiviral therapy is increasingly offered to patients with frequent recurrences, shown to meaningfully reduce both outbreak frequency and asymptomatic viral shedding.",
+    sources: [
+      { title: "Herpes Simplex Virus", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/herpes-simplex-virus" },
+    ],
+  },
+  varicella: {
+    complications: ["Secondary bacterial skin infection", "Varicella pneumonia (more common in adults)", "Encephalitis (rare)", "Congenital varicella syndrome (maternal infection in pregnancy)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["Chest X-ray if pneumonia suspected"],
+      microbiological: ["PCR of vesicle fluid (if diagnosis unclear)"],
+      immunological: [],
+    },
+    advances: "Varicella vaccination, increasingly included in private immunisation schedules in India, has been shown in countries with universal programmes to substantially reduce disease burden and complications.",
+    sources: [
+      { title: "About Chickenpox", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/chickenpox/about/index.html" },
+    ],
+  },
+  herpesZoster: {
+    complications: ["Post-herpetic neuralgia (most common complication, especially in older adults)", "Ophthalmic zoster (vision-threatening if untreated)", "Ramsay Hunt syndrome (facial nerve involvement)", "Disseminated zoster (immunocompromised patients)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["PCR of vesicle fluid (if diagnosis unclear)"],
+      immunological: [],
+    },
+    advances: "Starting antiviral treatment within 72 hours of rash onset is increasingly emphasised as the single most effective way to reduce the risk and severity of post-herpetic neuralgia.",
+    sources: [
+      { title: "About Shingles (Herpes Zoster)", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/shingles/about/index.html" },
+    ],
+  },
+  measles: {
+    complications: ["Pneumonia (leading cause of measles death)", "Encephalitis", "Subacute sclerosing panencephalitis (rare, delayed, fatal)", "Severe diarrhoea and malnutrition (especially in vulnerable children)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["Chest X-ray if pneumonia suspected"],
+      microbiological: ["RT-PCR (throat/nasal swab or urine)"],
+      immunological: ["IgM serology"],
+    },
+    advances: "India's measles-rubella vaccination campaign has substantially reduced case numbers, though pockets of low coverage continue to drive periodic outbreaks, keeping clinical vigilance important.",
+    sources: [
+      { title: "Measles", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/measles" },
+    ],
+  },
+  rubella: {
+    complications: ["Congenital rubella syndrome (if maternal infection in pregnancy — cataracts, deafness, heart defects)", "Arthritis (adults, especially women)", "Encephalitis (rare)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: ["IgM serology"],
+    },
+    advances: "Combined measles-rubella vaccination campaigns are specifically aimed at eliminating congenital rubella syndrome, since prevention through maternal immunity is far more effective than any treatment after infection occurs.",
+    sources: [
+      { title: "Rubella", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/rubella" },
+    ],
+  },
+  viralWarts: {
+    complications: ["Persistent/recurrent lesions", "Spread to other body sites (autoinoculation)", "Rarely, malignant transformation (specific HPV types, specific sites)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: [],
+    },
+    advances: "A wider range of destructive and immune-modulating topical treatments now gives more options for lesions resistant to first-line therapy, though recurrence remains common with any single modality.",
+    sources: [
+      { title: "Human Papillomavirus (HPV)", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/human-papillomavirus-(hpv)-and-cancer" },
+    ],
+  },
+  hepatitisA: {
+    complications: ["Fulminant hepatic failure (rare, but more common in adults and those with underlying liver disease)", "Cholestatic hepatitis (prolonged jaundice)", "Relapsing hepatitis (uncommon)"],
+    tests: {
+      blood: ["Liver function tests"],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: ["Anti-HAV IgM"],
+    },
+    advances: "Hepatitis A vaccination is increasingly recommended in India given rising average age of first infection in urban areas with improved sanitation, which paradoxically increases the risk of more severe disease when infection does occur later in life.",
+    sources: [
+      { title: "Hepatitis A", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/hepatitis-a" },
+    ],
+  },
+  hepatitisBAcute: {
+    complications: ["Progression to chronic infection (higher risk with younger age at infection)", "Fulminant hepatic failure (rare)", "Extrahepatic manifestations (rash, arthritis, rarely glomerulonephritis)"],
+    tests: {
+      blood: ["Liver function tests"],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: ["HBsAg, anti-HBc IgM"],
+    },
+    advances: "Universal infant hepatitis B vaccination, part of India's national immunisation schedule, has been a major driver in reducing new chronic infections over the past two decades.",
+    sources: [
+      { title: "Hepatitis B", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/hepatitis-b" },
+    ],
+  },
+  hepatitisCAndE: {
+    complications: ["Chronic infection (hepatitis C — majority of untreated cases become chronic)", "Fulminant hepatic failure (hepatitis E, especially in pregnancy — significant maternal mortality risk)", "Cirrhosis (chronic hepatitis C, long-term)"],
+    tests: {
+      blood: ["Liver function tests"],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: ["Anti-HCV antibody with confirmatory HCV RNA; anti-HEV IgM"],
+    },
+    advances: "Direct-acting antiviral regimens now cure the large majority of hepatitis C cases in a matter of weeks, a dramatic shift from older interferon-based treatment; hepatitis E remains primarily a water-sanitation-driven disease in India with no specific antiviral treatment, making prevention central, especially given its severity in pregnancy.",
+    sources: [
+      { title: "Hepatitis C", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/hepatitis-c" },
+    ],
+  },
+  chronicViralHepatitis: {
+    complications: ["Cirrhosis", "Hepatocellular carcinoma", "Liver failure", "Portal hypertension and its complications"],
+    tests: {
+      blood: ["Liver function tests", "Alpha-fetoprotein (HCC surveillance)"],
+      urine: [],
+      radiological: ["Ultrasound (routine HCC surveillance in chronic infection)", "Elastography (fibrosis staging)"],
+      microbiological: [],
+      immunological: ["Viral load (HBV DNA or HCV RNA)"],
+    },
+    advances: "Regular hepatocellular carcinoma surveillance (typically six-monthly ultrasound) is now standard for chronic hepatitis B and C patients, since early detection substantially improves treatment options.",
+    sources: [
+      { title: "Hepatitis B", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/hepatitis-b" },
+    ],
+  },
+  cytomegalovirusDisease: {
+    complications: ["Congenital CMV (hearing loss, developmental delay — if maternal infection in pregnancy)", "Retinitis (immunocompromised patients)", "Colitis/oesophagitis (immunocompromised)", "Pneumonitis (transplant recipients)"],
+    tests: {
+      blood: ["CMV PCR (viral load)"],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: ["CMV IgM/IgG serology"],
+    },
+    advances: "Routine CMV monitoring by PCR viral load is now standard practice in transplant recipients, allowing pre-emptive treatment before symptomatic disease develops.",
+    sources: [
+      { title: "About Cytomegalovirus", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/cytomegalovirus/about/index.html" },
+    ],
+  },
+  mumps: {
+    complications: ["Orchitis (post-pubertal males — risk of subfertility)", "Meningitis/encephalitis", "Pancreatitis", "Permanent hearing loss (rare)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["RT-PCR (buccal/oral swab)"],
+      immunological: ["IgM serology"],
+    },
+    advances: "Outbreaks continue to occur even in vaccinated populations due to waning immunity over time, prompting discussion in some settings about booster dosing strategies.",
+    sources: [
+      { title: "About Mumps", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/mumps/about/index.html" },
+    ],
+  },
+  infectiousMononucleosis: {
+    complications: ["Splenic rupture (rare but serious — activity restriction advised)", "Airway obstruction (severe tonsillar swelling)", "Haemolytic anaemia (rare)", "Prolonged fatigue (weeks to months)"],
+    tests: {
+      blood: ["CBC with differential (atypical lymphocytosis)", "Liver function tests"],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: ["Heterophile antibody test (Monospot) or EBV-specific serology"],
+    },
+    advances: "Ultrasound assessment of spleen size is increasingly used to individualise return-to-contact-sport timing, rather than relying on a fixed calendar-based restriction alone.",
+    sources: [
+      { title: "About Mono", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/epstein-barr/about-mono.html" },
+    ],
+  },
+  candidiasis: {
+    complications: ["Recurrent vulvovaginal candidiasis", "Oesophageal candidiasis (immunocompromised)", "Invasive candidiasis/candidaemia (critically ill, immunocompromised)"],
+    tests: {
+      blood: ["Blood culture (if invasive infection suspected)"],
+      urine: [],
+      radiological: [],
+      microbiological: ["Microscopy/culture of affected site"],
+      immunological: [],
+    },
+    advances: "Rising rates of azole-resistant Candida species, including Candida auris, are increasingly influencing empirical antifungal choice in hospital-acquired invasive infections.",
+    sources: [
+      { title: "Candidiasis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/candidiasis/about/index.html" },
+    ],
+  },
+  histoplasmosis: {
+    complications: ["Chronic pulmonary histoplasmosis (mimics tuberculosis)", "Disseminated disease (immunocompromised patients)", "Fibrosing mediastinitis (rare, delayed complication)"],
+    tests: {
+      blood: [],
+      urine: ["Histoplasma urine antigen (useful in disseminated disease)"],
+      radiological: ["Chest X-ray/CT"],
+      microbiological: ["Culture (slow-growing)"],
+      immunological: ["Serology"],
+    },
+    advances: "Recognition of histoplasmosis foci along the Gangetic plains means it is increasingly considered in the differential for tuberculosis-like presentations that don't respond to standard anti-tubercular therapy.",
+    sources: [
+      { title: "Histoplasmosis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/histoplasmosis/about/index.html" },
+    ],
+  },
+  aspergillosis: {
+    complications: ["Invasive pulmonary aspergillosis (immunocompromised — high mortality)", "Aspergilloma (fungal ball in pre-existing lung cavity)", "Allergic bronchopulmonary aspergillosis (asthma/cystic fibrosis patients)"],
+    tests: {
+      blood: ["Galactomannan antigen (invasive disease)"],
+      urine: [],
+      radiological: ["CT chest (halo sign in early invasive disease)"],
+      microbiological: ["Culture/microscopy of respiratory sample"],
+      immunological: ["IgE and specific antibody testing (allergic form)"],
+    },
+    advances: "Growing azole resistance in Aspergillus is prompting more susceptibility testing before finalising treatment in invasive disease, rather than assuming standard first-line therapy will be effective.",
+    sources: [
+      { title: "Aspergillosis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/aspergillosis/about/index.html" },
+    ],
+  },
+  cryptococcosis: {
+    complications: ["Cryptococcal meningitis (most serious form, high mortality if untreated)", "Raised intracranial pressure requiring repeated lumbar puncture", "Disseminated disease (severely immunocompromised)"],
+    tests: {
+      blood: ["Serum cryptococcal antigen"],
+      urine: [],
+      radiological: ["CT/MRI brain if meningitis suspected"],
+      microbiological: ["India ink stain of CSF", "CSF culture"],
+      immunological: ["CSF cryptococcal antigen"],
+    },
+    advances: "Cryptococcal antigen screening in patients with advanced HIV (low CD4 count) before symptoms develop, followed by pre-emptive treatment, has been shown to reduce progression to symptomatic meningitis.",
+    sources: [
+      { title: "Cryptococcosis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/fungal/diseases/cryptococcosis-neoformans/index.html" },
+    ],
+  },
+  mucormycosis: {
+    complications: ["Rhino-orbital-cerebral spread (can cause blindness, intracranial extension)", "Extensive tissue necrosis requiring radical surgical debridement", "High mortality, especially with delayed diagnosis/treatment", "Pulmonary and disseminated forms in severely immunocompromised patients"],
+    tests: {
+      blood: ["Blood glucose/HbA1c (diabetes is a major risk factor)"],
+      urine: [],
+      radiological: ["CT/MRI of sinuses, orbit, or brain depending on presentation"],
+      microbiological: ["Tissue biopsy with histopathology and culture (essential for diagnosis)"],
+      immunological: [],
+    },
+    advances: "India's large mucormycosis surge during the COVID-19 pandemic sharply increased clinical awareness and led to standardised early-diagnosis protocols in diabetic and steroid-treated patients, now widely adopted well beyond the pandemic context.",
+    sources: [
+      { title: "Mucormycosis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/mucormycosis/about/index.html" },
+    ],
+  },
+  mycetoma: {
+    complications: ["Progressive tissue destruction and deformity", "Secondary bacterial infection", "Bone involvement (advanced disease)", "Amputation (severe, neglected cases)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["X-ray/MRI to assess bone involvement"],
+      microbiological: ["Grain examination and culture (distinguishes fungal from bacterial mycetoma — treatment differs completely)"],
+      immunological: [],
+    },
+    advances: "Distinguishing fungal (eumycetoma) from bacterial (actinomycetoma) forms early is increasingly emphasised, since actinomycetoma often responds well to antibiotics while eumycetoma frequently requires prolonged antifungal treatment plus surgery.",
+    sources: [
+      { title: "Mycetoma", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/mycetoma" },
+    ],
+  },
+  schistosomiasis: {
+    complications: ["Chronic liver fibrosis and portal hypertension (intestinal/hepatic forms)", "Bladder cancer risk (urinary schistosomiasis, not the form typically seen in India)", "Anaemia", "Growth/cognitive impact in chronically infected children"],
+    tests: {
+      blood: ["Eosinophil count"],
+      urine: [],
+      radiological: ["Ultrasound (hepatic/splenic involvement)"],
+      microbiological: ["Stool or urine microscopy for ova"],
+      immunological: ["Serology (travel-acquired cases, low ova burden)"],
+    },
+    advances: "Mass drug administration programmes in endemic countries have substantially reduced global disease burden, though imported cases in travellers and migrants remain clinically relevant in India.",
+    sources: [
+      { title: "Schistosomiasis", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/schistosomiasis" },
+    ],
+  },
+  echinococcosis: {
+    complications: ["Cyst rupture with anaphylaxis (hydatid disease)", "Secondary dissemination after rupture", "Organ compression from cyst growth (liver, lung most common sites)", "Biliary obstruction (hepatic cysts)"],
+    tests: {
+      blood: ["Liver function tests"],
+      urine: [],
+      radiological: ["Ultrasound/CT (characteristic cyst appearance)"],
+      microbiological: [],
+      immunological: ["Serology"],
+    },
+    advances: "Image-guided percutaneous drainage techniques (PAIR — puncture, aspiration, injection, re-aspiration) now offer a less invasive alternative to surgery for many hepatic hydatid cysts.",
+    sources: [
+      { title: "Echinococcosis", org: "World Health Organization", url: "https://www.who.int/news-room/fact-sheets/detail/echinococcosis" },
+    ],
+  },
+  taeniasis: {
+    complications: ["Usually mild/asymptomatic intestinal infection", "Risk of progressing to cysticercosis if eggs (not just larvae) are ingested — a distinct and more serious condition", "Nutritional deficiency (heavy, prolonged infection)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["Stool microscopy for eggs/proglottids"],
+      immunological: [],
+    },
+    advances: "Recognition that taeniasis (adult tapeworm carriage) and cysticercosis (larval tissue infection) are clinically very different conditions from the same parasite has sharpened public health messaging, since a taeniasis carrier poses a cysticercosis risk to others through faecal-oral transmission.",
+    sources: [
+      { title: "Taeniasis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/taeniasis/about/index.html" },
+    ],
+  },
+  cysticercosis: {
+    complications: ["Neurocysticercosis with seizures (a leading cause of acquired epilepsy in India)", "Raised intracranial pressure/hydrocephalus", "Chronic epilepsy", "Ocular cysticercosis (vision loss)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["CT/MRI brain (characteristic cystic lesions)"],
+      microbiological: [],
+      immunological: ["Serology (blood or CSF)"],
+    },
+    advances: "Neurocysticercosis is increasingly recognised as a major, under-diagnosed cause of adult-onset seizures across India, prompting more routine neuroimaging in new-onset seizure presentations from endemic areas rather than assuming a primary epilepsy diagnosis.",
+    sources: [
+      { title: "Cysticercosis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/cysticercosis/about/index.html" },
+    ],
+  },
+  hookwormDisease: {
+    complications: ["Iron-deficiency anaemia (primary complication, especially with heavy infection)", "Protein malnutrition", "Growth and cognitive impact in children with chronic heavy infection"],
+    tests: {
+      blood: ["CBC (microcytic anaemia)", "Iron studies"],
+      urine: [],
+      radiological: [],
+      microbiological: ["Stool microscopy for ova"],
+      immunological: [],
+    },
+    advances: "School-based mass deworming programmes remain a cornerstone of India's public health strategy given hookworm's major contribution to iron-deficiency anaemia in endemic regions.",
+    sources: [
+      { title: "Hookworm", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/hookworm/about/index.html" },
+    ],
+  },
+  strongyloidiasis: {
+    complications: ["Hyperinfection syndrome (immunocompromised, especially with corticosteroid use — can be fatal)", "Disseminated disease", "Chronic low-grade GI symptoms (often under-recognised for years)"],
+    tests: {
+      blood: ["Eosinophil count"],
+      urine: [],
+      radiological: [],
+      microbiological: ["Stool microscopy (low sensitivity, may need repeat samples)"],
+      immunological: ["Serology (more sensitive than stool microscopy)"],
+    },
+    advances: "Serologic screening before starting immunosuppressive therapy or corticosteroids is increasingly recommended in patients from endemic areas, specifically to prevent triggering fatal hyperinfection syndrome.",
+    sources: [
+      { title: "Strongyloidiasis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/strongyloides/about/index.html" },
+    ],
+  },
+  trichuriasis: {
+    complications: ["Chronic dysentery-like symptoms (heavy infection)", "Rectal prolapse (heavy infection, children)", "Growth impact with chronic heavy infection"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["Stool microscopy for ova"],
+      immunological: [],
+    },
+    advances: "Integrated with the same school-based deworming programmes used for hookworm and other soil-transmitted helminths across India.",
+    sources: [
+      { title: "Trichuriasis", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/trichuris/about/index.html" },
+    ],
+  },
+  enterobiasis: {
+    complications: ["Perianal itching and secondary skin infection from scratching", "Sleep disturbance (common in affected children)", "Vulvovaginitis (occasionally, in girls)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["Adhesive tape test (early morning, before washing)"],
+      immunological: [],
+    },
+    advances: "Whole-household treatment, not just the symptomatic child, is increasingly emphasised given how easily pinworm eggs spread between close contacts, to prevent rapid reinfection.",
+    sources: [
+      { title: "Enterobiasis (Pinworm)", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/pinworm/about/index.html" },
+    ],
+  },
+  pediculosisPhthiriasis: {
+    complications: ["Secondary bacterial skin infection from scratching", "Social/school exclusion issues (head lice)", "Rare transmission of other infections (body lice, in specific settings)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: [],
+    },
+    advances: "Rising resistance to older topical treatments in some regions has prompted wider use of newer pediculicides and, in resistant cases, wet-combing-based mechanical removal protocols.",
+    sources: [
+      { title: "Head Lice", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/lice/about/head-lice.html" },
+    ],
+  },
+  scabies: {
+    complications: ["Secondary bacterial skin infection (impetigo, cellulitis)", "Post-streptococcal glomerulonephritis (via secondary strep skin infection)", "Crusted (Norwegian) scabies in immunocompromised patients — highly contagious", "Persistent itching for weeks after successful treatment"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: ["Skin scraping microscopy (confirmatory, though often clinical diagnosis)"],
+      immunological: [],
+    },
+    advances: "Oral ivermectin is increasingly used alongside or instead of topical treatment, particularly for outbreak settings, crusted scabies, and situations where thorough topical application is impractical.",
+    sources: [
+      { title: "Scabies", org: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/scabies/about/index.html" },
+    ],
+  },
+  myiasis: {
+    complications: ["Secondary bacterial infection of the wound", "Tissue destruction (heavy infestation)", "Misdiagnosis delay (mistaken for simple abscess/wound)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: [],
+      microbiological: [],
+      immunological: [],
+    },
+    advances: "Occlusive-suffocation removal techniques (blocking the larva's air supply to force it to emerge) remain the mainstay of simple furuncular myiasis management without needing surgical extraction in most cases.",
+    sources: [
+      { title: "Myiasis", org: "StatPearls, National Center for Biotechnology Information (NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK532987/" },
+    ],
+  },
 };
 
 // --- Scoring systems, grouped by diagnosis ----------------------------------
@@ -13031,7 +13779,7 @@ const SCORING_SYSTEMS = {
   ],
 };
 
-const DIAGNOSIS_LABEL = { hypertension: "Hypertension", pneumonia: "Pneumonia", anaemia: "Anaemia", myeloma: "Multiple myeloma", malaria: "Malaria", dengue: "Dengue", tuberculosis: "Tuberculosis", diabetes: "Diabetes mellitus", asthma: "Asthma", pud: "Peptic ulcer disease", snakebite: "Snakebite", copd: "COPD", heartFailure: "Heart failure", uti: "Urinary tract infection", staph: "Staphylococcal infections", strep: "Streptococcal infections", pneumococcal: "Pneumococcal infections", typhoid: "Typhoid (Enteric Fever)", dysentery: "Bacillary Dysentery", cholera: "Cholera", meningococcal: "Meningococcal Infections", diphtheria: "Diphtheria", clostridial: "Clostridial Infections", enterococcal: "Enterococcal Infections", gonococcal: "Gonococcal Infections", enterobacteriaceae: "Enterobacteriaceae", haemophilus: "Haemophilus influenzae Infections", pseudomonas: "Pseudomonas aeruginosa Infections", acinetobacter: "Acinetobacter", syphilis: "Syphilis", leptospirosis: "Leptospirosis", spirochaetal: "Other Spirochaetal Infections (Lyme Disease & Rat Bite Fever)", brucellosis: "Brucellosis", actinomycosis: "Actinomycosis", leprosy: "Leprosy", rickettsial: "Rickettsial Infections", amebiasisGiardiasis: "Amebiasis and Giardiasis", leishmaniasis: "Leishmaniasis", toxoplasmosis: "Toxoplasmosis", otherProtozoal: "Cryptosporidiosis, Trichomoniasis, Balantidiasis & Cystoisospora", nematodes: "Ankylostomiasis, Ascariasis & Other Nematodal Infections", tapewormHydatid: "Tapeworm and Hydatid Diseases", filariasis: "Lymphatic Filariasis and Related Diseases", systemicFungal: "Systemic Fungal Infections", pjp: "Pneumocystis jirovecii Pneumonia", herpesVirus: "Herpes Virus Infections (Simplex and Zoster)", influenzaViral: "Influenza and Other Common Viral Respiratory Infections", viralGastro: "Viral Gastroenteritis", rabies: "Rabies", arboviralChikungunya: "Arboviral Infections / Chikungunya", japaneseEncephalitis: "Japanese Encephalitis", hivAids: "HIV/AIDS — Epidemiology, Pathophysiology & Clinical Features", antiretroviralTherapy: "Antiretroviral Therapy", prep: "Pre-exposure Prophylaxis (PrEP)", hivPregnancy: "HIV and Pregnancy", osteoarthritis: "Osteoarthritis", rheumatoidArthritis: "Rheumatoid Arthritis", gout: "Gout and Other Crystal Arthritides", lowBackPain: "Low Back Pain", systemicAutoimmuneRheum: "Systemic Autoimmune Rheumatic Diseases (Lupus, Sjögren's, Vasculitis & Related)", lipidDisorders: "Disorders of Lipid and Lipoprotein Metabolism", obesity: "Disorders of Adipose Tissue and Obesity", hemochromatosis: "Disorders of Iron Metabolism and Iron Overload Syndromes", porphyrias: "The Porphyrias", wilsonsDisease: "Wilson's Disease", ricketsOsteomalacia: "Rickets and Osteomalacia", osteoporosis: "Osteoporosis", thyroidDisorders: "Disorders of Thyroid Gland", pituitaryDisorders: "Disorders of Anterior & Posterior Pituitary", adrenalDisorders: "Disorders of Adrenal Glands", parathyroidDisorders: "Disorders of Parathyroid Glands", pubertyDisorders: "Disorders of Puberty", diabetesAcuteComplications: "Acute Complications of Diabetes (DKA, HHS, Hypoglycaemia)", diabetesMicrovascular: "Microvascular Complications of Diabetes", diabeticFoot: "Diabetic Foot", diabetesPregnancy: "Diabetes and Pregnancy", diabetesPrevention: "Primary Prevention of Diabetes Mellitus", leukemia: "Leukemia (AML, CML, ALL, CLL)", hemolyticAnemia: "Hereditary and Acquired Hemolytic Anemias", aplasticAnemiaMDS: "Aplastic Anemia and Myelodysplastic Syndrome", lymphoma: "Lymphoma and Other Lymphoid Neoplasms", plateletDisorders: "Platelet Disorders", coagulationDisorders: "Coagulation Disorders", thromboticDisorders: "Thrombotic Disorders", transfusionMedicine: "Transfusion Medicine", stemCellTransplant: "Hematopoietic Stem Cell Transplantation", ckd: "Chronic Kidney Disease", aki: "Acute Kidney Injury", glomerularDisease: "Primary and Secondary Glomerular Diseases", pkd: "Polycystic Kidney Disease", kidneyFailureTreatment: "Dialysis and Other Extracorporeal Therapies / Renal Transplantation", renalArteryStenosis: "Vascular Injury to Kidney (Renal Artery Stenosis)", cardiorenalSyndrome: "Cardiorenal Syndrome", heatIllness: "Heat-related Illness", airPollution: "Air Pollution and Smoke-related Hazards", drowning: "Drowning (Submersion Injury)", radiationHazards: "Radiation Hazards", highAltitudeIllness: "High-altitude Medicine", electricalInjury: "Electric Shock and Lightning Injury", ild: "Diffuse Interstitial Lung Disease", sarcoidosis: "Sarcoidosis", sleepApnea: "Sleep-related Breathing Disorders", fungalLungInfection: "Fungal Infections of the Lungs", corPulmonale: "Cor Pulmonale", lungAbscessEmpyema: "Suppurative Pleuroparenchymal Diseases (Lung Abscess & Empyema)", pleuralDisease: "Diseases of Pleura, Mediastinum, Diaphragm & Chest Wall", coronaryArteryDisease: "Ischemic Heart Disease / Coronary Artery Disease", rheumaticHeartDisease: "Acute Rheumatic Fever and Rheumatic Heart Disease", infectiveEndocarditis: "Infective Endocarditis", valvularHeartDisease: "Valvular Heart Disease", arrhythmias: "Bradyarrhythmias and Tachyarrhythmias", cardiomyopathy: "Diseases of Myocardium (Cardiomyopathy)", pericarditis: "Diseases of the Pericardium", aorticAneurysm: "Diseases of the Aorta", suddenCardiacArrest: "Sudden Cardiac Arrest", congenitalHeartDisease: "Congenital Heart Disease", peripheralArteryDisease: "Vascular Disorders of the Extremities (Peripheral Artery Disease)", pregnancyHeartDisease: "Pregnancy and Heart Disease", gerd: "Esophageal Disorders (GERD)", ibd: "Inflammatory Bowel Disease", pancreatitis: "Acute and Chronic Pancreatitis", giBleeding: "Gastrointestinal Bleeding", functionalGI: "Functional Gastrointestinal Disorders", malabsorption: "Malabsorption Syndrome", viralHepatitis: "Acute and Chronic Viral Hepatitis", cirrhosis: "Cirrhosis of the Liver", nafld: "Nonalcoholic Fatty Liver Disease", gallstones: "Diseases of the Gallbladder and Biliary Tract", alcoholLiverDisease: "Alcohol-related Liver Disease", drugInducedLiverInjury: "Toxic and Drug-induced Liver Injury / Acute Liver Failure", pregnancyLiverDisease: "Pregnancy and Liver Disease", stroke: "Ischemic and Hemorrhagic Cerebrovascular Diseases (Stroke)", epilepsy: "Epilepsy", bacterialMeningitis: "Bacterial Meningitis and Brain Abscess", cvst: "Cerebral Venous Sinus Thrombosis", dementia: "Dementia", movementDisorders: "Hypokinetic Movement Disorders (Parkinson's Disease)", multipleSclerosis: "Demyelinating Disorders of the CNS (Multiple Sclerosis)", myastheniaGravis: "Myasthenia Gravis", alsMotorNeuron: "Amyotrophic Lateral Sclerosis and Other Motor Neuron Diseases", viralEncephalitis: "Viral Encephalitis", peripheralNeuropathy: "Peripheral Neuropathy", hydrocephalus: "Raised Intracranial Pressure and Hydrocephalus", cerebellarDisorders: "Cerebellar Disorders (Ataxia)", cranialNerveDisorders: "Disorders of Cranial Nerves (Bell's Palsy)", muscleDiseases: "Diseases of Muscles (Muscular Dystrophy)", sepsis: "Sepsis and Septic Shock", ards: "Acute Respiratory Distress Syndrome", electrolyteDisturbances: "Electrolyte Disturbances", acidBaseDisorders: "Acid-base Disorders", shockHemodynamic: "Hemodynamic Disturbances and Shock", fluidBalance: "Fluid Balance", nutritionCriticalIllness: "Nutrition in Critically Ill Patient", coPoisoning: "Toxic Gas Poisoning (Carbon Monoxide)", organophosphatePoisoning: "Organophosphorus Compound Poisoning", scorpionSting: "Scorpion Sting", toxicAlcohols: "Toxic Alcohols (Methanol)", metalPhosphidePoisoning: "Aluminum Phosphide and Other Metal Phosphide Poisoning", heavyMetalPoisoning: "Heavy Metal Poisoning Including Copper", causticIngestion: "Corrosive Acid and Alkali Poisoning", drugOverdose: "Drug Overdose", stimulantOverdose: "Recreational Drug Overdose (Stimulants)", immunizationTravel: "Immunization in Adults, Travel Medicine, and Use of Vaccines", moodDisorders: "Mood Disorders (Depression)", anxietyDisorders: "Neurotic Disorders (Anxiety Disorders)", substanceUseDisorders: "Substance Use Disorders", ptsd: "Post-Traumatic Stress Disorder (PTSD)", schizophrenia: "Psychosis and Schizophrenia", breastCancer: "Breast Cancer", lungCancer: "Lung Cancer", colorectalCancer: "Colorectal Cancer", prostateCancer: "Prostate Cancer", cervicalCancer: "Cervical Cancer", headNeckCancer: "Head and Neck Cancer", gastricEsophagealCancer: "Gastric and Esophageal Cancer", hepatobiliaryCancer: "Hepatobiliary Cancers", genitourinaryCancer: "Genitourinary Cancers", immunodeficiency: "Inborn Errors of Immunity (Primary & Secondary Immunodeficiency)", foodAllergy: "Food Allergy and Food Intolerance", bipolarDisorder: "Bipolar Disorder", eatingDisorders: "Eating Disorders", adhd: "Attention-Deficit/Hyperactivity Disorder (ADHD)", geriatricFalls: "Geriatric Syndromes (Falls and Frailty)", abdominalTB: "Abdominal Tuberculosis", ischemicBowel: "Ischemic Bowel Disease", interstitialNephritis: "Acute Tubulointerstitial Nephritis", myelopathy: "Compressive and Noncompressive Myelopathies", migraine: "Migraine", pancreaticCancer: "Pancreatic Cancer", autonomicDisorders: "Disorders of the Autonomic Nervous System", buddChiari: "HVOTO, EHPVO and NCPF (Budd-Chiari Syndrome)", speechDisorders: "Disorders of Speech (Aphasia)", eosinophilicLungDisease: "Eosinophilic Lung Disease", plantPoisoning: "Plant Poisoning", thyroidCancer: "Thyroid Cancer", skinCancer: "Skin Cancer (Including Melanoma)", ovarianCancer: "Ovarian Cancer", boneSarcoma: "Bone and Soft-tissue Sarcomas", testicularCancer: "Testicular Cancer", atrialFibrillation: "Atrial Fibrillation", varicoseVeins: "Varicose Veins", glaucoma: "Glaucoma", cataract: "Cataract", psoriasis: "Psoriasis", vitiligo: "Vitiligo", constipation: "Constipation", kidneyStones: "Kidney Stones", tetanus: "Tetanus", fibromyalgia: "Fibromyalgia", ankylosingSpondylitis: "Spondyloarthritides (Ankylosing Spondylitis)", restlessLegSyndrome: "Restless Legs Syndrome", gastritis: "Gastritis and Gastropathy", hearingLoss: "Age-Related Hearing Loss", sinusitis: "Chronic Sinusitis", allergicRhinitis: "Allergic Rhinitis", cellulitis: "Cellulitis", ringworm: "Ringworm (Dermatophytosis)", conjunctivitis: "Conjunctivitis (Pink Eye)", bph: "Benign Prostatic Hyperplasia", erectileDysfunction: "Erectile Dysfunction", menopause: "Menopause", urinaryIncontinence: "Urinary Incontinence", vertigoBalanceDisorders: "Vertigo and Balance Disorders", anaphylaxis: "Anaphylaxis", hemorrhoids: "Hemorrhoids", acne: "Acne Vulgaris", pulmonaryHypertension: "Pulmonary Hypertension", rosacea: "Rosacea", shortBowelSyndrome: "Short Bowel Syndrome", diverticularDisease: "Diverticular Disease", giantCellArteritis: "Giant Cell Arteritis (Temporal Arteritis)", gastroparesis: "Gastroparesis", cardiacTamponade: "Cardiac Tamponade", appendicitis: "Appendicitis", pyelonephritis: "Acute Pyelonephritis", intussusception: "Intussusception", testicularTorsion: "Testicular Torsion", preeclampsia: "Preeclampsia", placentalAbruption: "Placental Abruption", bowelObstruction: "Bowel Obstruction (Small Bowel Obstruction/Volvulus)", ectopicPregnancy: "Ectopic Pregnancy", ovarianTorsion: "Ovarian Torsion", acuteCholecystitis: "Acute Cholecystitis", inguinalHernia: "Inguinal Hernia" };
+const DIAGNOSIS_LABEL = { hypertension: "Hypertension", pneumonia: "Pneumonia", anaemia: "Anaemia", myeloma: "Multiple myeloma", malaria: "Malaria", dengue: "Dengue", tuberculosis: "Tuberculosis", diabetes: "Diabetes mellitus", asthma: "Asthma", pud: "Peptic ulcer disease", snakebite: "Snakebite", copd: "COPD", heartFailure: "Heart failure", uti: "Urinary tract infection", staph: "Staphylococcal infections", strep: "Streptococcal infections", pneumococcal: "Pneumococcal infections", typhoid: "Typhoid (Enteric Fever)", dysentery: "Bacillary Dysentery", cholera: "Cholera", meningococcal: "Meningococcal Infections", diphtheria: "Diphtheria", clostridial: "Clostridial Infections", enterococcal: "Enterococcal Infections", gonococcal: "Gonococcal Infections", enterobacteriaceae: "Enterobacteriaceae", haemophilus: "Haemophilus influenzae Infections", pseudomonas: "Pseudomonas aeruginosa Infections", acinetobacter: "Acinetobacter", syphilis: "Syphilis", leptospirosis: "Leptospirosis", spirochaetal: "Other Spirochaetal Infections (Lyme Disease & Rat Bite Fever)", brucellosis: "Brucellosis", actinomycosis: "Actinomycosis", leprosy: "Leprosy", rickettsial: "Rickettsial Infections", amebiasisGiardiasis: "Amebiasis and Giardiasis", leishmaniasis: "Leishmaniasis", toxoplasmosis: "Toxoplasmosis", otherProtozoal: "Cryptosporidiosis, Trichomoniasis, Balantidiasis & Cystoisospora", nematodes: "Ankylostomiasis, Ascariasis & Other Nematodal Infections", tapewormHydatid: "Tapeworm and Hydatid Diseases", filariasis: "Lymphatic Filariasis and Related Diseases", systemicFungal: "Systemic Fungal Infections", pjp: "Pneumocystis jirovecii Pneumonia", herpesVirus: "Herpes Virus Infections (Simplex and Zoster)", influenzaViral: "Influenza and Other Common Viral Respiratory Infections", viralGastro: "Viral Gastroenteritis", rabies: "Rabies", arboviralChikungunya: "Arboviral Infections / Chikungunya", japaneseEncephalitis: "Japanese Encephalitis", hivAids: "HIV/AIDS — Epidemiology, Pathophysiology & Clinical Features", antiretroviralTherapy: "Antiretroviral Therapy", prep: "Pre-exposure Prophylaxis (PrEP)", hivPregnancy: "HIV and Pregnancy", osteoarthritis: "Osteoarthritis", rheumatoidArthritis: "Rheumatoid Arthritis", gout: "Gout and Other Crystal Arthritides", lowBackPain: "Low Back Pain", systemicAutoimmuneRheum: "Systemic Autoimmune Rheumatic Diseases (Lupus, Sjögren's, Vasculitis & Related)", lipidDisorders: "Disorders of Lipid and Lipoprotein Metabolism", obesity: "Disorders of Adipose Tissue and Obesity", hemochromatosis: "Disorders of Iron Metabolism and Iron Overload Syndromes", porphyrias: "The Porphyrias", wilsonsDisease: "Wilson's Disease", ricketsOsteomalacia: "Rickets and Osteomalacia", osteoporosis: "Osteoporosis", thyroidDisorders: "Disorders of Thyroid Gland", pituitaryDisorders: "Disorders of Anterior & Posterior Pituitary", adrenalDisorders: "Disorders of Adrenal Glands", parathyroidDisorders: "Disorders of Parathyroid Glands", pubertyDisorders: "Disorders of Puberty", diabetesAcuteComplications: "Acute Complications of Diabetes (DKA, HHS, Hypoglycaemia)", diabetesMicrovascular: "Microvascular Complications of Diabetes", diabeticFoot: "Diabetic Foot", diabetesPregnancy: "Diabetes and Pregnancy", diabetesPrevention: "Primary Prevention of Diabetes Mellitus", leukemia: "Leukemia (AML, CML, ALL, CLL)", hemolyticAnemia: "Hereditary and Acquired Hemolytic Anemias", aplasticAnemiaMDS: "Aplastic Anemia and Myelodysplastic Syndrome", lymphoma: "Lymphoma and Other Lymphoid Neoplasms", plateletDisorders: "Platelet Disorders", coagulationDisorders: "Coagulation Disorders", thromboticDisorders: "Thrombotic Disorders", transfusionMedicine: "Transfusion Medicine", stemCellTransplant: "Hematopoietic Stem Cell Transplantation", ckd: "Chronic Kidney Disease", aki: "Acute Kidney Injury", glomerularDisease: "Primary and Secondary Glomerular Diseases", pkd: "Polycystic Kidney Disease", kidneyFailureTreatment: "Dialysis and Other Extracorporeal Therapies / Renal Transplantation", renalArteryStenosis: "Vascular Injury to Kidney (Renal Artery Stenosis)", cardiorenalSyndrome: "Cardiorenal Syndrome", heatIllness: "Heat-related Illness", airPollution: "Air Pollution and Smoke-related Hazards", drowning: "Drowning (Submersion Injury)", radiationHazards: "Radiation Hazards", highAltitudeIllness: "High-altitude Medicine", electricalInjury: "Electric Shock and Lightning Injury", ild: "Diffuse Interstitial Lung Disease", sarcoidosis: "Sarcoidosis", sleepApnea: "Sleep-related Breathing Disorders", fungalLungInfection: "Fungal Infections of the Lungs", corPulmonale: "Cor Pulmonale", lungAbscessEmpyema: "Suppurative Pleuroparenchymal Diseases (Lung Abscess & Empyema)", pleuralDisease: "Diseases of Pleura, Mediastinum, Diaphragm & Chest Wall", coronaryArteryDisease: "Ischemic Heart Disease / Coronary Artery Disease", rheumaticHeartDisease: "Acute Rheumatic Fever and Rheumatic Heart Disease", infectiveEndocarditis: "Infective Endocarditis", valvularHeartDisease: "Valvular Heart Disease", arrhythmias: "Bradyarrhythmias and Tachyarrhythmias", cardiomyopathy: "Diseases of Myocardium (Cardiomyopathy)", pericarditis: "Diseases of the Pericardium", aorticAneurysm: "Diseases of the Aorta", suddenCardiacArrest: "Sudden Cardiac Arrest", congenitalHeartDisease: "Congenital Heart Disease", peripheralArteryDisease: "Vascular Disorders of the Extremities (Peripheral Artery Disease)", pregnancyHeartDisease: "Pregnancy and Heart Disease", gerd: "Esophageal Disorders (GERD)", ibd: "Inflammatory Bowel Disease", pancreatitis: "Acute and Chronic Pancreatitis", giBleeding: "Gastrointestinal Bleeding", functionalGI: "Functional Gastrointestinal Disorders", malabsorption: "Malabsorption Syndrome", viralHepatitis: "Acute and Chronic Viral Hepatitis", cirrhosis: "Cirrhosis of the Liver", nafld: "Nonalcoholic Fatty Liver Disease", gallstones: "Diseases of the Gallbladder and Biliary Tract", alcoholLiverDisease: "Alcohol-related Liver Disease", drugInducedLiverInjury: "Toxic and Drug-induced Liver Injury / Acute Liver Failure", pregnancyLiverDisease: "Pregnancy and Liver Disease", stroke: "Ischemic and Hemorrhagic Cerebrovascular Diseases (Stroke)", epilepsy: "Epilepsy", bacterialMeningitis: "Bacterial Meningitis and Brain Abscess", cvst: "Cerebral Venous Sinus Thrombosis", dementia: "Dementia", movementDisorders: "Hypokinetic Movement Disorders (Parkinson's Disease)", multipleSclerosis: "Demyelinating Disorders of the CNS (Multiple Sclerosis)", myastheniaGravis: "Myasthenia Gravis", alsMotorNeuron: "Amyotrophic Lateral Sclerosis and Other Motor Neuron Diseases", viralEncephalitis: "Viral Encephalitis", peripheralNeuropathy: "Peripheral Neuropathy", hydrocephalus: "Raised Intracranial Pressure and Hydrocephalus", cerebellarDisorders: "Cerebellar Disorders (Ataxia)", cranialNerveDisorders: "Disorders of Cranial Nerves (Bell's Palsy)", muscleDiseases: "Diseases of Muscles (Muscular Dystrophy)", sepsis: "Sepsis and Septic Shock", ards: "Acute Respiratory Distress Syndrome", electrolyteDisturbances: "Electrolyte Disturbances", acidBaseDisorders: "Acid-base Disorders", shockHemodynamic: "Hemodynamic Disturbances and Shock", fluidBalance: "Fluid Balance", nutritionCriticalIllness: "Nutrition in Critically Ill Patient", coPoisoning: "Toxic Gas Poisoning (Carbon Monoxide)", organophosphatePoisoning: "Organophosphorus Compound Poisoning", scorpionSting: "Scorpion Sting", toxicAlcohols: "Toxic Alcohols (Methanol)", metalPhosphidePoisoning: "Aluminum Phosphide and Other Metal Phosphide Poisoning", heavyMetalPoisoning: "Heavy Metal Poisoning Including Copper", causticIngestion: "Corrosive Acid and Alkali Poisoning", drugOverdose: "Drug Overdose", stimulantOverdose: "Recreational Drug Overdose (Stimulants)", immunizationTravel: "Immunization in Adults, Travel Medicine, and Use of Vaccines", moodDisorders: "Mood Disorders (Depression)", anxietyDisorders: "Neurotic Disorders (Anxiety Disorders)", substanceUseDisorders: "Substance Use Disorders", ptsd: "Post-Traumatic Stress Disorder (PTSD)", schizophrenia: "Psychosis and Schizophrenia", breastCancer: "Breast Cancer", lungCancer: "Lung Cancer", colorectalCancer: "Colorectal Cancer", prostateCancer: "Prostate Cancer", cervicalCancer: "Cervical Cancer", headNeckCancer: "Head and Neck Cancer", gastricEsophagealCancer: "Gastric and Esophageal Cancer", hepatobiliaryCancer: "Hepatobiliary Cancers", genitourinaryCancer: "Genitourinary Cancers", immunodeficiency: "Inborn Errors of Immunity (Primary & Secondary Immunodeficiency)", foodAllergy: "Food Allergy and Food Intolerance", bipolarDisorder: "Bipolar Disorder", eatingDisorders: "Eating Disorders", adhd: "Attention-Deficit/Hyperactivity Disorder (ADHD)", geriatricFalls: "Geriatric Syndromes (Falls and Frailty)", abdominalTB: "Abdominal Tuberculosis", ischemicBowel: "Ischemic Bowel Disease", interstitialNephritis: "Acute Tubulointerstitial Nephritis", myelopathy: "Compressive and Noncompressive Myelopathies", migraine: "Migraine", pancreaticCancer: "Pancreatic Cancer", autonomicDisorders: "Disorders of the Autonomic Nervous System", buddChiari: "HVOTO, EHPVO and NCPF (Budd-Chiari Syndrome)", speechDisorders: "Disorders of Speech (Aphasia)", eosinophilicLungDisease: "Eosinophilic Lung Disease", plantPoisoning: "Plant Poisoning", thyroidCancer: "Thyroid Cancer", skinCancer: "Skin Cancer (Including Melanoma)", ovarianCancer: "Ovarian Cancer", boneSarcoma: "Bone and Soft-tissue Sarcomas", testicularCancer: "Testicular Cancer", atrialFibrillation: "Atrial Fibrillation", varicoseVeins: "Varicose Veins", glaucoma: "Glaucoma", cataract: "Cataract", psoriasis: "Psoriasis", vitiligo: "Vitiligo", constipation: "Constipation", kidneyStones: "Kidney Stones", tetanus: "Tetanus", fibromyalgia: "Fibromyalgia", ankylosingSpondylitis: "Spondyloarthritides (Ankylosing Spondylitis)", restlessLegSyndrome: "Restless Legs Syndrome", gastritis: "Gastritis and Gastropathy", hearingLoss: "Age-Related Hearing Loss", sinusitis: "Chronic Sinusitis", allergicRhinitis: "Allergic Rhinitis", cellulitis: "Cellulitis", ringworm: "Ringworm (Dermatophytosis)", conjunctivitis: "Conjunctivitis (Pink Eye)", bph: "Benign Prostatic Hyperplasia", erectileDysfunction: "Erectile Dysfunction", menopause: "Menopause", urinaryIncontinence: "Urinary Incontinence", vertigoBalanceDisorders: "Vertigo and Balance Disorders", anaphylaxis: "Anaphylaxis", hemorrhoids: "Hemorrhoids", acne: "Acne Vulgaris", pulmonaryHypertension: "Pulmonary Hypertension", rosacea: "Rosacea", shortBowelSyndrome: "Short Bowel Syndrome", diverticularDisease: "Diverticular Disease", giantCellArteritis: "Giant Cell Arteritis (Temporal Arteritis)", gastroparesis: "Gastroparesis", cardiacTamponade: "Cardiac Tamponade", appendicitis: "Appendicitis", pyelonephritis: "Acute Pyelonephritis", intussusception: "Intussusception", testicularTorsion: "Testicular Torsion", preeclampsia: "Preeclampsia", placentalAbruption: "Placental Abruption", bowelObstruction: "Bowel Obstruction (Small Bowel Obstruction/Volvulus)", ectopicPregnancy: "Ectopic Pregnancy", ovarianTorsion: "Ovarian Torsion", acuteCholecystitis: "Acute Cholecystitis", inguinalHernia: "Inguinal Hernia", salmonellosisNonTyphoidal: "Non-typhoidal Salmonellosis", anthrax: "Anthrax", melioidosis: "Melioidosis", ratBiteFever: "Rat-bite Fever", erysipeloid: "Erysipeloid", listeriosis: "Listeriosis", whoopingCough: "Whooping Cough (Pertussis)", scarletFever: "Scarlet Fever", streptococcalSepsis: "Streptococcal Sepsis", nocardiosis: "Nocardiosis", bartonellosis: "Bartonellosis (Cat-scratch Disease)", erysipelas: "Erysipelas", lymphogranulomaVenereum: "Lymphogranuloma Venereum", chancroid: "Chancroid", granulomaInguinale: "Granuloma Inguinale (Donovanosis)", anogenitalHerpes: "Anogenital Herpes", relapsingFever: "Relapsing Fever", trachoma: "Trachoma", scrubTyphus: "Scrub Typhus", spottedFeverRickettsioses: "Spotted Fever (Tick-borne Rickettsioses)", qFever: "Q Fever", acutePoliomyelitis: "Acute Poliomyelitis", viralMeningitis: "Viral Meningitis", herpesSimplexInfections: "Herpes Simplex Infections", varicella: "Varicella (Chickenpox)", herpesZoster: "Herpes Zoster (Shingles)", measles: "Measles", rubella: "Rubella (German Measles)", viralWarts: "Viral Warts", hepatitisA: "Hepatitis A", hepatitisBAcute: "Acute Hepatitis B", hepatitisCAndE: "Hepatitis C and Hepatitis E", chronicViralHepatitis: "Chronic Viral Hepatitis", cytomegalovirusDisease: "Cytomegalovirus (CMV) Disease", mumps: "Mumps", infectiousMononucleosis: "Infectious Mononucleosis", candidiasis: "Candidiasis", histoplasmosis: "Histoplasmosis", aspergillosis: "Aspergillosis", cryptococcosis: "Cryptococcosis", mucormycosis: "Mucormycosis", mycetoma: "Mycetoma", schistosomiasis: "Schistosomiasis", echinococcosis: "Echinococcosis (Hydatid Disease)", taeniasis: "Taeniasis (Tapeworm Carriage)", cysticercosis: "Cysticercosis (including Neurocysticercosis)", hookwormDisease: "Hookworm Disease", strongyloidiasis: "Strongyloidiasis", trichuriasis: "Trichuriasis (Whipworm)", enterobiasis: "Enterobiasis (Pinworm)", pediculosisPhthiriasis: "Pediculosis and Phthiriasis (Lice)", scabies: "Scabies", myiasis: "Myiasis" };
 
 // --- Medication safety reference (contraindications / adverse events / interactions) ---
 // Reference-level, well-established prescribing information. Not exhaustive —
