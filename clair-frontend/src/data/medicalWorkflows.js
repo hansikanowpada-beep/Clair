@@ -2406,6 +2406,209 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Obstructive Uropathy", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK558921/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 12: Acute sore throat ─────────────────────────────────────────
+  {
+    id: "med-sore-throat-entry",
+    condition: "Sore throat (entry pathway)",
+    region: "NECK",
+    synonyms: ["sore throat", "throat pain", "pharyngitis", "acute pharyngitis"],
+    status: "cited",
+    redFlags: [
+      "Stridor, drooling, or tripod positioning — think epiglottitis and do not examine the throat",
+      "Trismus (difficulty opening the mouth) or a muffled voice",
+      "Significant difficulty breathing or swallowing secretions",
+      "Neck swelling or stiffness",
+    ],
+    algorithm: [
+      {
+        id: "bg1",
+        stage: "Presentation",
+        title: "Acute sore throat — establish severity, duration and associated symptoms",
+        detail: "In a child with stridor and drooling, avoid examining the throat or agitating the child — this can precipitate complete airway obstruction in epiglottitis.",
+        next: ["bg2"],
+      },
+      {
+        id: "bg2",
+        stage: "Characterise it",
+        title: "Use the pattern of symptoms and examination findings to narrow the cause",
+        branches: [
+          { label: "Coryzal symptoms, cough, mild illness", to: "med-viral-pharyngitis" },
+          { label: "Sudden onset, fever, tonsillar exudate, no cough", to: "med-strep-pharyngitis" },
+          { label: "Trismus, uvular deviation, muffled voice", to: "med-peritonsillar-abscess" },
+          { label: "Prominent lymphadenopathy and fatigue, especially in a teenager or young adult", to: "med-infectious-mononucleosis" },
+          { label: "Stridor, drooling, tripod positioning", to: "med-epiglottitis" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Sore Throat Basics", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/sore-throat/about/index.html", licence: "US Government work — public domain" },
+      { title: "Sore Throat", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/sorethroat.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-viral-pharyngitis",
+    condition: "Viral pharyngitis",
+    region: "NECK",
+    synonyms: ["viral pharyngitis", "viral sore throat", "common cold sore throat"],
+    status: "cited",
+    redFlags: [
+      "Symptoms significantly worse than expected for a viral illness, or failing to improve as expected",
+    ],
+    algorithm: [
+      {
+        id: "bh1",
+        stage: "History",
+        title: "Sore throat with coryzal symptoms — runny nose, cough, mild fever",
+        next: ["bh2"],
+      },
+      {
+        id: "bh2",
+        stage: "Decision",
+        title: "Supportive care — analgesia, fluids, rest",
+        detail: "Antibiotics are not indicated; most cases resolve within a week.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "About Common Cold", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/common-cold/about/index.html", licence: "US Government work — public domain" },
+      { title: "Pharyngitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK519550/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-strep-pharyngitis",
+    condition: "Streptococcal (bacterial) pharyngitis",
+    region: "NECK",
+    synonyms: ["strep throat", "streptococcal pharyngitis", "bacterial pharyngitis", "group a strep"],
+    status: "cited",
+    redFlags: [
+      "Signs of a peritonsillar or retropharyngeal abscess",
+      "Signs of rheumatic fever or post-streptococcal glomerulonephritis appearing during recovery",
+    ],
+    algorithm: [
+      {
+        id: "bi1",
+        stage: "History and examination",
+        title: "Sudden-onset sore throat, fever, tonsillar exudate, tender anterior cervical nodes, absence of cough",
+        detail: "A named clinical prediction rule (Centor/McIsaac criteria) exists — name only. ClairMD does not calculate the score; the clinician uses it to decide who needs testing.",
+        next: ["bi2"],
+      },
+      {
+        id: "bi2",
+        stage: "Investigate",
+        title: "Rapid antigen detection test or throat culture in patients selected by the clinical score",
+        next: ["bi3"],
+      },
+      {
+        id: "bi3",
+        stage: "Decision",
+        title: "Antibiotics for confirmed streptococcal pharyngitis, per local guidance",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Guidance for Group A Streptococcal Pharyngitis", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/group-a-strep/hcp/clinical-guidance/strep-throat.html", licence: "US Government work — public domain" },
+      { title: "Testing for Strep Throat or Scarlet Fever", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/group-a-strep/testing/index.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-peritonsillar-abscess",
+    condition: "Peritonsillar abscess (quinsy)",
+    region: "NECK",
+    synonyms: ["peritonsillar abscess", "quinsy", "peritonsillar cellulitis"],
+    status: "cited",
+    redFlags: [
+      "Airway compromise",
+      "A spreading deep neck space infection",
+    ],
+    algorithm: [
+      {
+        id: "bj1",
+        stage: "History and examination",
+        title: "Severe unilateral throat pain, trismus, uvular deviation away from the affected side, muffled (\"hot potato\") voice",
+        next: ["bj2"],
+      },
+      {
+        id: "bj2",
+        stage: "Decision",
+        title: "Needle aspiration or incision and drainage, plus antibiotics",
+        detail: "Involve ENT for drainage and consider admission, particularly if airway compromise is a concern.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Peritonsillar Abscess", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK519520/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Tonsillitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK544342/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-infectious-mononucleosis",
+    condition: "Infectious mononucleosis",
+    region: "NECK",
+    synonyms: ["infectious mononucleosis", "glandular fever", "mono", "ebv infection"],
+    status: "cited",
+    redFlags: [
+      "Splenic rupture (severe abdominal pain, especially after trauma or exertion) — avoid contact sports while the spleen is enlarged",
+      "Airway compromise from severe tonsillar swelling",
+    ],
+    algorithm: [
+      {
+        id: "bk1",
+        stage: "History and examination",
+        title: "Sore throat, prominent lymphadenopathy, and fatigue, sometimes with splenomegaly",
+        detail: "Most common in teenagers and young adults.",
+        next: ["bk2"],
+      },
+      {
+        id: "bk2",
+        stage: "Investigate",
+        title: "Full blood count with atypical lymphocytes, monospot test or EBV serology",
+        next: ["bk3"],
+      },
+      {
+        id: "bk3",
+        stage: "Decision",
+        title: "Supportive care",
+        detail: "Avoid ampicillin or amoxicillin if streptococcal co-infection is suspected — these can cause a characteristic non-allergic rash in infectious mononucleosis.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Infectious Mononucleosis", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/infectiousmononucleosis.html", licence: "US Government work — public domain" },
+      { title: "Mononucleosis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470387/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-epiglottitis",
+    condition: "Epiglottitis",
+    region: "NECK",
+    synonyms: ["epiglottitis", "supraglottitis"],
+    status: "cited",
+    redFlags: [
+      "Any sign of impending airway obstruction — do not examine the throat or agitate the patient; secure the airway with the most experienced available team",
+    ],
+    algorithm: [
+      {
+        id: "bl1",
+        stage: "Recognise it",
+        title: "Stridor, drooling, a muffled voice, and a preference for sitting forward (tripod positioning)",
+        detail: "Do not lie the patient down, examine the throat, or attempt IV access before airway expertise is available — agitation can precipitate complete obstruction.",
+        next: ["bl2"],
+      },
+      {
+        id: "bl2",
+        stage: "Decision",
+        title: "Urgent airway management by the most experienced available team, in a controlled setting",
+        detail: "Antibiotics are given once the airway is secured.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Overview of Haemophilus influenzae Disease", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/hi-disease/hcp/clinicians/index.html", licence: "US Government work — public domain" },
+      { title: "Epiglottitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430960/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
