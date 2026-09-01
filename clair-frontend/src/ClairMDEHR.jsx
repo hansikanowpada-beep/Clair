@@ -4209,6 +4209,265 @@ const DIAGNOSIS_META = {
       { title: "Myiasis", org: "StatPearls, National Center for Biotechnology Information (NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK532987/" },
     ],
   },
+
+  // ── ICD-10 Chapter II additions (1 September 2026) ─────────────────────
+  // 18 conditions sourced from real WHO ICD-10-CM Chapter II (neoplasms)
+  // category names (icd10data.com), cross-checked against the existing entries
+  // above to avoid duplicates. Same schema as the rest of this object;
+  // independently written, not derived from any textbook.
+  renalCellCarcinoma: {
+    complications: ["Paraneoplastic syndromes (erythrocytosis, hypercalcaemia)", "Metastatic spread (lung, bone, brain)", "Renal vein/IVC tumour thrombus", "Haematuria and flank pain"],
+    tests: {
+      blood: ["CBC", "Serum calcium", "Liver function tests"],
+      urine: ["Urinalysis"],
+      radiological: ["CT abdomen with contrast", "MRI if IVC involvement suspected"],
+      microbiological: [],
+      immunological: [],
+    },
+    advances: "Partial nephrectomy is now preferred over radical nephrectomy for small, localised tumours to preserve kidney function, and targeted therapy/immunotherapy combinations have substantially improved outcomes in metastatic disease.",
+    sources: [
+      { title: "Kidney (Renal Cell) Cancer", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/kidney" },
+    ],
+  },
+  bladderCancer: {
+    complications: ["Local invasion into pelvic organs", "Metastatic spread (lymph nodes, bone, liver, lung)", "Recurrent haematuria and anaemia", "Hydronephrosis from ureteric obstruction"],
+    tests: {
+      blood: ["CBC", "Renal function tests"],
+      urine: ["Urine cytology", "Urinalysis"],
+      radiological: ["CT urogram"],
+      microbiological: ["Cystoscopy with biopsy"],
+      immunological: [],
+    },
+    advances: "Intravesical BCG immunotherapy remains standard for high-risk non-muscle-invasive disease, and bladder-preserving trimodality approaches (maximal TURBT plus chemoradiation) now offer an alternative to radical cystectomy in selected patients.",
+    sources: [
+      { title: "Bladder Cancer", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/bladder" },
+    ],
+  },
+  endometrialCancer: {
+    complications: ["Local invasion into myometrium/cervix", "Lymph node and distant metastasis", "Abnormal uterine bleeding leading to anaemia", "Uterine perforation (rare, procedure-related)"],
+    tests: {
+      blood: ["CBC"],
+      urine: [],
+      radiological: ["Transvaginal ultrasound", "MRI pelvis for staging"],
+      microbiological: ["Endometrial biopsy"],
+      immunological: [],
+    },
+    advances: "Molecular classification (POLE-mutated, mismatch-repair-deficient, p53-abnormal, and no-specific-molecular-profile subtypes) is increasingly used alongside traditional staging to guide adjuvant treatment decisions more precisely than histology alone.",
+    sources: [
+      { title: "Endometrial Cancer", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/endometrial" },
+    ],
+  },
+  vulvarCancer: {
+    complications: ["Local spread to vagina/urethra/anus", "Inguinal lymph node metastasis", "Lymphoedema after groin lymph node dissection", "Wound complications after vulvar surgery"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["MRI pelvis for staging", "PET-CT if advanced"],
+      microbiological: ["Vulvar biopsy"],
+      immunological: [],
+    },
+    advances: "Sentinel lymph node biopsy is increasingly used instead of full inguinofemoral lymphadenectomy in early-stage disease, meaningfully reducing lymphoedema risk without compromising outcomes.",
+    sources: [
+      { title: "Vulvar Cancer", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/vulvar" },
+    ],
+  },
+  vaginalCancer: {
+    complications: ["Local invasion into bladder/rectum", "Lymph node metastasis", "Fistula formation (advanced disease)", "Vaginal stenosis after radiotherapy"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["MRI pelvis", "PET-CT for staging"],
+      microbiological: ["Vaginal biopsy"],
+      immunological: [],
+    },
+    advances: "Most vaginal cancers are secondary (spread from the cervix, vulva, or endometrium), so ruling out a primary elsewhere is an essential first step before treating a lesion as a true primary vaginal cancer.",
+    sources: [
+      { title: "Vaginal Cancer", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/vaginal" },
+    ],
+  },
+  penileCancer: {
+    complications: ["Inguinal lymph node metastasis (major prognostic factor)", "Local tissue destruction", "Urethral obstruction", "Psychosexual impact of surgery"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["MRI penis for local staging", "CT/PET-CT if nodal disease suspected"],
+      microbiological: ["Penile lesion biopsy"],
+      immunological: [],
+    },
+    advances: "Penile-preserving surgical techniques are increasingly used for early-stage disease where oncologically appropriate, aiming to preserve function without compromising cure rates.",
+    sources: [
+      { title: "Penile Cancer", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/penile" },
+    ],
+  },
+  nasopharyngealCarcinoma: {
+    complications: ["Cranial nerve palsies (skull base invasion)", "Cervical lymph node metastasis (often the presenting sign)", "Distant metastasis (bone, liver, lung)", "Radiotherapy-related complications (xerostomia, hearing loss)"],
+    tests: {
+      blood: ["EBV serology/DNA load"],
+      urine: [],
+      radiological: ["MRI nasopharynx and skull base", "PET-CT for staging"],
+      microbiological: ["Nasopharyngeal biopsy"],
+      immunological: [],
+    },
+    advances: "Epstein-Barr virus DNA load is increasingly used both as a diagnostic aid and to monitor treatment response and detect recurrence, given the strong association between EBV and this cancer, particularly in endemic regions.",
+    sources: [
+      { title: "Nasopharyngeal Cancer", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/nasopharyngeal" },
+    ],
+  },
+  malignantMesothelioma: {
+    complications: ["Pleural effusion causing breathlessness", "Local invasion of chest wall/diaphragm/pericardium", "Poor prognosis with short median survival", "Pain from chest wall involvement"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["CT chest", "PET-CT for staging"],
+      microbiological: ["Pleural fluid cytology", "Pleural biopsy for histology"],
+      immunological: [],
+    },
+    advances: "Combination immunotherapy (nivolumab plus ipilimumab) has become a standard first-line option for unresectable mesothelioma, offering a survival benefit over chemotherapy alone in trials.",
+    sources: [
+      { title: "Mesothelioma", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/mesothelioma" },
+    ],
+  },
+  kaposiSarcoma: {
+    complications: ["Disseminated cutaneous and visceral disease (GI tract, lungs) in advanced HIV", "Lymphoedema from lymphatic involvement", "Airway obstruction (pulmonary KS)", "Disfigurement from skin lesions"],
+    tests: {
+      blood: ["HIV testing if status not already known"],
+      urine: [],
+      radiological: ["Chest imaging if pulmonary involvement suspected"],
+      microbiological: ["Skin biopsy showing HHV-8-associated spindle cell proliferation"],
+      immunological: [],
+    },
+    advances: "Effective antiretroviral therapy alone can induce regression of HIV-associated Kaposi sarcoma in many patients, making ART optimisation a central part of management alongside any specific oncological treatment.",
+    sources: [
+      { title: "Kaposi Sarcoma Treatment (PDQ)", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/soft-tissue-sarcoma/patient/kaposi-treatment-pdq" },
+    ],
+  },
+  softTissueSarcoma: {
+    complications: ["Local recurrence after resection", "Distant metastasis (most commonly lung)", "Nerve/vascular compromise from local invasion", "Functional loss after limb-sparing surgery"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["MRI of the primary site", "CT chest for metastatic staging"],
+      microbiological: ["Core needle biopsy with histopathology"],
+      immunological: [],
+    },
+    advances: "Limb-sparing surgery combined with radiotherapy has become standard for extremity sarcomas, replacing amputation in the large majority of cases without compromising survival.",
+    sources: [
+      { title: "Adult Soft Tissue Sarcoma", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/soft-tissue-sarcoma" },
+    ],
+  },
+  cnsTumours: {
+    complications: ["Raised intracranial pressure", "Seizures", "Focal neurological deficits depending on tumour location", "Neurocognitive decline (especially after whole-brain radiotherapy)"],
+    tests: {
+      blood: [],
+      urine: [],
+      radiological: ["MRI brain with contrast (primary imaging modality)"],
+      microbiological: ["Biopsy/resection with histopathology and molecular profiling"],
+      immunological: [],
+    },
+    advances: "Molecular profiling (IDH mutation status, 1p/19q co-deletion, MGMT methylation) now guides both diagnosis and treatment choice in gliomas, refining the older, purely histology-based classification.",
+    sources: [
+      { title: "Adult Central Nervous System Tumors", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/brain" },
+    ],
+  },
+  neuroblastoma: {
+    complications: ["Metastatic spread (bone marrow, bone, liver, skin — classically in infants)", "Spinal cord compression (paraspinal tumours)", "Opsoclonus-myoclonus syndrome (paraneoplastic)", "Horner syndrome (cervical/thoracic tumours)"],
+    tests: {
+      blood: [],
+      urine: ["Urine catecholamine metabolites (VMA, HVA)"],
+      radiological: ["CT/MRI of the primary site", "MIBG scan"],
+      microbiological: ["Tumour biopsy with histopathology"],
+      immunological: [],
+    },
+    advances: "Risk-stratified treatment based on age, stage, and tumour biology (including MYCN amplification status) now allows very low-risk disease to be managed with observation alone in selected infants, avoiding overtreatment.",
+    sources: [
+      { title: "Neuroblastoma", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/neuroblastoma" },
+    ],
+  },
+  retinoblastoma: {
+    complications: ["Vision loss", "Enucleation (eye removal) in advanced unilateral disease", "Second primary cancers later in life (hereditary RB1 mutation carriers)", "Orbital/metastatic spread if untreated"],
+    tests: {
+      blood: ["Genetic testing for RB1 mutation"],
+      urine: [],
+      radiological: ["MRI orbits/brain (CT avoided where possible to limit radiation exposure in RB1 mutation carriers)"],
+      microbiological: [],
+      immunological: [],
+    },
+    advances: "Intra-arterial and intravitreal chemotherapy delivery now allow many eyes to be saved that would previously have required enucleation, particularly for advanced intraocular disease.",
+    sources: [
+      { title: "Retinoblastoma", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/retinoblastoma" },
+    ],
+  },
+  myeloproliferativeNeoplasms: {
+    complications: ["Thrombosis (arterial and venous — major cause of morbidity)", "Progression to myelofibrosis or acute leukaemia", "Bleeding (from acquired von Willebrand syndrome at very high platelet counts)", "Splenomegaly-related symptoms"],
+    tests: {
+      blood: ["CBC", "JAK2/CALR/MPL mutation testing"],
+      urine: [],
+      radiological: ["Abdominal ultrasound for splenomegaly"],
+      microbiological: [],
+      immunological: [],
+    },
+    advances: "JAK2, CALR, and MPL mutation testing now allows most cases to be diagnosed without bone marrow biopsy in straightforward presentations, and JAK inhibitors have transformed symptom control in myelofibrosis.",
+    sources: [
+      { title: "Chronic Myeloproliferative Neoplasms Treatment (PDQ)", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/myeloproliferative" },
+    ],
+  },
+  gastrointestinalStromalTumour: {
+    complications: ["GI bleeding (from mucosal ulceration over the tumour)", "Bowel obstruction", "Tumour rupture with peritoneal spread", "Metastasis (liver and peritoneum most common)"],
+    tests: {
+      blood: ["CBC (anaemia from bleeding)"],
+      urine: [],
+      radiological: ["CT abdomen/pelvis with contrast"],
+      microbiological: ["Biopsy with KIT/CD117 and DOG1 immunohistochemistry"],
+      immunological: [],
+    },
+    advances: "Targeted tyrosine kinase inhibitors (imatinib and successors) have transformed outcomes in GIST, since these tumours are typically resistant to conventional chemotherapy but respond well to KIT/PDGFRA-targeted therapy.",
+    sources: [
+      { title: "Gastrointestinal Stromal Tumors Treatment (PDQ)", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/soft-tissue-sarcoma/patient/gist-treatment-pdq" },
+    ],
+  },
+  gestationalTrophoblasticDisease: {
+    complications: ["Persistent/invasive mole requiring further treatment", "Choriocarcinoma (malignant transformation)", "Uterine perforation", "Pulmonary trophoblastic embolisation (rare, presents as respiratory distress)"],
+    tests: {
+      blood: ["Serum beta-hCG (key diagnostic and monitoring marker)"],
+      urine: [],
+      radiological: ["Pelvic ultrasound (\"snowstorm\" pattern in molar pregnancy)", "Chest X-ray to screen for pulmonary metastasis"],
+      microbiological: [],
+      immunological: [],
+    },
+    advances: "Serial beta-hCG monitoring after evacuation of a molar pregnancy remains the cornerstone of detecting persistent disease early, before it progresses to choriocarcinoma, and cure rates with chemotherapy for gestational trophoblastic neoplasia are now very high even in metastatic disease.",
+    sources: [
+      { title: "Gestational Trophoblastic Disease Treatment (PDQ)", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/gestational-trophoblastic-tumor" },
+    ],
+  },
+  secondaryMetastaticNeoplasm: {
+    complications: ["Organ dysfunction at the metastatic site (e.g. hepatic failure, pathological fracture, spinal cord compression)", "Malignant effusions (pleural, peritoneal)", "Hypercalcaemia of malignancy", "Significant symptom burden requiring palliative care input"],
+    tests: {
+      blood: ["Tumour markers if a likely primary site is suspected", "Serum calcium"],
+      urine: [],
+      radiological: ["Imaging of the metastatic site plus a search for the primary (CT chest/abdomen/pelvis, PET-CT)"],
+      microbiological: ["Biopsy of a metastatic site with immunohistochemistry to help identify the likely primary"],
+      immunological: [],
+    },
+    advances: "Immunohistochemical and molecular profiling of biopsied metastatic tissue increasingly allows a likely tissue of origin to be identified even when imaging cannot locate a primary tumour, which can meaningfully change treatment options.",
+    sources: [
+      { title: "Metastatic Cancer", org: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/types/metastatic-cancer" },
+    ],
+  },
+  colonicPolyps: {
+    complications: ["Malignant transformation (adenomatous polyps, especially if large or with high-grade dysplasia)", "Bleeding (occult or overt)", "Bowel obstruction (rare, large polyps)", "Post-polypectomy bleeding or perforation"],
+    tests: {
+      blood: ["CBC (if bleeding suspected)"],
+      urine: [],
+      radiological: [],
+      microbiological: ["Colonoscopy with polypectomy and histopathology"],
+      immunological: [],
+    },
+    advances: "Surveillance colonoscopy intervals are now individualised based on the number, size, and histology of polyps found, rather than a single fixed interval for everyone, refined by evidence on progression risk for each polyp subtype.",
+    sources: [
+      { title: "Colon Polyps", org: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/digestive-diseases/colon-polyps" },
+    ],
+  },
+
 };
 
 // --- Scoring systems, grouped by diagnosis ----------------------------------
@@ -13779,7 +14038,7 @@ const SCORING_SYSTEMS = {
   ],
 };
 
-const DIAGNOSIS_LABEL = { hypertension: "Hypertension", pneumonia: "Pneumonia", anaemia: "Anaemia", myeloma: "Multiple myeloma", malaria: "Malaria", dengue: "Dengue", tuberculosis: "Tuberculosis", diabetes: "Diabetes mellitus", asthma: "Asthma", pud: "Peptic ulcer disease", snakebite: "Snakebite", copd: "COPD", heartFailure: "Heart failure", uti: "Urinary tract infection", staph: "Staphylococcal infections", strep: "Streptococcal infections", pneumococcal: "Pneumococcal infections", typhoid: "Typhoid (Enteric Fever)", dysentery: "Bacillary Dysentery", cholera: "Cholera", meningococcal: "Meningococcal Infections", diphtheria: "Diphtheria", clostridial: "Clostridial Infections", enterococcal: "Enterococcal Infections", gonococcal: "Gonococcal Infections", enterobacteriaceae: "Enterobacteriaceae", haemophilus: "Haemophilus influenzae Infections", pseudomonas: "Pseudomonas aeruginosa Infections", acinetobacter: "Acinetobacter", syphilis: "Syphilis", leptospirosis: "Leptospirosis", spirochaetal: "Other Spirochaetal Infections (Lyme Disease & Rat Bite Fever)", brucellosis: "Brucellosis", actinomycosis: "Actinomycosis", leprosy: "Leprosy", rickettsial: "Rickettsial Infections", amebiasisGiardiasis: "Amebiasis and Giardiasis", leishmaniasis: "Leishmaniasis", toxoplasmosis: "Toxoplasmosis", otherProtozoal: "Cryptosporidiosis, Trichomoniasis, Balantidiasis & Cystoisospora", nematodes: "Ankylostomiasis, Ascariasis & Other Nematodal Infections", tapewormHydatid: "Tapeworm and Hydatid Diseases", filariasis: "Lymphatic Filariasis and Related Diseases", systemicFungal: "Systemic Fungal Infections", pjp: "Pneumocystis jirovecii Pneumonia", herpesVirus: "Herpes Virus Infections (Simplex and Zoster)", influenzaViral: "Influenza and Other Common Viral Respiratory Infections", viralGastro: "Viral Gastroenteritis", rabies: "Rabies", arboviralChikungunya: "Arboviral Infections / Chikungunya", japaneseEncephalitis: "Japanese Encephalitis", hivAids: "HIV/AIDS — Epidemiology, Pathophysiology & Clinical Features", antiretroviralTherapy: "Antiretroviral Therapy", prep: "Pre-exposure Prophylaxis (PrEP)", hivPregnancy: "HIV and Pregnancy", osteoarthritis: "Osteoarthritis", rheumatoidArthritis: "Rheumatoid Arthritis", gout: "Gout and Other Crystal Arthritides", lowBackPain: "Low Back Pain", systemicAutoimmuneRheum: "Systemic Autoimmune Rheumatic Diseases (Lupus, Sjögren's, Vasculitis & Related)", lipidDisorders: "Disorders of Lipid and Lipoprotein Metabolism", obesity: "Disorders of Adipose Tissue and Obesity", hemochromatosis: "Disorders of Iron Metabolism and Iron Overload Syndromes", porphyrias: "The Porphyrias", wilsonsDisease: "Wilson's Disease", ricketsOsteomalacia: "Rickets and Osteomalacia", osteoporosis: "Osteoporosis", thyroidDisorders: "Disorders of Thyroid Gland", pituitaryDisorders: "Disorders of Anterior & Posterior Pituitary", adrenalDisorders: "Disorders of Adrenal Glands", parathyroidDisorders: "Disorders of Parathyroid Glands", pubertyDisorders: "Disorders of Puberty", diabetesAcuteComplications: "Acute Complications of Diabetes (DKA, HHS, Hypoglycaemia)", diabetesMicrovascular: "Microvascular Complications of Diabetes", diabeticFoot: "Diabetic Foot", diabetesPregnancy: "Diabetes and Pregnancy", diabetesPrevention: "Primary Prevention of Diabetes Mellitus", leukemia: "Leukemia (AML, CML, ALL, CLL)", hemolyticAnemia: "Hereditary and Acquired Hemolytic Anemias", aplasticAnemiaMDS: "Aplastic Anemia and Myelodysplastic Syndrome", lymphoma: "Lymphoma and Other Lymphoid Neoplasms", plateletDisorders: "Platelet Disorders", coagulationDisorders: "Coagulation Disorders", thromboticDisorders: "Thrombotic Disorders", transfusionMedicine: "Transfusion Medicine", stemCellTransplant: "Hematopoietic Stem Cell Transplantation", ckd: "Chronic Kidney Disease", aki: "Acute Kidney Injury", glomerularDisease: "Primary and Secondary Glomerular Diseases", pkd: "Polycystic Kidney Disease", kidneyFailureTreatment: "Dialysis and Other Extracorporeal Therapies / Renal Transplantation", renalArteryStenosis: "Vascular Injury to Kidney (Renal Artery Stenosis)", cardiorenalSyndrome: "Cardiorenal Syndrome", heatIllness: "Heat-related Illness", airPollution: "Air Pollution and Smoke-related Hazards", drowning: "Drowning (Submersion Injury)", radiationHazards: "Radiation Hazards", highAltitudeIllness: "High-altitude Medicine", electricalInjury: "Electric Shock and Lightning Injury", ild: "Diffuse Interstitial Lung Disease", sarcoidosis: "Sarcoidosis", sleepApnea: "Sleep-related Breathing Disorders", fungalLungInfection: "Fungal Infections of the Lungs", corPulmonale: "Cor Pulmonale", lungAbscessEmpyema: "Suppurative Pleuroparenchymal Diseases (Lung Abscess & Empyema)", pleuralDisease: "Diseases of Pleura, Mediastinum, Diaphragm & Chest Wall", coronaryArteryDisease: "Ischemic Heart Disease / Coronary Artery Disease", rheumaticHeartDisease: "Acute Rheumatic Fever and Rheumatic Heart Disease", infectiveEndocarditis: "Infective Endocarditis", valvularHeartDisease: "Valvular Heart Disease", arrhythmias: "Bradyarrhythmias and Tachyarrhythmias", cardiomyopathy: "Diseases of Myocardium (Cardiomyopathy)", pericarditis: "Diseases of the Pericardium", aorticAneurysm: "Diseases of the Aorta", suddenCardiacArrest: "Sudden Cardiac Arrest", congenitalHeartDisease: "Congenital Heart Disease", peripheralArteryDisease: "Vascular Disorders of the Extremities (Peripheral Artery Disease)", pregnancyHeartDisease: "Pregnancy and Heart Disease", gerd: "Esophageal Disorders (GERD)", ibd: "Inflammatory Bowel Disease", pancreatitis: "Acute and Chronic Pancreatitis", giBleeding: "Gastrointestinal Bleeding", functionalGI: "Functional Gastrointestinal Disorders", malabsorption: "Malabsorption Syndrome", viralHepatitis: "Acute and Chronic Viral Hepatitis", cirrhosis: "Cirrhosis of the Liver", nafld: "Nonalcoholic Fatty Liver Disease", gallstones: "Diseases of the Gallbladder and Biliary Tract", alcoholLiverDisease: "Alcohol-related Liver Disease", drugInducedLiverInjury: "Toxic and Drug-induced Liver Injury / Acute Liver Failure", pregnancyLiverDisease: "Pregnancy and Liver Disease", stroke: "Ischemic and Hemorrhagic Cerebrovascular Diseases (Stroke)", epilepsy: "Epilepsy", bacterialMeningitis: "Bacterial Meningitis and Brain Abscess", cvst: "Cerebral Venous Sinus Thrombosis", dementia: "Dementia", movementDisorders: "Hypokinetic Movement Disorders (Parkinson's Disease)", multipleSclerosis: "Demyelinating Disorders of the CNS (Multiple Sclerosis)", myastheniaGravis: "Myasthenia Gravis", alsMotorNeuron: "Amyotrophic Lateral Sclerosis and Other Motor Neuron Diseases", viralEncephalitis: "Viral Encephalitis", peripheralNeuropathy: "Peripheral Neuropathy", hydrocephalus: "Raised Intracranial Pressure and Hydrocephalus", cerebellarDisorders: "Cerebellar Disorders (Ataxia)", cranialNerveDisorders: "Disorders of Cranial Nerves (Bell's Palsy)", muscleDiseases: "Diseases of Muscles (Muscular Dystrophy)", sepsis: "Sepsis and Septic Shock", ards: "Acute Respiratory Distress Syndrome", electrolyteDisturbances: "Electrolyte Disturbances", acidBaseDisorders: "Acid-base Disorders", shockHemodynamic: "Hemodynamic Disturbances and Shock", fluidBalance: "Fluid Balance", nutritionCriticalIllness: "Nutrition in Critically Ill Patient", coPoisoning: "Toxic Gas Poisoning (Carbon Monoxide)", organophosphatePoisoning: "Organophosphorus Compound Poisoning", scorpionSting: "Scorpion Sting", toxicAlcohols: "Toxic Alcohols (Methanol)", metalPhosphidePoisoning: "Aluminum Phosphide and Other Metal Phosphide Poisoning", heavyMetalPoisoning: "Heavy Metal Poisoning Including Copper", causticIngestion: "Corrosive Acid and Alkali Poisoning", drugOverdose: "Drug Overdose", stimulantOverdose: "Recreational Drug Overdose (Stimulants)", immunizationTravel: "Immunization in Adults, Travel Medicine, and Use of Vaccines", moodDisorders: "Mood Disorders (Depression)", anxietyDisorders: "Neurotic Disorders (Anxiety Disorders)", substanceUseDisorders: "Substance Use Disorders", ptsd: "Post-Traumatic Stress Disorder (PTSD)", schizophrenia: "Psychosis and Schizophrenia", breastCancer: "Breast Cancer", lungCancer: "Lung Cancer", colorectalCancer: "Colorectal Cancer", prostateCancer: "Prostate Cancer", cervicalCancer: "Cervical Cancer", headNeckCancer: "Head and Neck Cancer", gastricEsophagealCancer: "Gastric and Esophageal Cancer", hepatobiliaryCancer: "Hepatobiliary Cancers", genitourinaryCancer: "Genitourinary Cancers", immunodeficiency: "Inborn Errors of Immunity (Primary & Secondary Immunodeficiency)", foodAllergy: "Food Allergy and Food Intolerance", bipolarDisorder: "Bipolar Disorder", eatingDisorders: "Eating Disorders", adhd: "Attention-Deficit/Hyperactivity Disorder (ADHD)", geriatricFalls: "Geriatric Syndromes (Falls and Frailty)", abdominalTB: "Abdominal Tuberculosis", ischemicBowel: "Ischemic Bowel Disease", interstitialNephritis: "Acute Tubulointerstitial Nephritis", myelopathy: "Compressive and Noncompressive Myelopathies", migraine: "Migraine", pancreaticCancer: "Pancreatic Cancer", autonomicDisorders: "Disorders of the Autonomic Nervous System", buddChiari: "HVOTO, EHPVO and NCPF (Budd-Chiari Syndrome)", speechDisorders: "Disorders of Speech (Aphasia)", eosinophilicLungDisease: "Eosinophilic Lung Disease", plantPoisoning: "Plant Poisoning", thyroidCancer: "Thyroid Cancer", skinCancer: "Skin Cancer (Including Melanoma)", ovarianCancer: "Ovarian Cancer", boneSarcoma: "Bone and Soft-tissue Sarcomas", testicularCancer: "Testicular Cancer", atrialFibrillation: "Atrial Fibrillation", varicoseVeins: "Varicose Veins", glaucoma: "Glaucoma", cataract: "Cataract", psoriasis: "Psoriasis", vitiligo: "Vitiligo", constipation: "Constipation", kidneyStones: "Kidney Stones", tetanus: "Tetanus", fibromyalgia: "Fibromyalgia", ankylosingSpondylitis: "Spondyloarthritides (Ankylosing Spondylitis)", restlessLegSyndrome: "Restless Legs Syndrome", gastritis: "Gastritis and Gastropathy", hearingLoss: "Age-Related Hearing Loss", sinusitis: "Chronic Sinusitis", allergicRhinitis: "Allergic Rhinitis", cellulitis: "Cellulitis", ringworm: "Ringworm (Dermatophytosis)", conjunctivitis: "Conjunctivitis (Pink Eye)", bph: "Benign Prostatic Hyperplasia", erectileDysfunction: "Erectile Dysfunction", menopause: "Menopause", urinaryIncontinence: "Urinary Incontinence", vertigoBalanceDisorders: "Vertigo and Balance Disorders", anaphylaxis: "Anaphylaxis", hemorrhoids: "Hemorrhoids", acne: "Acne Vulgaris", pulmonaryHypertension: "Pulmonary Hypertension", rosacea: "Rosacea", shortBowelSyndrome: "Short Bowel Syndrome", diverticularDisease: "Diverticular Disease", giantCellArteritis: "Giant Cell Arteritis (Temporal Arteritis)", gastroparesis: "Gastroparesis", cardiacTamponade: "Cardiac Tamponade", appendicitis: "Appendicitis", pyelonephritis: "Acute Pyelonephritis", intussusception: "Intussusception", testicularTorsion: "Testicular Torsion", preeclampsia: "Preeclampsia", placentalAbruption: "Placental Abruption", bowelObstruction: "Bowel Obstruction (Small Bowel Obstruction/Volvulus)", ectopicPregnancy: "Ectopic Pregnancy", ovarianTorsion: "Ovarian Torsion", acuteCholecystitis: "Acute Cholecystitis", inguinalHernia: "Inguinal Hernia", salmonellosisNonTyphoidal: "Non-typhoidal Salmonellosis", anthrax: "Anthrax", melioidosis: "Melioidosis", ratBiteFever: "Rat-bite Fever", erysipeloid: "Erysipeloid", listeriosis: "Listeriosis", whoopingCough: "Whooping Cough (Pertussis)", scarletFever: "Scarlet Fever", streptococcalSepsis: "Streptococcal Sepsis", nocardiosis: "Nocardiosis", bartonellosis: "Bartonellosis (Cat-scratch Disease)", erysipelas: "Erysipelas", lymphogranulomaVenereum: "Lymphogranuloma Venereum", chancroid: "Chancroid", granulomaInguinale: "Granuloma Inguinale (Donovanosis)", anogenitalHerpes: "Anogenital Herpes", relapsingFever: "Relapsing Fever", trachoma: "Trachoma", scrubTyphus: "Scrub Typhus", spottedFeverRickettsioses: "Spotted Fever (Tick-borne Rickettsioses)", qFever: "Q Fever", acutePoliomyelitis: "Acute Poliomyelitis", viralMeningitis: "Viral Meningitis", herpesSimplexInfections: "Herpes Simplex Infections", varicella: "Varicella (Chickenpox)", herpesZoster: "Herpes Zoster (Shingles)", measles: "Measles", rubella: "Rubella (German Measles)", viralWarts: "Viral Warts", hepatitisA: "Hepatitis A", hepatitisBAcute: "Acute Hepatitis B", hepatitisCAndE: "Hepatitis C and Hepatitis E", chronicViralHepatitis: "Chronic Viral Hepatitis", cytomegalovirusDisease: "Cytomegalovirus (CMV) Disease", mumps: "Mumps", infectiousMononucleosis: "Infectious Mononucleosis", candidiasis: "Candidiasis", histoplasmosis: "Histoplasmosis", aspergillosis: "Aspergillosis", cryptococcosis: "Cryptococcosis", mucormycosis: "Mucormycosis", mycetoma: "Mycetoma", schistosomiasis: "Schistosomiasis", echinococcosis: "Echinococcosis (Hydatid Disease)", taeniasis: "Taeniasis (Tapeworm Carriage)", cysticercosis: "Cysticercosis (including Neurocysticercosis)", hookwormDisease: "Hookworm Disease", strongyloidiasis: "Strongyloidiasis", trichuriasis: "Trichuriasis (Whipworm)", enterobiasis: "Enterobiasis (Pinworm)", pediculosisPhthiriasis: "Pediculosis and Phthiriasis (Lice)", scabies: "Scabies", myiasis: "Myiasis" };
+const DIAGNOSIS_LABEL = { hypertension: "Hypertension", pneumonia: "Pneumonia", anaemia: "Anaemia", myeloma: "Multiple myeloma", malaria: "Malaria", dengue: "Dengue", tuberculosis: "Tuberculosis", diabetes: "Diabetes mellitus", asthma: "Asthma", pud: "Peptic ulcer disease", snakebite: "Snakebite", copd: "COPD", heartFailure: "Heart failure", uti: "Urinary tract infection", staph: "Staphylococcal infections", strep: "Streptococcal infections", pneumococcal: "Pneumococcal infections", typhoid: "Typhoid (Enteric Fever)", dysentery: "Bacillary Dysentery", cholera: "Cholera", meningococcal: "Meningococcal Infections", diphtheria: "Diphtheria", clostridial: "Clostridial Infections", enterococcal: "Enterococcal Infections", gonococcal: "Gonococcal Infections", enterobacteriaceae: "Enterobacteriaceae", haemophilus: "Haemophilus influenzae Infections", pseudomonas: "Pseudomonas aeruginosa Infections", acinetobacter: "Acinetobacter", syphilis: "Syphilis", leptospirosis: "Leptospirosis", spirochaetal: "Other Spirochaetal Infections (Lyme Disease & Rat Bite Fever)", brucellosis: "Brucellosis", actinomycosis: "Actinomycosis", leprosy: "Leprosy", rickettsial: "Rickettsial Infections", amebiasisGiardiasis: "Amebiasis and Giardiasis", leishmaniasis: "Leishmaniasis", toxoplasmosis: "Toxoplasmosis", otherProtozoal: "Cryptosporidiosis, Trichomoniasis, Balantidiasis & Cystoisospora", nematodes: "Ankylostomiasis, Ascariasis & Other Nematodal Infections", tapewormHydatid: "Tapeworm and Hydatid Diseases", filariasis: "Lymphatic Filariasis and Related Diseases", systemicFungal: "Systemic Fungal Infections", pjp: "Pneumocystis jirovecii Pneumonia", herpesVirus: "Herpes Virus Infections (Simplex and Zoster)", influenzaViral: "Influenza and Other Common Viral Respiratory Infections", viralGastro: "Viral Gastroenteritis", rabies: "Rabies", arboviralChikungunya: "Arboviral Infections / Chikungunya", japaneseEncephalitis: "Japanese Encephalitis", hivAids: "HIV/AIDS — Epidemiology, Pathophysiology & Clinical Features", antiretroviralTherapy: "Antiretroviral Therapy", prep: "Pre-exposure Prophylaxis (PrEP)", hivPregnancy: "HIV and Pregnancy", osteoarthritis: "Osteoarthritis", rheumatoidArthritis: "Rheumatoid Arthritis", gout: "Gout and Other Crystal Arthritides", lowBackPain: "Low Back Pain", systemicAutoimmuneRheum: "Systemic Autoimmune Rheumatic Diseases (Lupus, Sjögren's, Vasculitis & Related)", lipidDisorders: "Disorders of Lipid and Lipoprotein Metabolism", obesity: "Disorders of Adipose Tissue and Obesity", hemochromatosis: "Disorders of Iron Metabolism and Iron Overload Syndromes", porphyrias: "The Porphyrias", wilsonsDisease: "Wilson's Disease", ricketsOsteomalacia: "Rickets and Osteomalacia", osteoporosis: "Osteoporosis", thyroidDisorders: "Disorders of Thyroid Gland", pituitaryDisorders: "Disorders of Anterior & Posterior Pituitary", adrenalDisorders: "Disorders of Adrenal Glands", parathyroidDisorders: "Disorders of Parathyroid Glands", pubertyDisorders: "Disorders of Puberty", diabetesAcuteComplications: "Acute Complications of Diabetes (DKA, HHS, Hypoglycaemia)", diabetesMicrovascular: "Microvascular Complications of Diabetes", diabeticFoot: "Diabetic Foot", diabetesPregnancy: "Diabetes and Pregnancy", diabetesPrevention: "Primary Prevention of Diabetes Mellitus", leukemia: "Leukemia (AML, CML, ALL, CLL)", hemolyticAnemia: "Hereditary and Acquired Hemolytic Anemias", aplasticAnemiaMDS: "Aplastic Anemia and Myelodysplastic Syndrome", lymphoma: "Lymphoma and Other Lymphoid Neoplasms", plateletDisorders: "Platelet Disorders", coagulationDisorders: "Coagulation Disorders", thromboticDisorders: "Thrombotic Disorders", transfusionMedicine: "Transfusion Medicine", stemCellTransplant: "Hematopoietic Stem Cell Transplantation", ckd: "Chronic Kidney Disease", aki: "Acute Kidney Injury", glomerularDisease: "Primary and Secondary Glomerular Diseases", pkd: "Polycystic Kidney Disease", kidneyFailureTreatment: "Dialysis and Other Extracorporeal Therapies / Renal Transplantation", renalArteryStenosis: "Vascular Injury to Kidney (Renal Artery Stenosis)", cardiorenalSyndrome: "Cardiorenal Syndrome", heatIllness: "Heat-related Illness", airPollution: "Air Pollution and Smoke-related Hazards", drowning: "Drowning (Submersion Injury)", radiationHazards: "Radiation Hazards", highAltitudeIllness: "High-altitude Medicine", electricalInjury: "Electric Shock and Lightning Injury", ild: "Diffuse Interstitial Lung Disease", sarcoidosis: "Sarcoidosis", sleepApnea: "Sleep-related Breathing Disorders", fungalLungInfection: "Fungal Infections of the Lungs", corPulmonale: "Cor Pulmonale", lungAbscessEmpyema: "Suppurative Pleuroparenchymal Diseases (Lung Abscess & Empyema)", pleuralDisease: "Diseases of Pleura, Mediastinum, Diaphragm & Chest Wall", coronaryArteryDisease: "Ischemic Heart Disease / Coronary Artery Disease", rheumaticHeartDisease: "Acute Rheumatic Fever and Rheumatic Heart Disease", infectiveEndocarditis: "Infective Endocarditis", valvularHeartDisease: "Valvular Heart Disease", arrhythmias: "Bradyarrhythmias and Tachyarrhythmias", cardiomyopathy: "Diseases of Myocardium (Cardiomyopathy)", pericarditis: "Diseases of the Pericardium", aorticAneurysm: "Diseases of the Aorta", suddenCardiacArrest: "Sudden Cardiac Arrest", congenitalHeartDisease: "Congenital Heart Disease", peripheralArteryDisease: "Vascular Disorders of the Extremities (Peripheral Artery Disease)", pregnancyHeartDisease: "Pregnancy and Heart Disease", gerd: "Esophageal Disorders (GERD)", ibd: "Inflammatory Bowel Disease", pancreatitis: "Acute and Chronic Pancreatitis", giBleeding: "Gastrointestinal Bleeding", functionalGI: "Functional Gastrointestinal Disorders", malabsorption: "Malabsorption Syndrome", viralHepatitis: "Acute and Chronic Viral Hepatitis", cirrhosis: "Cirrhosis of the Liver", nafld: "Nonalcoholic Fatty Liver Disease", gallstones: "Diseases of the Gallbladder and Biliary Tract", alcoholLiverDisease: "Alcohol-related Liver Disease", drugInducedLiverInjury: "Toxic and Drug-induced Liver Injury / Acute Liver Failure", pregnancyLiverDisease: "Pregnancy and Liver Disease", stroke: "Ischemic and Hemorrhagic Cerebrovascular Diseases (Stroke)", epilepsy: "Epilepsy", bacterialMeningitis: "Bacterial Meningitis and Brain Abscess", cvst: "Cerebral Venous Sinus Thrombosis", dementia: "Dementia", movementDisorders: "Hypokinetic Movement Disorders (Parkinson's Disease)", multipleSclerosis: "Demyelinating Disorders of the CNS (Multiple Sclerosis)", myastheniaGravis: "Myasthenia Gravis", alsMotorNeuron: "Amyotrophic Lateral Sclerosis and Other Motor Neuron Diseases", viralEncephalitis: "Viral Encephalitis", peripheralNeuropathy: "Peripheral Neuropathy", hydrocephalus: "Raised Intracranial Pressure and Hydrocephalus", cerebellarDisorders: "Cerebellar Disorders (Ataxia)", cranialNerveDisorders: "Disorders of Cranial Nerves (Bell's Palsy)", muscleDiseases: "Diseases of Muscles (Muscular Dystrophy)", sepsis: "Sepsis and Septic Shock", ards: "Acute Respiratory Distress Syndrome", electrolyteDisturbances: "Electrolyte Disturbances", acidBaseDisorders: "Acid-base Disorders", shockHemodynamic: "Hemodynamic Disturbances and Shock", fluidBalance: "Fluid Balance", nutritionCriticalIllness: "Nutrition in Critically Ill Patient", coPoisoning: "Toxic Gas Poisoning (Carbon Monoxide)", organophosphatePoisoning: "Organophosphorus Compound Poisoning", scorpionSting: "Scorpion Sting", toxicAlcohols: "Toxic Alcohols (Methanol)", metalPhosphidePoisoning: "Aluminum Phosphide and Other Metal Phosphide Poisoning", heavyMetalPoisoning: "Heavy Metal Poisoning Including Copper", causticIngestion: "Corrosive Acid and Alkali Poisoning", drugOverdose: "Drug Overdose", stimulantOverdose: "Recreational Drug Overdose (Stimulants)", immunizationTravel: "Immunization in Adults, Travel Medicine, and Use of Vaccines", moodDisorders: "Mood Disorders (Depression)", anxietyDisorders: "Neurotic Disorders (Anxiety Disorders)", substanceUseDisorders: "Substance Use Disorders", ptsd: "Post-Traumatic Stress Disorder (PTSD)", schizophrenia: "Psychosis and Schizophrenia", breastCancer: "Breast Cancer", lungCancer: "Lung Cancer", colorectalCancer: "Colorectal Cancer", prostateCancer: "Prostate Cancer", cervicalCancer: "Cervical Cancer", headNeckCancer: "Head and Neck Cancer", gastricEsophagealCancer: "Gastric and Esophageal Cancer", hepatobiliaryCancer: "Hepatobiliary Cancers", genitourinaryCancer: "Genitourinary Cancers", immunodeficiency: "Inborn Errors of Immunity (Primary & Secondary Immunodeficiency)", foodAllergy: "Food Allergy and Food Intolerance", bipolarDisorder: "Bipolar Disorder", eatingDisorders: "Eating Disorders", adhd: "Attention-Deficit/Hyperactivity Disorder (ADHD)", geriatricFalls: "Geriatric Syndromes (Falls and Frailty)", abdominalTB: "Abdominal Tuberculosis", ischemicBowel: "Ischemic Bowel Disease", interstitialNephritis: "Acute Tubulointerstitial Nephritis", myelopathy: "Compressive and Noncompressive Myelopathies", migraine: "Migraine", pancreaticCancer: "Pancreatic Cancer", autonomicDisorders: "Disorders of the Autonomic Nervous System", buddChiari: "HVOTO, EHPVO and NCPF (Budd-Chiari Syndrome)", speechDisorders: "Disorders of Speech (Aphasia)", eosinophilicLungDisease: "Eosinophilic Lung Disease", plantPoisoning: "Plant Poisoning", thyroidCancer: "Thyroid Cancer", skinCancer: "Skin Cancer (Including Melanoma)", ovarianCancer: "Ovarian Cancer", boneSarcoma: "Bone and Soft-tissue Sarcomas", testicularCancer: "Testicular Cancer", atrialFibrillation: "Atrial Fibrillation", varicoseVeins: "Varicose Veins", glaucoma: "Glaucoma", cataract: "Cataract", psoriasis: "Psoriasis", vitiligo: "Vitiligo", constipation: "Constipation", kidneyStones: "Kidney Stones", tetanus: "Tetanus", fibromyalgia: "Fibromyalgia", ankylosingSpondylitis: "Spondyloarthritides (Ankylosing Spondylitis)", restlessLegSyndrome: "Restless Legs Syndrome", gastritis: "Gastritis and Gastropathy", hearingLoss: "Age-Related Hearing Loss", sinusitis: "Chronic Sinusitis", allergicRhinitis: "Allergic Rhinitis", cellulitis: "Cellulitis", ringworm: "Ringworm (Dermatophytosis)", conjunctivitis: "Conjunctivitis (Pink Eye)", bph: "Benign Prostatic Hyperplasia", erectileDysfunction: "Erectile Dysfunction", menopause: "Menopause", urinaryIncontinence: "Urinary Incontinence", vertigoBalanceDisorders: "Vertigo and Balance Disorders", anaphylaxis: "Anaphylaxis", hemorrhoids: "Hemorrhoids", acne: "Acne Vulgaris", pulmonaryHypertension: "Pulmonary Hypertension", rosacea: "Rosacea", shortBowelSyndrome: "Short Bowel Syndrome", diverticularDisease: "Diverticular Disease", giantCellArteritis: "Giant Cell Arteritis (Temporal Arteritis)", gastroparesis: "Gastroparesis", cardiacTamponade: "Cardiac Tamponade", appendicitis: "Appendicitis", pyelonephritis: "Acute Pyelonephritis", intussusception: "Intussusception", testicularTorsion: "Testicular Torsion", preeclampsia: "Preeclampsia", placentalAbruption: "Placental Abruption", bowelObstruction: "Bowel Obstruction (Small Bowel Obstruction/Volvulus)", ectopicPregnancy: "Ectopic Pregnancy", ovarianTorsion: "Ovarian Torsion", acuteCholecystitis: "Acute Cholecystitis", inguinalHernia: "Inguinal Hernia", salmonellosisNonTyphoidal: "Non-typhoidal Salmonellosis", anthrax: "Anthrax", melioidosis: "Melioidosis", ratBiteFever: "Rat-bite Fever", erysipeloid: "Erysipeloid", listeriosis: "Listeriosis", whoopingCough: "Whooping Cough (Pertussis)", scarletFever: "Scarlet Fever", streptococcalSepsis: "Streptococcal Sepsis", nocardiosis: "Nocardiosis", bartonellosis: "Bartonellosis (Cat-scratch Disease)", erysipelas: "Erysipelas", lymphogranulomaVenereum: "Lymphogranuloma Venereum", chancroid: "Chancroid", granulomaInguinale: "Granuloma Inguinale (Donovanosis)", anogenitalHerpes: "Anogenital Herpes", relapsingFever: "Relapsing Fever", trachoma: "Trachoma", scrubTyphus: "Scrub Typhus", spottedFeverRickettsioses: "Spotted Fever (Tick-borne Rickettsioses)", qFever: "Q Fever", acutePoliomyelitis: "Acute Poliomyelitis", viralMeningitis: "Viral Meningitis", herpesSimplexInfections: "Herpes Simplex Infections", varicella: "Varicella (Chickenpox)", herpesZoster: "Herpes Zoster (Shingles)", measles: "Measles", rubella: "Rubella (German Measles)", viralWarts: "Viral Warts", hepatitisA: "Hepatitis A", hepatitisBAcute: "Acute Hepatitis B", hepatitisCAndE: "Hepatitis C and Hepatitis E", chronicViralHepatitis: "Chronic Viral Hepatitis", cytomegalovirusDisease: "Cytomegalovirus (CMV) Disease", mumps: "Mumps", infectiousMononucleosis: "Infectious Mononucleosis", candidiasis: "Candidiasis", histoplasmosis: "Histoplasmosis", aspergillosis: "Aspergillosis", cryptococcosis: "Cryptococcosis", mucormycosis: "Mucormycosis", mycetoma: "Mycetoma", schistosomiasis: "Schistosomiasis", echinococcosis: "Echinococcosis (Hydatid Disease)", taeniasis: "Taeniasis (Tapeworm Carriage)", cysticercosis: "Cysticercosis (including Neurocysticercosis)", hookwormDisease: "Hookworm Disease", strongyloidiasis: "Strongyloidiasis", trichuriasis: "Trichuriasis (Whipworm)", enterobiasis: "Enterobiasis (Pinworm)", pediculosisPhthiriasis: "Pediculosis and Phthiriasis (Lice)", scabies: "Scabies", myiasis: "Myiasis", renalCellCarcinoma: "Renal Cell Carcinoma", bladderCancer: "Urinary Bladder Cancer", endometrialCancer: "Endometrial Cancer", vulvarCancer: "Vulvar Cancer", vaginalCancer: "Vaginal Cancer", penileCancer: "Penile Cancer", nasopharyngealCarcinoma: "Nasopharyngeal Carcinoma", malignantMesothelioma: "Malignant Mesothelioma", kaposiSarcoma: "Kaposi Sarcoma", softTissueSarcoma: "Soft Tissue Sarcoma", cnsTumours: "Brain and Central Nervous System Tumours", neuroblastoma: "Neuroblastoma", retinoblastoma: "Retinoblastoma", myeloproliferativeNeoplasms: "Myeloproliferative Neoplasms", gastrointestinalStromalTumour: "Gastrointestinal Stromal Tumour (GIST)", gestationalTrophoblasticDisease: "Gestational Trophoblastic Disease", secondaryMetastaticNeoplasm: "Secondary (Metastatic) Malignant Neoplasm", colonicPolyps: "Colonic Polyps" };
 
 // --- Medication safety reference (contraindications / adverse events / interactions) ---
 // Reference-level, well-established prescribing information. Not exhaustive —
