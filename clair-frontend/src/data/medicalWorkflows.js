@@ -885,6 +885,206 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Giant Cell Arteritis (Temporal Arteritis)", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK459376/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 4: Acute confusion / delirium ─────────────────────────────────
+  {
+    id: "med-acute-confusion-entry",
+    condition: "Acute confusion (entry pathway)",
+    region: "HEAD",
+    synonyms: ["confusion", "acute confusion", "delirium", "altered mental status", "new confusion"],
+    status: "cited",
+    redFlags: [
+      "A reduced Glasgow Coma Scale or airway compromise",
+      "A new focal neurological deficit",
+      "Fever with neck stiffness",
+      "Pinpoint pupils with a reduced respiratory rate",
+    ],
+    algorithm: [
+      {
+        id: "t1",
+        stage: "Presentation",
+        title: "New confusion — establish onset and the patient's baseline cognition",
+        detail: "Acute onset over hours to days, with a fluctuating course, is the hallmark of delirium rather than an underlying dementia.",
+        next: ["t2"],
+      },
+      {
+        id: "t2",
+        stage: "Stabilise first",
+        title: "Check airway, breathing, circulation and blood glucose immediately",
+        detail: "A fingerprick glucose takes seconds and hypoglycaemia is rapidly reversible — check it before anything else.",
+        next: ["t3"],
+      },
+      {
+        id: "t3",
+        stage: "Screen for reversible causes",
+        title: "Look for the common reversible precipitants before assuming an irreversible cause",
+        branches: [
+          { label: "Low blood glucose on fingerprick testing", to: "med-hypoglycaemia" },
+          { label: "Known heavy alcohol use, tremor, autonomic hyperactivity", to: "med-alcohol-withdrawal-delirium" },
+          { label: "Known liver disease, asterixis, jaundice", to: "med-hepatic-encephalopathy" },
+          { label: "Pinpoint pupils, reduced respiratory rate, known or suspected opioid/sedative use", to: "med-opioid-toxicity" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Delirium", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/delirium.html", licence: "US Government work — public domain" },
+      { title: "Delirium", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470399/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-hypoglycaemia",
+    condition: "Hypoglycaemia",
+    region: "HEAD",
+    synonyms: ["hypoglycaemia", "hypoglycemia", "low blood sugar", "low blood glucose"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or seizure",
+      "Recurrent hypoglycaemia despite treatment — needs further workup for the underlying cause",
+    ],
+    algorithm: [
+      {
+        id: "u1",
+        stage: "Recognise it",
+        title: "Confusion, sweating, tremor or reduced consciousness, especially in a patient on insulin or a sulfonylurea",
+        next: ["u2"],
+      },
+      {
+        id: "u2",
+        stage: "Confirm",
+        title: "Fingerprick blood glucose",
+        detail: "Treat on clinical suspicion in a severely affected patient rather than waiting on testing if that would delay treatment.",
+        next: ["u3"],
+      },
+      {
+        id: "u3",
+        stage: "Decision",
+        title: "Oral fast-acting carbohydrate if able to swallow safely; intravenous glucose or intramuscular glucagon if not",
+        detail: "Recheck glucose after treatment and look for the precipitant — a missed meal, exercise, a medication error, or insulin/sulfonylurea excess.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Low Blood Glucose (Hypoglycemia)", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/diabetes/overview/preventing-problems/low-blood-glucose-hypoglycemia", licence: "US Government work — public domain" },
+      { title: "Hypoglycemia", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/hypoglycemia.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-alcohol-withdrawal-delirium",
+    condition: "Alcohol withdrawal delirium (delirium tremens)",
+    region: "HEAD",
+    synonyms: ["delirium tremens", "alcohol withdrawal", "dts", "alcohol withdrawal delirium"],
+    status: "cited",
+    redFlags: [
+      "Seizure",
+      "Hallucinations with autonomic instability (fever, tachycardia, hypertension) — the hallmark of delirium tremens",
+      "Features suggesting Wernicke's encephalopathy (confusion, ataxia, an eye movement abnormality) — give thiamine before or with any glucose",
+    ],
+    algorithm: [
+      {
+        id: "v1",
+        stage: "History",
+        title: "Reduction or cessation of heavy, regular alcohol use, typically 48 to 96 hours before symptom onset",
+        next: ["v2"],
+      },
+      {
+        id: "v2",
+        stage: "Examination",
+        title: "Tremor, sweating, tachycardia and agitation; hallucinations and disorientation in severe cases",
+        next: ["v3"],
+      },
+      {
+        id: "v3",
+        stage: "Decision",
+        title: "Benzodiazepines are the standard treatment, using a symptom-triggered or fixed-schedule regimen",
+        detail: "ClairMD does not select a dose or regimen — the clinician chooses and titrates it. Give thiamine before or with any glucose to reduce the risk of precipitating Wernicke's encephalopathy.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Alcohol Withdrawal Syndrome", publisher: "National Institute on Alcohol Abuse and Alcoholism (NIAAA), NIH, USA", url: "https://pubs.niaaa.nih.gov/publications/aa05.htm", licence: "US Government work — public domain" },
+      { title: "Delirium tremens", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000766.htm", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-hepatic-encephalopathy",
+    condition: "Hepatic encephalopathy",
+    region: "HEAD",
+    synonyms: ["hepatic encephalopathy", "liver failure confusion", "portosystemic encephalopathy"],
+    status: "cited",
+    redFlags: [
+      "Stupor or coma (grade III-IV encephalopathy) — needs urgent escalation and airway protection",
+      "Signs of an acute precipitant needing urgent treatment in its own right (GI bleeding, infection)",
+    ],
+    algorithm: [
+      {
+        id: "w1",
+        stage: "History",
+        title: "Known cirrhosis or chronic liver disease, with new confusion or altered behaviour",
+        next: ["w2"],
+      },
+      {
+        id: "w2",
+        stage: "Examination",
+        title: "Asterixis (flapping tremor), jaundice, other signs of chronic liver disease",
+        next: ["w3"],
+      },
+      {
+        id: "w3",
+        stage: "Search for a precipitant",
+        title: "Gastrointestinal bleeding, infection (including spontaneous bacterial peritonitis), constipation, electrolyte disturbance, non-adherence or a new sedative",
+        detail: "Treating the precipitant is usually more important than any single test result.",
+        next: ["w4"],
+      },
+      {
+        id: "w4",
+        stage: "Decision",
+        title: "Lactulose as first-line treatment, titrated to soft stool frequency; treat the identified precipitant",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Symptoms & Causes of Cirrhosis", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/liver-disease/cirrhosis", licence: "US Government work — public domain" },
+      { title: "Loss of brain function - liver disease", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000302.htm", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-opioid-toxicity",
+    condition: "Opioid or sedative toxicity",
+    region: "HEAD",
+    synonyms: ["opioid overdose", "opioid toxicity", "sedative toxicity", "opioid poisoning"],
+    status: "cited",
+    redFlags: [
+      "A critically low or absent respiratory rate",
+      "Cyanosis or a critically low oxygen saturation",
+    ],
+    algorithm: [
+      {
+        id: "x1",
+        stage: "Recognise it",
+        title: "Reduced consciousness, pinpoint pupils, and slow or shallow breathing",
+        detail: "Consider it in any unexplained reduced consciousness, not only when opioid use is already known.",
+        next: ["x2"],
+      },
+      {
+        id: "x2",
+        stage: "Stabilise first",
+        title: "Support airway and breathing; give oxygen",
+        next: ["x3"],
+      },
+      {
+        id: "x3",
+        stage: "Decision",
+        title: "Naloxone reverses opioid-induced respiratory depression",
+        detail: "Its effects are shorter-acting than many opioids, so re-sedation can occur — monitor closely after reversal and repeat doses as needed per local protocol.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Naloxone DrugFacts", publisher: "National Institute on Drug Abuse (NIDA), NIH, USA", url: "https://nida.nih.gov/publications/drugfacts/naloxone", licence: "US Government work — public domain" },
+      { title: "Naloxone", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK441910/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
