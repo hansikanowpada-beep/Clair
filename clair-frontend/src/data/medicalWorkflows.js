@@ -1085,6 +1085,208 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Naloxone", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK441910/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 5: Jaundice ────────────────────────────────────────────────────
+  {
+    id: "med-jaundice-entry",
+    condition: "Jaundice (entry pathway)",
+    region: "ABDOMEN",
+    synonyms: ["jaundice", "yellow skin", "yellow eyes", "icterus", "hyperbilirubinaemia"],
+    status: "cited",
+    redFlags: [
+      "Signs of acute liver failure (encephalopathy, coagulopathy)",
+      "Fever, jaundice and right upper quadrant pain together — suggests ascending cholangitis and needs urgent biliary drainage",
+      "Signs of decompensated chronic liver disease (ascites, variceal bleeding, encephalopathy)",
+    ],
+    algorithm: [
+      {
+        id: "y1",
+        stage: "Presentation",
+        title: "New jaundice — establish onset and associated symptoms",
+        detail: "Ask about pain, fever, pale stools/dark urine, itching, alcohol use, medications, and travel or exposure history.",
+        next: ["y2"],
+      },
+      {
+        id: "y2",
+        stage: "Investigate",
+        title: "Split bilirubin (conjugated vs unconjugated) and liver function tests",
+        detail: "The pattern of bilirubin, ALT/AST and ALP/GGT does most of the work in narrowing the differential before imaging is needed.",
+        branches: [
+          { label: "Unconjugated bilirubin predominates, normal liver enzymes", to: "med-haemolytic-jaundice" },
+          { label: "Hepatocellular pattern — ALT/AST much higher than ALP", to: "med-acute-viral-hepatitis" },
+          { label: "Cholestatic pattern — ALP/GGT much higher than ALT/AST, or duct dilatation", to: "med-obstructive-jaundice" },
+          { label: "New medication started before the jaundice began", to: "med-drug-induced-liver-injury" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Jaundice", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000210.htm", licence: "US Government work — public domain" },
+      { title: "Jaundice", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK544252/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-haemolytic-jaundice",
+    condition: "Haemolytic jaundice",
+    region: "ABDOMEN",
+    synonyms: ["haemolytic jaundice", "hemolytic jaundice", "haemolysis", "hemolysis"],
+    status: "cited",
+    redFlags: [
+      "Severe anaemia with haemodynamic compromise",
+      "An acute haemolytic crisis (e.g. in G6PD deficiency or sickle cell disease)",
+    ],
+    algorithm: [
+      {
+        id: "z1",
+        stage: "History",
+        title: "Pallor, fatigue, and dark urine without pale stools",
+        detail: "Ask about a known haemolytic condition or a recent trigger — infection, a new medication, or fava bean ingestion in G6PD deficiency.",
+        next: ["z2"],
+      },
+      {
+        id: "z2",
+        stage: "Bloods",
+        title: "Reticulocyte count, LDH, haptoglobin, blood film",
+        detail: "A raised reticulocyte count and LDH with a low haptoglobin support haemolysis; the blood film often points to the specific cause (spherocytes, sickle cells, schistocytes).",
+        next: ["z3"],
+      },
+      {
+        id: "z3",
+        stage: "Decision",
+        title: "Identify and treat the underlying cause",
+        detail: "Supportive transfusion if anaemia is severe or symptomatic.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Immune hemolytic anemia", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000576.htm", licence: "US Government work — public domain" },
+      { title: "Hemolytic Anemia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK558904/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-acute-viral-hepatitis",
+    condition: "Acute viral hepatitis",
+    region: "ABDOMEN",
+    synonyms: ["viral hepatitis", "acute hepatitis", "hepatitis a", "hepatitis b", "hepatitis c", "hepatitis e"],
+    status: "cited",
+    redFlags: [
+      "Signs of acute liver failure — encephalopathy or a rising INR",
+      "Persistently worsening liver function despite supportive care",
+    ],
+    algorithm: [
+      {
+        id: "aa1",
+        stage: "History",
+        title: "Jaundice with malaise, nausea and right upper quadrant discomfort",
+        detail: "Ask about exposure risk — travel, contaminated food or water, injection drug use, sexual exposure.",
+        next: ["aa2"],
+      },
+      {
+        id: "aa2",
+        stage: "Bloods",
+        title: "Markedly elevated ALT and AST (hepatocellular pattern), hepatitis serology",
+        detail: "Serology identifies the specific virus and distinguishes acute from chronic infection.",
+        next: ["aa3"],
+      },
+      {
+        id: "aa3",
+        stage: "Decision",
+        title: "Mostly supportive care for self-limiting viral hepatitis",
+        detail: "Monitor liver function and coagulation for signs of progression to acute liver failure.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Overview of Viral Hepatitis", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/hepatitis/hcp/clinical-overview/index.html", licence: "US Government work — public domain" },
+      { title: "Hepatitis", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/hepatitis.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-obstructive-jaundice",
+    condition: "Obstructive (cholestatic) jaundice",
+    region: "ABDOMEN",
+    synonyms: ["obstructive jaundice", "cholestatic jaundice", "biliary obstruction", "cholestasis"],
+    status: "cited",
+    redFlags: [
+      "Fever with jaundice and right upper quadrant pain together (Charcot's triad) — suggests ascending cholangitis, needing urgent drainage",
+      "Painless jaundice with weight loss in an older patient — consider malignant biliary obstruction",
+    ],
+    algorithm: [
+      {
+        id: "ab1",
+        stage: "History",
+        title: "Pale stools, dark urine, itching, with or without pain",
+        next: ["ab2"],
+      },
+      {
+        id: "ab2",
+        stage: "Bloods",
+        title: "Conjugated hyperbilirubinaemia with a disproportionately raised ALP and GGT",
+        next: ["ab3"],
+      },
+      {
+        id: "ab3",
+        stage: "Imaging",
+        title: "Abdominal ultrasound first-line, looking for bile duct dilatation and its cause",
+        detail: "Further imaging (MRCP, CT) or endoscopic assessment (ERCP) is guided by the ultrasound findings.",
+        next: ["ab4"],
+      },
+      {
+        id: "ab4",
+        stage: "Decision",
+        title: "Biliary drainage (endoscopic, percutaneous or surgical) for confirmed obstruction",
+        detail: "Urgent drainage if cholangitis is present.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Gallstones", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/digestive-diseases/gallstones", licence: "US Government work — public domain" },
+      { title: "Cholestatic Jaundice", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482279/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-drug-induced-liver-injury",
+    condition: "Drug-induced liver injury",
+    region: "ABDOMEN",
+    synonyms: ["drug induced liver injury", "dili", "drug induced hepatotoxicity"],
+    status: "cited",
+    redFlags: [
+      "Signs of acute liver failure",
+      "Jaundice with a hepatocellular pattern and a rising INR — a poor prognostic combination",
+    ],
+    algorithm: [
+      {
+        id: "ac1",
+        stage: "History",
+        title: "A temporal relationship between starting a new medication and the onset of liver injury",
+        detail: "Ask specifically about over-the-counter medications, herbal remedies and supplements, which are easily overlooked.",
+        next: ["ac2"],
+      },
+      {
+        id: "ac2",
+        stage: "Pattern",
+        title: "Classify the injury as hepatocellular, cholestatic, or mixed using the ALT:ALP ratio",
+        next: ["ac3"],
+      },
+      {
+        id: "ac3",
+        stage: "Causality",
+        title: "Named causality assessment tools exist (e.g. RUCAM) — name only",
+        detail: "ClairMD does not score causality. The clinician assesses it using the named tool, alongside excluding other causes.",
+        next: ["ac4"],
+      },
+      {
+        id: "ac4",
+        stage: "Decision",
+        title: "Stop the suspected drug and monitor liver function to resolution",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Drug-Induced Hepatotoxicity", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK557535/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Categorization of the Likelihood of Drug Induced Liver Injury", publisher: "LiverTox, NIDDK/National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK548392/", licence: "US Government work — public domain" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
