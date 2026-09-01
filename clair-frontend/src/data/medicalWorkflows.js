@@ -1710,6 +1710,193 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Inflammatory Bowel Disease", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470312/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 8: Acute leg swelling ──────────────────────────────────────────
+  // The bilateral-swelling branch deliberately targets the existing
+  // med-acute-heart-failure entry from Cluster 2 instead of duplicating it.
+  {
+    id: "med-leg-swelling-entry",
+    condition: "Leg swelling (entry pathway)",
+    region: "LEG",
+    synonyms: ["leg swelling", "leg oedema", "leg edema", "swollen leg", "calf swelling"],
+    status: "cited",
+    redFlags: [
+      "Signs of compartment syndrome (severe pain out of proportion, tense swelling)",
+      "Suspected cellulitis with systemic sepsis",
+      "Breathlessness or pleuritic chest pain alongside the leg swelling",
+    ],
+    algorithm: [
+      {
+        id: "ao1",
+        stage: "Presentation",
+        title: "Leg swelling — establish whether it is unilateral or bilateral, and how quickly it developed",
+        detail: "Bilateral swelling more often points to a systemic cause (heart failure, renal or liver disease, medication); unilateral swelling more often points to a local cause.",
+        next: ["ao2"],
+      },
+      {
+        id: "ao2",
+        stage: "Characterise it",
+        title: "Use the pattern and associated findings to narrow the cause",
+        branches: [
+          { label: "Unilateral swelling, pain, warmth — possible clot", to: "med-deep-vein-thrombosis" },
+          { label: "Unilateral erythema, warmth, tenderness, fever", to: "med-cellulitis-leg" },
+          { label: "Chronic swelling, varicose veins, skin pigmentation change", to: "med-chronic-venous-insufficiency" },
+          { label: "Sudden calf pain and swelling, or a known lump behind the knee", to: "med-ruptured-bakers-cyst" },
+          { label: "Bilateral swelling with orthopnoea and a known cardiac history", to: "med-acute-heart-failure" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Swelling", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/003103.htm", licence: "US Government work — public domain" },
+      { title: "Peripheral Edema", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK554452/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-deep-vein-thrombosis",
+    condition: "Deep vein thrombosis",
+    region: "LEG",
+    synonyms: ["deep vein thrombosis", "dvt", "blood clot leg", "venous thrombosis"],
+    status: "cited",
+    redFlags: [
+      "Signs of pulmonary embolism accompanying the leg symptoms",
+      "Phlegmasia (a severely swollen, painful, discoloured limb) — a vascular emergency",
+    ],
+    algorithm: [
+      {
+        id: "ap1",
+        stage: "History and examination",
+        title: "Unilateral leg swelling, pain, warmth, and sometimes calf tenderness",
+        next: ["ap2"],
+      },
+      {
+        id: "ap2",
+        stage: "Pre-test probability",
+        title: "A named clinical prediction rule exists (Wells score) — name only",
+        detail: "ClairMD does not calculate the score; the clinician applies their own judgement using the named tool.",
+        next: ["ap3"],
+      },
+      {
+        id: "ap3",
+        stage: "Investigate",
+        title: "D-dimer if pre-test probability is low; compression ultrasound if probability is higher or D-dimer is positive",
+        next: ["ap4"],
+      },
+      {
+        id: "ap4",
+        stage: "Decision",
+        title: "Anticoagulation once confirmed",
+        detail: "Duration and choice of agent depend on the provoking factor and bleeding risk, decided by the clinician.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Venous Thromboembolism - Diagnosis", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/venous-thromboembolism/diagnosis", licence: "US Government work — public domain" },
+      { title: "Deep Venous Thrombosis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK507708/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-cellulitis-leg",
+    condition: "Cellulitis of the leg",
+    region: "LEG",
+    synonyms: ["cellulitis", "leg cellulitis", "skin infection leg"],
+    status: "cited",
+    redFlags: [
+      "Rapidly spreading erythema, pain out of proportion to examination findings, or skin necrosis — consider necrotising fasciitis",
+      "Systemic sepsis",
+    ],
+    algorithm: [
+      {
+        id: "aq1",
+        stage: "History and examination",
+        title: "Unilateral erythema, warmth, swelling and tenderness, often with fever",
+        detail: "Mark the border of the erythema to help track progression or response to treatment.",
+        next: ["aq2"],
+      },
+      {
+        id: "aq2",
+        stage: "Decision",
+        title: "Antibiotics targeting the likely organisms, chosen per local guidance",
+        detail: "Mild cases can often be managed with oral antibiotics; systemic toxicity or failure to improve warrants escalation and reassessment.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Guidance for Group A Streptococcal Cellulitis", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/group-a-strep/hcp/clinical-guidance/cellulitis.html", licence: "US Government work — public domain" },
+      { title: "Cellulitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK549770/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-chronic-venous-insufficiency",
+    condition: "Chronic venous insufficiency",
+    region: "LEG",
+    synonyms: ["chronic venous insufficiency", "venous insufficiency", "venous oedema", "venous stasis"],
+    status: "cited",
+    redFlags: [
+      "A new venous leg ulcer with signs of infection",
+      "Sudden worsening of chronic swelling — reconsider an acute cause such as DVT",
+    ],
+    algorithm: [
+      {
+        id: "ar1",
+        stage: "History",
+        title: "Chronic, often bilateral, swelling that worsens through the day and improves with elevation",
+        next: ["ar2"],
+      },
+      {
+        id: "ar2",
+        stage: "Examination",
+        title: "Varicose veins, skin pigmentation (haemosiderin staining), lipodermatosclerosis, or a venous ulcer in advanced disease",
+        next: ["ar3"],
+      },
+      {
+        id: "ar3",
+        stage: "Decision",
+        title: "Compression therapy is the mainstay of management once significant arterial disease has been excluded",
+        detail: "Check ankle-brachial pressure index before compression if arterial disease is a concern.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Venous insufficiency", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000203.htm", licence: "US Government work — public domain" },
+      { title: "Venous Insufficiency", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430975/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-ruptured-bakers-cyst",
+    condition: "Ruptured Baker's cyst",
+    region: "LEG",
+    synonyms: ["baker's cyst", "bakers cyst", "popliteal cyst", "ruptured baker's cyst"],
+    status: "cited",
+    redFlags: [
+      "Clinical features alone cannot reliably distinguish a ruptured Baker's cyst from DVT — both need imaging",
+    ],
+    algorithm: [
+      {
+        id: "as1",
+        stage: "History",
+        title: "Sudden calf pain and swelling, sometimes with bruising tracking down towards the ankle",
+        detail: "Ask about a known lump behind the knee (the intact cyst) predating the acute episode.",
+        next: ["as2"],
+      },
+      {
+        id: "as2",
+        stage: "Investigate",
+        title: "Ultrasound distinguishes a ruptured Baker's cyst from DVT",
+        detail: "The two can coexist, and a ruptured cyst can itself cause a DVT through compression — ultrasound findings guide management either way.",
+        next: ["as3"],
+      },
+      {
+        id: "as3",
+        stage: "Decision",
+        title: "Supportive management (rest, analgesia) once DVT has been excluded, or treated if also present",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Baker's Cyst", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430774/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
