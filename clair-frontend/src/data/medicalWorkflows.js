@@ -376,6 +376,281 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Diagnosis of GER & GERD", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/digestive-diseases/acid-reflux-ger-gerd-adults/diagnosis", licence: "US Government work — public domain" },
     ],
   },
+
+  // ── Cluster 2: Acute breathlessness ──────────────────────────────────────
+  // Two branches ("Pleuritic pain, risk factors for clot" and "Sudden
+  // pleuritic pain, reduced breath sounds one side") deliberately target
+  // med-pulmonary-embolism and med-spontaneous-pneumothorax from Cluster 1
+  // rather than duplicating them — the two clusters are meant to interlink
+  // exactly like the surgical library's entry pathways do.
+  {
+    id: "med-breathlessness-entry",
+    condition: "Breathlessness (entry pathway)",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
+    region: "CHEST",
+    synonyms: ["breathlessness", "dyspnoea", "dyspnea", "shortness of breath", "sob", "difficulty breathing"],
+    status: "cited",
+    redFlags: [
+      "Silent chest, exhaustion or a reduced conscious level",
+      "Cyanosis or a critically low oxygen saturation",
+      "Stridor or audible upper airway obstruction",
+      "Urticaria, angioedema or hypotension after a likely allergen exposure",
+    ],
+    algorithm: [
+      {
+        id: "h1",
+        stage: "Presentation",
+        title: "Breathlessness — establish the speed of onset",
+        detail: "Sudden onset points toward pulmonary embolism, pneumothorax or anaphylaxis; onset over hours to days points toward infection or heart failure; a background of known airway disease points toward an exacerbation of it.",
+        next: ["h2"],
+      },
+      {
+        id: "h2",
+        stage: "Stabilise first",
+        title: "Assess airway, breathing, circulation; give oxygen while assessing",
+        next: ["h3"],
+      },
+      {
+        id: "h3",
+        stage: "History and examination",
+        title: "Wheeze, known asthma/COPD, orthopnoea and ankle swelling, fever, recent allergen exposure",
+        branches: [
+          { label: "Known asthma, widespread wheeze, reduced peak flow", to: "med-acute-severe-asthma" },
+          { label: "Known COPD, more breathless or more sputum than baseline", to: "med-copd-exacerbation" },
+          { label: "Orthopnoea, ankle oedema, bibasal crackles", to: "med-acute-heart-failure" },
+          { label: "Fever, productive cough, focal chest signs", to: "med-community-acquired-pneumonia" },
+          { label: "Pleuritic pain, risk factors for clot", to: "med-pulmonary-embolism" },
+          { label: "Sudden pleuritic pain, reduced breath sounds one side", to: "med-spontaneous-pneumothorax" },
+          { label: "Urticaria, angioedema, exposure to a known trigger", to: "med-anaphylaxis" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Breathing difficulty", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/003075.htm", licence: "US Government work — public domain" },
+      { title: "Dyspnea", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK499965/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-acute-severe-asthma",
+    condition: "Acute severe asthma",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
+    region: "CHEST",
+    synonyms: ["asthma attack", "acute asthma", "status asthmaticus", "asthma exacerbation"],
+    status: "cited",
+    redFlags: [
+      "Silent chest, exhaustion, confusion or a reduced conscious level",
+      "Bradycardia or a new arrhythmia",
+      "Inability to complete sentences in one breath",
+    ],
+    algorithm: [
+      {
+        id: "i1",
+        stage: "History",
+        title: "Progressive wheeze, cough and chest tightness, often with a known trigger",
+        detail: "Ask about prior ICU admissions or near-fatal attacks — a strong predictor of severity this time too.",
+        next: ["i2"],
+      },
+      {
+        id: "i2",
+        stage: "Examination",
+        title: "Respiratory rate, accessory muscle use, ability to complete sentences, peak expiratory flow",
+        next: ["i3"],
+      },
+      {
+        id: "i3",
+        stage: "Severity",
+        title: "Named severity bands exist (moderate / acute severe / life-threatening) — name only",
+        detail: "ClairMD does not grade severity. The clinician assesses and classifies using the named criteria.",
+        next: ["i4"],
+      },
+      {
+        id: "i4",
+        stage: "Decision",
+        title: "High-flow oxygen, nebulised bronchodilators and systemic corticosteroids",
+        detail: "Escalate to critical care for life-threatening features or any sign of exhaustion — do not wait for deterioration on a ward.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Asthma", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/asthma", licence: "US Government work — public domain" },
+      { title: "Status Asthmaticus", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK526070/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-copd-exacerbation",
+    condition: "COPD exacerbation",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
+    region: "CHEST",
+    synonyms: ["copd exacerbation", "copd flare", "acute copd", "chronic bronchitis flare"],
+    status: "cited",
+    redFlags: [
+      "Type 2 respiratory failure with worsening acidosis on blood gas",
+      "A reduced conscious level",
+      "Haemodynamic instability",
+    ],
+    algorithm: [
+      {
+        id: "j1",
+        stage: "History",
+        title: "Increased breathlessness, sputum volume or sputum purulence from baseline",
+        detail: "Establish the patient's usual baseline function and home oxygen/inhaler regimen for comparison.",
+        next: ["j2"],
+      },
+      {
+        id: "j2",
+        stage: "Investigate",
+        title: "Arterial blood gas, chest X-ray, sputum culture if purulent",
+        detail: "Blood gas identifies type 2 respiratory failure and guides safe oxygen targets.",
+        next: ["j3"],
+      },
+      {
+        id: "j3",
+        stage: "Decision",
+        title: "Controlled oxygen therapy, bronchodilators, corticosteroids; antibiotics if features of infection",
+        detail: "Non-invasive ventilation is considered for persistent respiratory acidosis despite initial medical therapy.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "COPD", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/copd", licence: "US Government work — public domain" },
+      { title: "Chronic Obstructive Pulmonary Disease (COPD)", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK559281/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-acute-heart-failure",
+    condition: "Acute heart failure / acute pulmonary oedema",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
+    region: "CHEST",
+    synonyms: ["acute heart failure", "pulmonary oedema", "pulmonary edema", "decompensated heart failure"],
+    status: "cited",
+    redFlags: [
+      "Cardiogenic shock",
+      "Severe hypoxia despite high-flow oxygen",
+    ],
+    algorithm: [
+      {
+        id: "k1",
+        stage: "History",
+        title: "Orthopnoea, paroxysmal nocturnal dyspnoea, ankle swelling",
+        detail: "Ask about a known cardiac history, medication adherence and any recent dietary salt/fluid indiscretion.",
+        next: ["k2"],
+      },
+      {
+        id: "k2",
+        stage: "Examination",
+        title: "Bibasal crackles, raised jugular venous pressure, peripheral oedema, gallop rhythm",
+        next: ["k3"],
+      },
+      {
+        id: "k3",
+        stage: "Investigate",
+        title: "BNP/NT-proBNP, chest X-ray, echocardiography",
+        detail: "A normal natriuretic peptide makes acute heart failure unlikely; chest X-ray and echo characterise the picture further.",
+        next: ["k4"],
+      },
+      {
+        id: "k4",
+        stage: "Decision",
+        title: "Sit the patient up, oxygen if hypoxic, intravenous diuretic",
+        detail: "Identify and treat a precipitant (arrhythmia, ischaemia, infection, non-adherence) alongside symptomatic treatment.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Heart Failure", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/heart-failure", licence: "US Government work — public domain" },
+      { title: "Heart Failure — Diagnosis", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/heart-failure/diagnosis", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-community-acquired-pneumonia",
+    condition: "Community-acquired pneumonia",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
+    region: "CHEST",
+    synonyms: ["pneumonia", "community acquired pneumonia", "cap", "chest infection"],
+    status: "cited",
+    redFlags: [
+      "Confusion, hypotension or a high respiratory rate — features of severe pneumonia",
+      "Multilobar involvement on imaging",
+    ],
+    algorithm: [
+      {
+        id: "l1",
+        stage: "History",
+        title: "Fever, productive cough, pleuritic chest pain, breathlessness",
+        next: ["l2"],
+      },
+      {
+        id: "l2",
+        stage: "Examination",
+        title: "Focal crackles or bronchial breathing, reduced oxygen saturation",
+        next: ["l3"],
+      },
+      {
+        id: "l3",
+        stage: "Severity",
+        title: "Named severity score (CURB-65) exists — name only",
+        detail: "ClairMD does not compute the score. The clinician calculates it and uses it to guide the site of care.",
+        next: ["l4"],
+      },
+      {
+        id: "l4",
+        stage: "Investigate",
+        title: "Chest X-ray, blood cultures and sputum culture before antibiotics where possible",
+        next: ["l5"],
+      },
+      {
+        id: "l5",
+        stage: "Decision",
+        title: "Empirical antibiotics per local guidance; escalate care setting according to severity",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Pneumonia", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/pneumonia", licence: "US Government work — public domain" },
+      { title: "Community-Acquired Pneumonia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430749/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-anaphylaxis",
+    condition: "Anaphylaxis",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
+    region: "CHEST",
+    synonyms: ["anaphylaxis", "anaphylactic reaction", "severe allergic reaction"],
+    status: "cited",
+    redFlags: [
+      "Airway swelling or stridor",
+      "Hypotension or a reduced conscious level",
+      "Rapidly progressive symptoms after a known allergen exposure",
+    ],
+    algorithm: [
+      {
+        id: "m1",
+        stage: "Recognise it",
+        title: "Sudden onset with airway, breathing or circulation compromise, usually with skin/mucosal changes",
+        detail: "Urticaria, angioedema or flushing support the diagnosis but are not always present — do not wait for a rash before treating.",
+        next: ["m2"],
+      },
+      {
+        id: "m2",
+        stage: "Decision",
+        title: "Intramuscular adrenaline (epinephrine) as first-line treatment, given promptly",
+        detail: "Remove the trigger if still present, lie the patient flat with legs raised (or sitting if breathless) and call for help early — do not delay adrenaline waiting for other treatments.",
+        next: ["m3"],
+      },
+      {
+        id: "m3",
+        stage: "Supportive care",
+        title: "Oxygen, IV fluids for hypotension, monitor for a biphasic reaction",
+        detail: "A biphasic reaction can occur hours after apparent resolution, so observation after treatment is part of the pathway, not an afterthought.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Anaphylaxis", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/anaphylaxis.html", licence: "US Government work — public domain" },
+      { title: "Anaphylaxis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482124/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
