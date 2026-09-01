@@ -13,12 +13,13 @@
  * DIAGNOSIS_META's ~500 general-medicine conditions.
  *
  * ── PROVENANCE ────────────────────────────────────────────────────────────
- * Murtagh's General Practice supplied a chapter/topic REFERENCE only (the
- * `chapterRef` field below), the same practice already established for
- * DIFFERENTIAL_TEMPLATES in ClairMDEHR.jsx. No text, table or figure from
- * any commercial textbook is reproduced anywhere in this file. Every
- * pathway is written independently and linked to a freely accessible
- * source.
+ * No commercial textbook is referenced anywhere in this file — not for
+ * content, and not even as a chapter/topic pointer (earlier entries carried
+ * a `chapterRef: "cf. Murtagh's General Practice, Ch. ..."` note the same
+ * way DIFFERENTIAL_TEMPLATES in ClairMDEHR.jsx still does; that field has
+ * been removed here per standing instruction — this file cites only free,
+ * open-access sources). Every pathway is written independently and linked
+ * to one of those sources directly.
  *
  * ── SOURCING RULE ─────────────────────────────────────────────────────────
  * Prefer public-domain/NIH-affiliated sources (NHLBI / NIDDK / NCI / CDC /
@@ -49,7 +50,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-chest-pain-entry",
     condition: "Chest pain (entry pathway)",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 30 \"Chest pain\"",
     region: "CHEST",
     synonyms: ["chest pain", "chest discomfort", "central chest pain", "chest tightness"],
     status: "cited",
@@ -105,7 +105,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-acute-coronary-syndrome",
     condition: "Acute coronary syndrome",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 30 \"Chest pain\"",
     region: "CHEST",
     synonyms: ["acs", "heart attack", "myocardial infarction", "unstable angina", "stemi", "nstemi"],
     status: "cited",
@@ -159,7 +158,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-pulmonary-embolism",
     condition: "Pulmonary embolism",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
     region: "CHEST",
     synonyms: ["pe", "pulmonary embolism", "blood clot lung", "pulmonary embolus"],
     status: "cited",
@@ -206,7 +204,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-aortic-dissection",
     condition: "Aortic dissection",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 30 \"Chest pain\"",
     region: "CHEST",
     synonyms: ["aortic dissection", "tearing chest pain", "dissecting aneurysm"],
     status: "cited",
@@ -252,7 +249,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-acute-pericarditis",
     condition: "Acute pericarditis",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 30 \"Chest pain\"",
     region: "CHEST",
     synonyms: ["pericarditis", "pericardial pain"],
     status: "cited",
@@ -297,7 +293,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-spontaneous-pneumothorax",
     condition: "Spontaneous pneumothorax",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
     region: "CHEST",
     synonyms: ["pneumothorax", "collapsed lung"],
     status: "cited",
@@ -341,7 +336,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-gerd-chest-pain",
     condition: "GERD-related (non-cardiac) chest pain",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 30 \"Chest pain\"",
     region: "CHEST",
     synonyms: ["gerd chest pain", "non-cardiac chest pain", "reflux chest pain", "heartburn"],
     status: "cited",
@@ -386,7 +380,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-breathlessness-entry",
     condition: "Breathlessness (entry pathway)",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
     region: "CHEST",
     synonyms: ["breathlessness", "dyspnoea", "dyspnea", "shortness of breath", "sob", "difficulty breathing"],
     status: "cited",
@@ -434,7 +427,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-acute-severe-asthma",
     condition: "Acute severe asthma",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
     region: "CHEST",
     synonyms: ["asthma attack", "acute asthma", "status asthmaticus", "asthma exacerbation"],
     status: "cited",
@@ -480,7 +472,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-copd-exacerbation",
     condition: "COPD exacerbation",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
     region: "CHEST",
     synonyms: ["copd exacerbation", "copd flare", "acute copd", "chronic bronchitis flare"],
     status: "cited",
@@ -520,7 +511,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-acute-heart-failure",
     condition: "Acute heart failure / acute pulmonary oedema",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
     region: "CHEST",
     synonyms: ["acute heart failure", "pulmonary oedema", "pulmonary edema", "decompensated heart failure"],
     status: "cited",
@@ -565,7 +555,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-community-acquired-pneumonia",
     condition: "Community-acquired pneumonia",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
     region: "CHEST",
     synonyms: ["pneumonia", "community acquired pneumonia", "cap", "chest infection"],
     status: "cited",
@@ -614,7 +603,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-anaphylaxis",
     condition: "Anaphylaxis",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 38 \"Dyspnoea\"",
     region: "CHEST",
     synonyms: ["anaphylaxis", "anaphylactic reaction", "severe allergic reaction"],
     status: "cited",
@@ -656,7 +644,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-headache-entry",
     condition: "Headache (entry pathway)",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
     region: "HEAD",
     synonyms: ["headache", "head pain", "cephalgia"],
     status: "cited",
@@ -703,7 +690,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-migraine",
     condition: "Migraine",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
     region: "HEAD",
     synonyms: ["migraine", "migraine headache", "migraine with aura", "migraine without aura"],
     status: "cited",
@@ -741,7 +727,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-tension-headache",
     condition: "Tension-type headache",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
     region: "HEAD",
     synonyms: ["tension headache", "tension-type headache", "stress headache"],
     status: "cited",
@@ -778,7 +763,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-subarachnoid-haemorrhage",
     condition: "Subarachnoid haemorrhage",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
     region: "HEAD",
     synonyms: ["subarachnoid haemorrhage", "subarachnoid hemorrhage", "sah", "thunderclap headache"],
     status: "cited",
@@ -822,7 +806,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-bacterial-meningitis",
     condition: "Bacterial meningitis",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
     region: "HEAD",
     synonyms: ["meningitis", "bacterial meningitis", "meningococcal disease"],
     status: "cited",
@@ -862,7 +845,6 @@ export const MEDICAL_WORKFLOWS = [
   {
     id: "med-giant-cell-arteritis",
     condition: "Giant cell arteritis",
-    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
     region: "HEAD",
     synonyms: ["giant cell arteritis", "temporal arteritis", "gca"],
     status: "cited",
