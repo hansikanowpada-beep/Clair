@@ -26491,8 +26491,13 @@ const LIBRARY_MODAL_CONFIG = {
     // searching here doesn't know or care which library a condition came
     // from — only that ClairMD covers it.
     getItems: () => {
-      const general = Object.keys(DIAGNOSIS_META).map((k) => ({ key: k, name: DIAGNOSIS_LABEL[k], meta: DIAGNOSIS_META[k], kind: "diagnosisMeta" }));
-      const surgical = WORKFLOWS.map((w) => ({ key: w.id, name: w.condition, workflow: w, kind: "surgicalWorkflow" }));
+      // Keys are namespaced by source ("dx-"/"wf-") because a DIAGNOSIS_META
+      // key and a WORKFLOWS id can be the identical string for the same
+      // everyday condition (e.g. both use "erysipelas"). Unprefixed keys
+      // collided across the two libraries once merged, which made React
+      // misrender the list (duplicate/stale rows) whenever it re-filtered.
+      const general = Object.keys(DIAGNOSIS_META).map((k) => ({ key: `dx-${k}`, name: DIAGNOSIS_LABEL[k], meta: DIAGNOSIS_META[k], kind: "diagnosisMeta" }));
+      const surgical = WORKFLOWS.map((w) => ({ key: `wf-${w.id}`, name: w.condition, workflow: w, kind: "surgicalWorkflow" }));
       return [...general, ...surgical].sort((a, b) => a.name.localeCompare(b.name));
     },
     filterItem: (item, q) => item.name.toLowerCase().includes(q),
