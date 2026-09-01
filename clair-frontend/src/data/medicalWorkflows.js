@@ -651,6 +651,258 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Anaphylaxis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482124/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 3: Headache ───────────────────────────────────────────────────
+  {
+    id: "med-headache-entry",
+    condition: "Headache (entry pathway)",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
+    region: "HEAD",
+    synonyms: ["headache", "head pain", "cephalgia"],
+    status: "cited",
+    redFlags: [
+      "Thunderclap headache — maximal intensity within seconds to minutes",
+      "Fever with neck stiffness or photophobia",
+      "New headache in a patient over 50, especially with jaw claudication or visual disturbance",
+      "Headache with a new focal neurological deficit, seizure or reduced consciousness",
+      "Headache worse lying down, on straining, or waking the patient from sleep",
+    ],
+    algorithm: [
+      {
+        id: "n1",
+        stage: "Presentation",
+        title: "Headache — establish speed of onset and whether it is the worst or first of its kind",
+        detail: "A genuinely new pattern in a known headache sufferer is treated with the same caution as a first presentation.",
+        next: ["n2"],
+      },
+      {
+        id: "n2",
+        stage: "Stabilise first",
+        title: "Assess conscious level and look for focal neurological signs before further workup",
+        next: ["n3"],
+      },
+      {
+        id: "n3",
+        stage: "History and examination",
+        title: "Onset pattern, associated symptoms, age, and examination findings",
+        branches: [
+          { label: "Thunderclap onset, worst headache of life", to: "med-subarachnoid-haemorrhage" },
+          { label: "Fever, neck stiffness, photophobia", to: "med-bacterial-meningitis" },
+          { label: "Age over 50, jaw claudication, scalp tenderness or visual symptoms", to: "med-giant-cell-arteritis" },
+          { label: "Episodic, unilateral, with nausea and photophobia, +/- aura", to: "med-migraine" },
+          { label: "Bilateral, pressing or tightening, no red flags", to: "med-tension-headache" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Headache", publisher: "National Institute of Neurological Disorders and Stroke (NINDS), NIH, USA", url: "https://www.ninds.nih.gov/health-information/disorders/headache", licence: "US Government work — public domain" },
+      { title: "Headache", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/headache.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-migraine",
+    condition: "Migraine",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
+    region: "HEAD",
+    synonyms: ["migraine", "migraine headache", "migraine with aura", "migraine without aura"],
+    status: "cited",
+    redFlags: [
+      "A sudden change in the usual pattern, or a genuinely new type of headache, in a known migraine sufferer",
+      "Aura lasting longer than an hour, or with focal weakness",
+    ],
+    algorithm: [
+      {
+        id: "o1",
+        stage: "History",
+        title: "Episodic, often unilateral, throbbing headache with nausea, photophobia and phonophobia",
+        detail: "Ask specifically about aura (visual, sensory or speech disturbance preceding or accompanying the headache) and typical attack frequency.",
+        next: ["o2"],
+      },
+      {
+        id: "o2",
+        stage: "Diagnostic criteria",
+        title: "Named diagnostic criteria exist (ICHD) — name only",
+        detail: "ClairMD does not apply the criteria itself. Diagnosis is clinical, based on the pattern of attacks over time.",
+        next: ["o3"],
+      },
+      {
+        id: "o3",
+        stage: "Decision",
+        title: "Acute treatment for individual attacks; consider preventive therapy if attacks are frequent or disabling",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Migraine", publisher: "National Institute of Neurological Disorders and Stroke (NINDS), NIH, USA", url: "https://www.ninds.nih.gov/health-information/disorders/migraine", licence: "US Government work — public domain" },
+      { title: "Migraine", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/migraine.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-tension-headache",
+    condition: "Tension-type headache",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
+    region: "HEAD",
+    synonyms: ["tension headache", "tension-type headache", "stress headache"],
+    status: "cited",
+    redFlags: [
+      "Any red flag feature from the headache entry pathway should prompt reconsidering this diagnosis, not defaulting to it",
+    ],
+    algorithm: [
+      {
+        id: "p1",
+        stage: "History",
+        title: "Bilateral, pressing or tightening headache, mild-to-moderate intensity",
+        detail: "Typically not aggravated by routine physical activity, and without significant nausea.",
+        next: ["p2"],
+      },
+      {
+        id: "p2",
+        stage: "Examination",
+        title: "Normal neurological examination; pericranial muscle tenderness may be present",
+        next: ["p3"],
+      },
+      {
+        id: "p3",
+        stage: "Decision",
+        title: "Simple analgesia and addressing likely triggers (stress, posture, sleep, eye strain)",
+        detail: "Watch for medication-overuse headache with frequent analgesic use — a common cause of chronic daily headache.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Tension headache", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000797.htm", licence: "US Government work — public domain" },
+      { title: "Muscle Contraction Tension Headache", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK562274/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-subarachnoid-haemorrhage",
+    condition: "Subarachnoid haemorrhage",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
+    region: "HEAD",
+    synonyms: ["subarachnoid haemorrhage", "subarachnoid hemorrhage", "sah", "thunderclap headache"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or a new focal neurological deficit",
+      "Recurrent thunderclap episodes",
+    ],
+    algorithm: [
+      {
+        id: "q1",
+        stage: "History",
+        title: "Sudden, severe headache, maximal at onset — the \"worst headache of my life\"",
+        next: ["q2"],
+      },
+      {
+        id: "q2",
+        stage: "Imaging",
+        title: "Non-contrast CT head — most sensitive within the first 6 hours of onset",
+        next: ["q3"],
+      },
+      {
+        id: "q3",
+        stage: "Further test",
+        title: "Lumbar puncture if CT is negative and clinical suspicion remains",
+        detail: "Looking for xanthochromia; timed appropriately after the headache onset per local protocol.",
+        next: ["q4"],
+      },
+      {
+        id: "q4",
+        stage: "Decision",
+        title: "Urgent neurosurgical or neurointerventional referral once confirmed",
+        detail: "Aneurysm securing (coiling or clipping) prevents re-bleeding, which carries a high mortality if it occurs.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Subarachnoid Hemorrhage", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK441958/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Cerebral Aneurysms", publisher: "National Institute of Neurological Disorders and Stroke (NINDS), NIH, USA", url: "https://www.ninds.nih.gov/health-information/disorders/cerebral-aneurysms", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-bacterial-meningitis",
+    condition: "Bacterial meningitis",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
+    region: "HEAD",
+    synonyms: ["meningitis", "bacterial meningitis", "meningococcal disease"],
+    status: "cited",
+    redFlags: [
+      "A non-blanching rash (suggests meningococcaemia)",
+      "Reduced consciousness or focal neurological signs",
+      "Signs of septic shock",
+    ],
+    algorithm: [
+      {
+        id: "r1",
+        stage: "History and examination",
+        title: "Fever, headache, neck stiffness, photophobia",
+        detail: "Classic signs (Kernig's, Brudzinski's) support the diagnosis when present but their absence does not exclude it.",
+        next: ["r2"],
+      },
+      {
+        id: "r2",
+        stage: "Decision",
+        title: "Give empirical antibiotics without delay once bacterial meningitis is suspected",
+        detail: "Do not wait for lumbar puncture or imaging to give the first dose of antibiotics — treatment delay measurably worsens outcome.",
+        next: ["r3"],
+      },
+      {
+        id: "r3",
+        stage: "Investigate",
+        title: "Blood cultures, lumbar puncture once safe to do so",
+        detail: "CT head first if there are signs of raised intracranial pressure or a focal deficit, to check it is safe to proceed to lumbar puncture.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "About Meningitis", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/meningitis/about/index.html", licence: "US Government work — public domain" },
+      { title: "Clinical Guidance for Meningococcal Disease", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/meningococcal/hcp/clinical-guidance/index.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-giant-cell-arteritis",
+    condition: "Giant cell arteritis",
+    chapterRef: "cf. Murtagh's General Practice, Ch. 27 \"Headache\"",
+    region: "HEAD",
+    synonyms: ["giant cell arteritis", "temporal arteritis", "gca"],
+    status: "cited",
+    redFlags: [
+      "Any visual disturbance — needs urgent same-day assessment, since untreated GCA can cause sudden, irreversible vision loss",
+    ],
+    algorithm: [
+      {
+        id: "s1",
+        stage: "History",
+        title: "New headache in a patient over 50, scalp tenderness, jaw claudication",
+        detail: "Ask about associated polymyalgia rheumatica symptoms (proximal shoulder and hip girdle stiffness) — the two conditions frequently overlap.",
+        next: ["s2"],
+      },
+      {
+        id: "s2",
+        stage: "Bloods",
+        title: "ESR and CRP — typically markedly elevated",
+        next: ["s3"],
+      },
+      {
+        id: "s3",
+        stage: "Decision",
+        title: "Start high-dose corticosteroids immediately on clinical suspicion",
+        detail: "Do not wait for biopsy confirmation before treating — the risk of vision loss outweighs the risk of a short delay to biopsy.",
+        next: ["s4"],
+      },
+      {
+        id: "s4",
+        stage: "Confirm",
+        title: "Temporal artery biopsy, ideally within one to two weeks of starting steroids",
+        detail: "A negative biopsy does not fully exclude the diagnosis given \"skip lesions\" in the artery — clinical judgement remains central.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Polymyalgia Rheumatica and Giant Cell Arteritis", publisher: "National Institute of Arthritis and Musculoskeletal and Skin Diseases (NIAMS), NIH, USA", url: "https://www.niams.nih.gov/health-topics/polymyalgia-rheumatica-giant-cell-arteritis", licence: "US Government work — public domain" },
+      { title: "Giant Cell Arteritis (Temporal Arteritis)", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK459376/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
