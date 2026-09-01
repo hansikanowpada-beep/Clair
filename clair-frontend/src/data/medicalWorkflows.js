@@ -1516,6 +1516,200 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Anxiety", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/anxiety.html", licence: "US Government work — public domain" },
     ],
   },
+
+  // ── Cluster 7: Acute diarrhoea ─────────────────────────────────────────────
+  {
+    id: "med-acute-diarrhoea-entry",
+    condition: "Acute diarrhoea (entry pathway)",
+    region: "ABDOMEN",
+    synonyms: ["diarrhoea", "diarrhea", "loose stools", "acute diarrhoea"],
+    status: "cited",
+    redFlags: [
+      "Signs of severe dehydration (reduced consciousness, very low blood pressure, minimal urine output)",
+      "Bloody diarrhoea with high fever or systemic toxicity",
+      "Severe abdominal pain out of proportion to the diarrhoea",
+      "New diarrhoea following recent antibiotic use",
+    ],
+    algorithm: [
+      {
+        id: "aj1",
+        stage: "Presentation",
+        title: "New diarrhoea — establish onset, frequency, and whether blood or mucus is present",
+        next: ["aj2"],
+      },
+      {
+        id: "aj2",
+        stage: "Assess hydration",
+        title: "Check for signs of dehydration and correct fluid losses",
+        detail: "Oral rehydration is sufficient for most patients; intravenous fluids are needed for those who can't keep up with losses or are significantly dehydrated.",
+        next: ["aj3"],
+      },
+      {
+        id: "aj3",
+        stage: "Characterise it",
+        title: "Use the pattern of symptoms and history to narrow the cause",
+        branches: [
+          { label: "Watery diarrhoea with vomiting, no blood", to: "med-viral-gastroenteritis" },
+          { label: "Bloody diarrhoea with fever", to: "med-bacterial-dysentery" },
+          { label: "Diarrhoea following recent antibiotic use", to: "med-c-diff-diarrhoea" },
+          { label: "Known inflammatory bowel disease with a flare of symptoms", to: "med-ibd-flare" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Diagnosis of Diarrhea", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/digestive-diseases/diarrhea/diagnosis", licence: "US Government work — public domain" },
+      { title: "Diarrhea", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/diarrhea.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-viral-gastroenteritis",
+    condition: "Viral gastroenteritis",
+    region: "ABDOMEN",
+    synonyms: ["viral gastroenteritis", "stomach flu", "norovirus", "rotavirus"],
+    status: "cited",
+    redFlags: [
+      "Significant dehydration unresponsive to oral rehydration",
+      "Symptoms lasting beyond the typical few days for a viral illness",
+    ],
+    algorithm: [
+      {
+        id: "ak1",
+        stage: "History",
+        title: "Watery diarrhoea, often with vomiting and cramping, usually self-limiting over a few days",
+        detail: "Ask about sick contacts and shared meals — outbreaks are common.",
+        next: ["ak2"],
+      },
+      {
+        id: "ak2",
+        stage: "Examination",
+        title: "Assess hydration status; examination is otherwise usually unremarkable",
+        next: ["ak3"],
+      },
+      {
+        id: "ak3",
+        stage: "Decision",
+        title: "Supportive care — oral rehydration, antiemetics if needed",
+        detail: "Testing is not usually needed for a typical, self-limiting presentation; reserve stool studies for severe, prolonged, or outbreak-associated cases.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "About Norovirus", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/norovirus/about/index.html", licence: "US Government work — public domain" },
+      { title: "Gastroenteritis", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/gastroenteritis.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-bacterial-dysentery",
+    condition: "Bacterial dysentery",
+    region: "ABDOMEN",
+    synonyms: ["dysentery", "bacterial dysentery", "shigellosis", "bloody diarrhoea"],
+    status: "cited",
+    redFlags: [
+      "Signs of systemic sepsis",
+      "Features of haemolytic uraemic syndrome (reduced urine output, pallor, bruising) — particularly relevant with Shiga toxin-producing organisms, where antibiotics can worsen the risk",
+    ],
+    algorithm: [
+      {
+        id: "al1",
+        stage: "History",
+        title: "Bloody or mucoid diarrhoea with fever and abdominal cramping",
+        detail: "Ask about travel, food and water exposure, and sick contacts.",
+        next: ["al2"],
+      },
+      {
+        id: "al2",
+        stage: "Investigate",
+        title: "Stool culture and sensitivity, or a stool PCR panel where available",
+        next: ["al3"],
+      },
+      {
+        id: "al3",
+        stage: "Decision",
+        title: "Antibiotics are not always required and can be harmful in some Shiga toxin-producing infections",
+        detail: "ClairMD does not select an antibiotic. Decide with local guidance and the specific organism/severity in mind — supportive rehydration is appropriate for most cases regardless.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Overview of Shigellosis", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/shigella/hcp/clinical-overview/index.html", licence: "US Government work — public domain" },
+      { title: "Bacterial Diarrhea", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK551643/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-c-diff-diarrhoea",
+    condition: "Clostridioides difficile-associated diarrhoea",
+    region: "ABDOMEN",
+    synonyms: ["c diff", "clostridioides difficile", "clostridium difficile", "c diff colitis"],
+    status: "cited",
+    redFlags: [
+      "Signs of severe or fulminant colitis (marked abdominal distension, systemic toxicity)",
+      "Suspected toxic megacolon",
+    ],
+    algorithm: [
+      {
+        id: "am1",
+        stage: "History",
+        title: "New diarrhoea following recent antibiotic use (or a healthcare exposure)",
+        next: ["am2"],
+      },
+      {
+        id: "am2",
+        stage: "Investigate",
+        title: "Stool testing for C. difficile toxin or the toxin gene (PCR)",
+        detail: "Test only patients with clinically significant diarrhoea — testing an asymptomatic patient, or one already improving, is not useful.",
+        next: ["am3"],
+      },
+      {
+        id: "am3",
+        stage: "Decision",
+        title: "Stop the precipitating antibiotic if possible",
+        detail: "Specific first-line antimicrobial therapy for C. difficile is given per current guidance.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "C. diff: Facts for Clinicians", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/c-diff/hcp/clinical-overview/index.html", licence: "US Government work — public domain" },
+      { title: "Clinical Testing and Diagnosis for C. diff Infection", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/c-diff/hcp/diagnosis-testing/index.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-ibd-flare",
+    condition: "Inflammatory bowel disease flare",
+    region: "ABDOMEN",
+    synonyms: ["ibd flare", "ulcerative colitis flare", "crohn's flare", "inflammatory bowel disease flare"],
+    status: "cited",
+    redFlags: [
+      "Signs of toxic megacolon or severe colitis (fever, tachycardia, marked abdominal tenderness)",
+      "Significant rectal bleeding with haemodynamic compromise",
+    ],
+    algorithm: [
+      {
+        id: "an1",
+        stage: "History",
+        title: "Known inflammatory bowel disease with worsening bloody diarrhoea, abdominal pain, or urgency",
+        detail: "Ask about medication adherence and any recent trigger — infection, NSAID use, antibiotic use.",
+        next: ["an2"],
+      },
+      {
+        id: "an2",
+        stage: "Investigate",
+        title: "Faecal calprotectin, stool studies to exclude a superimposed infection, bloods including inflammatory markers",
+        next: ["an3"],
+      },
+      {
+        id: "an3",
+        stage: "Decision",
+        title: "Escalate anti-inflammatory therapy per the patient's existing IBD management plan",
+        detail: "Involve gastroenterology for a significant flare.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Ulcerative Colitis", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/digestive-diseases/ulcerative-colitis", licence: "US Government work — public domain" },
+      { title: "Inflammatory Bowel Disease", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470312/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
