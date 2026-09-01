@@ -11,7 +11,7 @@ import {
   Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
-  LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass, Calculator,
+  LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass, Calculator, Check, RotateCcw,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
@@ -3484,59 +3484,60 @@ const DIAGNOSIS_META = {
 // Informational reference
 // only: presents what to examine, not a diagnosis, score, or recommendation
 // (kept deliberately outside CDSCO Class A boundaries in that respect).
-// `signs` on a section (where present) lists the discrete positive/negative
-// clinical findings worth a quick Present/Absent toggle instead of free
-// typing — narrative/numeric sections (vitals, cranial nerve testing, etc.)
-// deliberately have no `signs` and stay free-text only. Toggling a sign
-// writes/updates a "Label: Present"/"Label: Absent" line in that section's
-// notes — nothing is assumed for a sign the doctor hasn't touched.
+// Deliberately not scored — no point values, computed score, or diagnosis.
+// Each item is Not examined / Normal / Abnormal (or, for `measure` items, a
+// raw value + unit), purely to help capture what the doctor found. Opened
+// from the Ribbon's Insert → Examination Templates group as a standalone
+// reference popup (see ExamPopup below); the doctor copies the findings as
+// plain text and pastes them into whichever note is open — it doesn't
+// write into a note's state directly.
 const EXAM_TEMPLATES = {
   general: {
     name: "General Examination",
     sections: [
-      { title: "General inspection", items: ["Overall appearance, distress, consciousness level", "Build, nutritional status, hydration", "Pallor, jaundice, cyanosis, clubbing, oedema", "Gait and posture on entering the room"], signs: ["Pallor", "Jaundice", "Cyanosis", "Clubbing", "Oedema"] },
-      { title: "Vital signs", items: ["Temperature", "Pulse rate, rhythm, volume", "Respiratory rate", "Blood pressure", "Oxygen saturation"] },
-      { title: "Lymph nodes", items: ["Cervical, axillary, inguinal regions — size, tenderness, consistency, mobility"], signs: ["Cervical lymphadenopathy", "Axillary lymphadenopathy", "Inguinal lymphadenopathy"] },
-      { title: "Skin, hair, nails", items: ["Colour, texture, lesions", "Hair distribution", "Nail changes (clubbing, koilonychia, splinter haemorrhages)"], signs: ["Skin lesions", "Nail clubbing", "Koilonychia", "Splinter haemorrhages"] },
+      { title: "General inspection", items: ["Overall appearance", "Distress", "Consciousness level", "Build", "Nutritional status", "Hydration status", "Pallor", "Jaundice", "Cyanosis", "Clubbing", "Oedema", "Gait on entering the room", "Posture on entering the room"] },
+      { title: "Vital signs", items: [{ measure: "Temperature", unit: "°C", placeholder: "e.g. 37.0" }, { measure: "Pulse rate", unit: "bpm", placeholder: "e.g. 78" }, "Pulse rhythm", "Pulse volume", { measure: "Respiratory rate", unit: "breaths/min", placeholder: "e.g. 16" }, { measure: "Blood pressure", unit: "mmHg", placeholder: "e.g. 120/80" }, { measure: "Oxygen saturation", unit: "%", placeholder: "e.g. 98" }] },
+      { title: "Lymph nodes", items: ["Cervical lymph nodes — size, tenderness, consistency, mobility", "Axillary lymph nodes — size, tenderness, consistency, mobility", "Inguinal lymph nodes — size, tenderness, consistency, mobility"] },
+      { title: "Skin, hair, nails", items: ["Skin colour", "Skin texture", "Skin lesions", "Hair distribution", "Nail clubbing", "Koilonychia", "Splinter haemorrhages"] },
     ],
     source: { title: "The General Examination", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK1740/" },
   },
   cardiovascular: {
     name: "Cardiovascular System",
     sections: [
-      { title: "Inspection", items: ["Precordium — visible pulsations, scars, deformity", "Jugular venous pulse — height, waveform", "Peripheral signs — clubbing, splinter haemorrhages, peripheral cyanosis"], signs: ["Visible precordial pulsations", "Raised JVP", "Peripheral cyanosis", "Clubbing"] },
-      { title: "Palpation", items: ["Radial, brachial, carotid, femoral, popliteal, dorsalis pedis pulses — rate, rhythm, volume, character", "Apex beat — location, character", "Heaves and thrills over precordium", "Peripheral oedema"], signs: ["Pulse irregularity", "Displaced apex beat", "Parasternal heave", "Thrill", "Peripheral oedema"] },
+      { title: "Inspection", items: ["Precordial pulsations", "Precordial scars", "Precordial deformity", "Jugular venous pulse — height and waveform", "Peripheral clubbing", "Splinter haemorrhages", "Peripheral cyanosis"] },
+      { title: "Palpation", items: ["Radial pulse — rate, rhythm, volume, character", "Brachial pulse — rate, rhythm, volume, character", "Carotid pulse — rate, rhythm, volume, character", "Femoral pulse — rate, rhythm, volume, character", "Popliteal pulse — rate, rhythm, volume, character", "Dorsalis pedis pulse — rate, rhythm, volume, character", "Apex beat — location and character", "Heaves", "Thrills", "Peripheral oedema"] },
       { title: "Percussion", items: ["Cardiac borders (limited clinical value, largely superseded by imaging)"] },
-      { title: "Auscultation", items: ["Heart sounds S1, S2 at all four areas (mitral, tricuspid, pulmonary, aortic)", "Added sounds — S3, S4, murmurs, clicks, rubs", "Carotid and femoral bruits", "Blood pressure in both arms if indicated"], signs: ["S3 gallop", "S4 gallop", "Murmur", "Pericardial rub", "Carotid bruit", "Femoral bruit"] },
+      { title: "Auscultation", items: ["Heart sounds S1, S2 — mitral area", "Heart sounds S1, S2 — tricuspid area", "Heart sounds S1, S2 — pulmonary area", "Heart sounds S1, S2 — aortic area", "S3 (third heart sound)", "S4 (fourth heart sound)", "Murmurs", "Clicks", "Rubs", "Carotid bruit", "Femoral bruit", { measure: "Blood pressure — right arm (if indicated)", unit: "mmHg", placeholder: "e.g. 120/80" }, { measure: "Blood pressure — left arm (if indicated)", unit: "mmHg", placeholder: "e.g. 120/80" }] },
     ],
     source: { title: "Cardiac Exam", org: "StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK553078/" },
   },
   respiratory: {
     name: "Respiratory System",
     sections: [
-      { title: "Inspection", items: ["Respiratory rate, rhythm, effort", "Chest shape and symmetry", "Use of accessory muscles, intercostal recession", "Scars, deformity, visible masses"], signs: ["Tachypnoea", "Chest asymmetry", "Accessory muscle use", "Intercostal recession"] },
-      { title: "Palpation", items: ["Tracheal position", "Chest expansion (symmetry and degree)", "Tactile vocal fremitus", "Tenderness, lymphadenopathy"], signs: ["Tracheal deviation", "Reduced chest expansion", "Reduced vocal fremitus", "Chest wall tenderness"] },
-      { title: "Percussion", items: ["Percussion note across all lung zones, comparing sides", "Dullness, hyper-resonance, stony dullness"], signs: ["Dullness", "Hyper-resonance", "Stony dullness"] },
-      { title: "Auscultation", items: ["Breath sounds — normal vesicular vs. bronchial", "Added sounds — crackles, wheeze, pleural rub", "Vocal resonance"], signs: ["Reduced breath sounds", "Bronchial breathing", "Crackles", "Wheeze", "Pleural rub"] },
+      { title: "Inspection", items: [{ measure: "Respiratory rate", unit: "breaths/min", placeholder: "e.g. 16" }, "Respiratory rhythm", "Respiratory effort", "Chest shape", "Chest symmetry", "Use of accessory muscles", "Intercostal recession", "Scars", "Deformity", "Visible masses"] },
+      { title: "Palpation", items: ["Tracheal position", "Chest expansion — symmetry and degree", "Tactile vocal fremitus", "Chest wall tenderness", "Lymphadenopathy"] },
+      { title: "Percussion", items: ["Percussion note across all lung zones, comparing sides", "Dullness", "Hyper-resonance", "Stony dullness"] },
+      { title: "Auscultation", items: ["Breath sounds — normal vesicular vs. bronchial", "Crackles", "Wheeze", "Pleural rub", "Vocal resonance"] },
     ],
     source: { title: "Lung Exam", org: "StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK459253/" },
   },
   gastrointestinal: {
     name: "Gastrointestinal / Abdominal System",
     sections: [
-      { title: "Inspection", items: ["Abdominal contour, distension, visible masses or peristalsis", "Scars, striae, dilated veins, hernial orifices", "Umbilicus"], signs: ["Abdominal distension", "Visible masses", "Visible peristalsis", "Dilated veins", "Hernial orifice swelling"] },
-      { title: "Palpation", items: ["Light palpation — tenderness, guarding, rigidity (all quadrants)", "Deep palpation — masses, organomegaly (liver, spleen, kidneys)", "Specific signs (e.g. Murphy's sign) where clinically indicated"], signs: ["Tenderness", "Guarding", "Rigidity", "Hepatomegaly", "Splenomegaly", "Palpable kidney", "Murphy's sign"] },
-      { title: "Percussion", items: ["Liver span", "Shifting dullness / fluid thrill (ascites)", "Percussion tenderness"], signs: ["Shifting dullness", "Fluid thrill", "Percussion tenderness"] },
-      { title: "Auscultation", items: ["Bowel sounds — presence, character, frequency", "Bruits (renal, aortic, hepatic) where indicated"], signs: ["Bowel sounds present", "Renal bruit", "Aortic bruit", "Hepatic bruit"] },
+      { title: "Inspection", items: ["Abdominal contour", "Distension", "Visible masses", "Visible peristalsis", "Scars", "Striae", "Dilated veins", "Hernial orifices", "Umbilicus"] },
+      { title: "Palpation", items: ["Light palpation — tenderness", "Light palpation — guarding", "Light palpation — rigidity", "Deep palpation — masses", "Liver palpation (organomegaly)", "Spleen palpation (organomegaly)", "Kidney palpation (organomegaly)", "Specific signs (e.g. Murphy's sign) where clinically indicated"] },
+      { title: "Percussion", items: [{ measure: "Liver span", unit: "cm", placeholder: "e.g. 10" }, "Shifting dullness", "Fluid thrill", "Percussion tenderness"] },
+      { title: "Auscultation", items: ["Bowel sounds — presence, character, frequency", "Renal bruit", "Aortic bruit", "Hepatic bruit"] },
     ],
     source: { title: "Abdominal Examination", org: "StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK459220/" },
   },
   musculoskeletal: {
     name: "Locomotor (Musculoskeletal) System",
     sections: [
-      { title: "Inspection", items: ["Gait, posture, deformity", "Joint swelling, erythema, muscle wasting", "Symmetry between sides"], signs: ["Gait abnormality", "Postural deformity", "Joint swelling", "Erythema", "Muscle wasting"] },
-      { title: "Palpation", items: ["Warmth, tenderness, effusion at each joint", "Bony landmarks and soft-tissue structures"], signs: ["Warmth", "Tenderness", "Joint effusion"] },
-      { title: "Movement", items: ["Active and passive range of motion at relevant joints", "Pain or crepitus on movement", "Muscle power (grade 0–5)"], signs: ["Reduced range of motion", "Pain on movement", "Crepitus"] },
+      { title: "Inspection", items: ["Gait", "Posture", "Deformity", "Joint swelling", "Erythema", "Muscle wasting", "Symmetry between sides"] },
+      { title: "Palpation", items: ["Warmth at joint", "Tenderness at joint", "Effusion at joint", "Bony landmarks", "Soft-tissue structures"] },
+      { title: "Movement", items: ["Active range of motion", "Passive range of motion", "Pain on movement", "Crepitus on movement", { measure: "Muscle power", unit: "/5", placeholder: "0–5" }] },
       { title: "Special tests", items: ["Joint-specific stress/stability tests as clinically indicated"] },
     ],
     source: { title: "An Overview of the Musculoskeletal System", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK266/" },
@@ -3544,74 +3545,62 @@ const EXAM_TEMPLATES = {
   nervous: {
     name: "Nervous System",
     sections: [
-      { title: "Mental status & speech", items: ["Level of consciousness, orientation", "Speech — fluency, articulation, comprehension"], signs: ["Altered consciousness", "Disorientation", "Speech abnormality"] },
-      { title: "Cranial nerves", items: ["I–XII, tested systematically as clinically indicated"], signs: ["Cranial nerve deficit"] },
-      { title: "Motor system", items: ["Bulk, tone, power (all limbs, graded 0–5)", "Involuntary movements"], signs: ["Reduced muscle bulk", "Abnormal tone", "Reduced power", "Involuntary movements"] },
-      { title: "Reflexes", items: ["Deep tendon reflexes (biceps, triceps, supinator, knee, ankle)", "Plantar response"], signs: ["Reduced/absent deep tendon reflexes", "Exaggerated reflexes", "Extensor plantar response (Babinski)"] },
-      { title: "Sensory system", items: ["Light touch, pain, vibration, proprioception"], signs: ["Reduced light touch", "Reduced pain sensation", "Reduced vibration sense", "Reduced proprioception"] },
-      { title: "Coordination & gait", items: ["Finger-nose, heel-shin testing", "Gait observation, Romberg's test"], signs: ["Dysmetria (finger-nose/heel-shin)", "Positive Romberg's sign", "Ataxic gait"] },
+      { title: "Mental status & speech", items: ["Level of consciousness", "Orientation", "Speech — fluency, articulation, comprehension"] },
+      { title: "Cranial nerves", items: ["CN I (Olfactory) — sense of smell, each nostril tested separately", "CN II (Optic) — visual acuity", "CN II (Optic) — visual fields by confrontation", "CN II (Optic) — pupillary light reflex (direct and consensual)", "CN II (Optic) — fundoscopy", "CN III, IV, VI (Oculomotor, Trochlear, Abducens) — eye movements in all directions", "CN III, IV, VI (Oculomotor, Trochlear, Abducens) — pupil size and reactivity", "CN III, IV, VI (Oculomotor, Trochlear, Abducens) — ptosis", "CN III, IV, VI (Oculomotor, Trochlear, Abducens) — nystagmus", "CN V (Trigeminal) — facial sensation, all three divisions", "CN V (Trigeminal) — jaw muscle strength (motor division)", "CN V (Trigeminal) — corneal reflex", "CN VII (Facial) — facial expression symmetry (forehead, eye closure, smile)", "CN VII (Facial) — taste, anterior two-thirds of tongue, if indicated", "CN VIII (Vestibulocochlear) — hearing (whisper or finger-rub test)", "CN VIII (Vestibulocochlear) — Rinne and Weber tests", "CN VIII (Vestibulocochlear) — balance, if indicated", "CN IX, X (Glossopharyngeal, Vagus) — palatal movement and symmetry", "CN IX, X (Glossopharyngeal, Vagus) — gag reflex", "CN IX, X (Glossopharyngeal, Vagus) — swallowing", "CN IX, X (Glossopharyngeal, Vagus) — voice quality", "CN XI (Accessory) — shoulder shrug strength", "CN XI (Accessory) — head rotation strength against resistance", "CN XII (Hypoglossal) — tongue protrusion", "CN XII (Hypoglossal) — tongue symmetry", "CN XII (Hypoglossal) — wasting or fasciculation"] },
+      { title: "Motor system", items: ["Bulk (all limbs)", "Tone (all limbs)", { measure: "Power (all limbs)", unit: "/5", placeholder: "e.g. 4/5" }, "Involuntary movements"] },
+      { title: "Reflexes", items: ["Biceps reflex (C5–C6)", "Triceps reflex (C7–C8)", "Supinator / brachioradialis reflex (C5–C6)", "Knee / patellar reflex (L3–L4)", "Ankle / Achilles reflex (S1–S2)", "Plantar response (Babinski sign)"] },
+      { title: "Sensory system", items: ["Light touch", "Pain (pinprick)", "Vibration", "Proprioception"] },
+      { title: "Coordination & gait", items: ["Finger-nose test", "Heel-shin test", "Gait observation", "Romberg's test"] },
     ],
     source: { title: "An Overview of the Nervous System", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK373/" },
   },
   urogenital: {
     name: "Urogenital System",
     sections: [
-      { title: "Inspection", items: ["External genitalia — general inspection for lesions, masses, discharge, developmental abnormalities", "Lower abdomen — distension, visible masses"], signs: ["External genital lesions", "Discharge", "Lower abdominal distension"] },
-      { title: "Palpation", items: ["Lower abdomen — bladder distension, masses, tenderness", "Kidneys — bimanual palpation where indicated", "External genitalia — masses, tenderness, consistency"], signs: ["Bladder distension", "Palpable kidney", "Tenderness"] },
-      { title: "Further assessment", items: ["Pelvic/rectal examination where clinically indicated, following appropriate consent and chaperone protocol", "Costovertebral angle tenderness"], signs: ["Costovertebral angle tenderness"] },
+      { title: "Inspection", items: ["External genitalia — lesions", "External genitalia — masses", "External genitalia — discharge", "External genitalia — developmental abnormalities", "Lower abdomen distension", "Lower abdomen visible masses"] },
+      { title: "Palpation", items: ["Bladder distension", "Lower abdomen masses", "Lower abdomen tenderness", "Kidneys — bimanual palpation where indicated", "External genitalia — masses (palpation)", "External genitalia — tenderness", "External genitalia — consistency"] },
+      { title: "Further assessment", items: ["Pelvic/rectal examination where clinically indicated, following appropriate consent and chaperone protocol", "Costovertebral angle tenderness"] },
     ],
     source: { title: "Pelvic Examination", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK286/" },
   },
   endocrine: {
     name: "Endocrine & Metabolic",
     sections: [
-      { title: "General inspection", items: ["Body habitus, weight distribution", "Skin changes, hair distribution, sweating"] },
-      { title: "Neck / thyroid", items: ["Visible swelling on inspection, swallowing test", "Palpation — size, consistency, nodularity, tenderness, mobility with swallowing", "Auscultation for bruit if enlarged"], signs: ["Visible thyroid swelling", "Thyroid nodularity", "Thyroid tenderness", "Thyroid bruit"] },
-      { title: "Eyes", items: ["Lid lag, exophthalmos, periorbital changes"], signs: ["Lid lag", "Exophthalmos", "Periorbital changes"] },
-      { title: "Extremities", items: ["Tremor, reflexes (relaxation phase), pretibial changes"], signs: ["Tremor", "Pretibial myxoedema"] },
+      { title: "General inspection", items: ["Body habitus", "Weight distribution", "Skin changes", "Hair distribution", "Sweating"] },
+      { title: "Neck / thyroid", items: ["Visible swelling on inspection", "Swallowing test", "Thyroid palpation — size, consistency, nodularity, tenderness, mobility with swallowing", "Auscultation for bruit if enlarged"] },
+      { title: "Eyes", items: ["Lid lag", "Exophthalmos", "Periorbital changes"] },
+      { title: "Extremities", items: ["Tremor", "Reflexes — relaxation phase", "Pretibial changes"] },
     ],
     source: { title: "Neck and Thyroid Examination", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK244/" },
   },
   skin: {
     name: "Skin, Nails and Hair",
     sections: [
-      { title: "General approach", items: ["Full-body examination in good lighting, not just the area of complaint", "Note site, distribution, and arrangement of any lesions"] },
-      { title: "Lesion characterisation", items: ["Primary lesion type (macule, papule, vesicle, etc.)", "Size, colour, border, surface texture", "Secondary changes (scale, crust, scarring)"], signs: ["Scale", "Crust", "Scarring"] },
-      { title: "Hair and nails", items: ["Hair distribution, texture, loss patterns", "Nail shape, colour, surface changes"], signs: ["Hair loss", "Nail surface changes"] },
+      { title: "General approach", items: ["Full-body examination in good lighting, not just the area of complaint", "Site, distribution and arrangement of any lesions"] },
+      { title: "Lesion characterisation", items: ["Primary lesion type (macule, papule, vesicle, etc.)", { measure: "Lesion size", unit: "cm", placeholder: "e.g. 2 x 1.5" }, "Lesion colour", "Lesion border", "Lesion surface texture", "Scale", "Crust", "Scarring"] },
+      { title: "Hair and nails", items: ["Hair distribution", "Hair texture", "Hair loss patterns", "Nail shape", "Nail colour", "Nail surface changes"] },
     ],
     source: { title: "Skin", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK208/" },
   },
   eyes: {
     name: "Eyes",
     sections: [
-      { title: "External inspection", items: ["Lids, lashes, lacrimal apparatus", "Conjunctiva, sclera — injection, pallor, jaundice", "Cornea, anterior chamber", "Pupil size, shape, symmetry, reaction to light and accommodation"], signs: ["Conjunctival injection", "Conjunctival pallor", "Scleral icterus", "Corneal opacity", "Pupillary asymmetry"] },
-      { title: "Visual function", items: ["Visual acuity (each eye separately)", "Visual fields (confrontation)", "Extraocular movements, nystagmus"], signs: ["Reduced visual acuity", "Visual field defect", "Nystagmus"] },
-      { title: "Fundoscopy", items: ["Red reflex, disc, vessels, macula where equipment and training allow"], signs: ["Abnormal red reflex", "Disc swelling/pallor"] },
+      { title: "External inspection", items: ["Lids", "Lashes", "Lacrimal apparatus", "Conjunctiva — injection, pallor, jaundice", "Sclera — injection, pallor, jaundice", "Cornea", "Anterior chamber", "Pupil size", "Pupil shape", "Pupil symmetry", "Pupil reaction to light and accommodation"] },
+      { title: "Visual function", items: [{ measure: "Visual acuity — right eye", unit: "Snellen", placeholder: "e.g. 6/6" }, { measure: "Visual acuity — left eye", unit: "Snellen", placeholder: "e.g. 6/6" }, "Visual fields — right eye (confrontation)", "Visual fields — left eye (confrontation)", "Extraocular movements", "Nystagmus"] },
+      { title: "Fundoscopy", items: ["Red reflex", "Optic disc", "Retinal vessels", "Macula"] },
     ],
     source: { title: "The External Eye Examination", org: "Clinical Methods (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK218/" },
   },
   ent: {
     name: "Ear, Nose and Throat",
     sections: [
-      { title: "Ear", items: ["Pinna and external canal — inspection", "Otoscopic examination — canal and tympanic membrane", "Gross hearing assessment"], signs: ["Abnormal otoscopy finding", "Reduced hearing"] },
-      { title: "Nose", items: ["External inspection", "Anterior rhinoscopy — septum, turbinates, discharge"], signs: ["Septal deviation", "Nasal discharge"] },
-      { title: "Throat / oral cavity", items: ["Lips, teeth, gums, tongue, buccal mucosa", "Oropharynx, tonsils", "Neck — cervical lymph nodes"], signs: ["Oral cavity lesions", "Tonsillar enlargement", "Cervical lymphadenopathy"] },
+      { title: "Ear", items: ["Pinna inspection", "External canal inspection", "Otoscopy — ear canal", "Otoscopy — tympanic membrane", "Gross hearing assessment"] },
+      { title: "Nose", items: ["External inspection", "Rhinoscopy — septum", "Rhinoscopy — turbinates", "Rhinoscopy — discharge"] },
+      { title: "Throat / oral cavity", items: ["Lips", "Teeth", "Gums", "Tongue", "Buccal mucosa", "Oropharynx", "Tonsils", "Neck — cervical lymph nodes"] },
     ],
     source: { title: "Otoscopy", org: "StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA", url: "https://www.ncbi.nlm.nih.gov/books/NBK556090/" },
   },
 };
-
-// Shared by ExaminationPicker's own "+" buttons and any external trigger
-// (the Ribbon's Examination Templates group) that adds a system to an
-// examSpace array — kept as one function so both build the identical shape
-// ({ key, notes: { [sectionTitle]: "" }, signs: {} }).
-function buildExamSpaceEntry(key) {
-  const t = EXAM_TEMPLATES[key];
-  if (!t) return null;
-  const notes = {};
-  t.sections.forEach((sec) => { notes[sec.title] = ""; });
-  return { key, notes, signs: {} };
-}
 
 // Differential diagnosis reference lists by presenting complaint. Original
 // content written from general medical knowledge — not extracted from any
@@ -15122,7 +15111,7 @@ function AutoExpandingTextarea({ value, onChange, placeholder }) {
   );
 }
 
-function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examSpace: externalExamSpace, setExamSpace: externalSetExamSpace, disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, ssValues: externalSsValues, setSsValues: externalSetSsValues, envValues: externalEnvValues, setEnvValues: externalSetEnvValues, traumaOpen: externalTraumaOpen, setTraumaOpen: externalSetTraumaOpen, disasterOpen: externalDisasterOpen, setDisasterOpen: externalSetDisasterOpen, poisoningOpen: externalPoisoningOpen, setPoisoningOpen: externalSetPoisoningOpen, envOpen: externalEnvOpen, setEnvOpen: externalSetEnvOpen, ssOpen: externalSsOpen, setSsOpen: externalSetSsOpen }) {
+function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examNotes: externalExamNotes, setExamNotes: externalSetExamNotes, disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, ssValues: externalSsValues, setSsValues: externalSetSsValues, envValues: externalEnvValues, setEnvValues: externalSetEnvValues, traumaOpen: externalTraumaOpen, setTraumaOpen: externalSetTraumaOpen, disasterOpen: externalDisasterOpen, setDisasterOpen: externalSetDisasterOpen, poisoningOpen: externalPoisoningOpen, setPoisoningOpen: externalSetPoisoningOpen, envOpen: externalEnvOpen, setEnvOpen: externalSetEnvOpen, ssOpen: externalSsOpen, setSsOpen: externalSetSsOpen }) {
   const [internalDraftHpi, setInternalDraftHpi] = useState("");
   const draftHpi = externalDraftHpi !== undefined ? externalDraftHpi : internalDraftHpi;
   const setDraftHpi = externalSetDraftHpi !== undefined ? externalSetDraftHpi : setInternalDraftHpi;
@@ -15162,7 +15151,7 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
               <p className="text-sm mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{e.notes}</p>
             )}
 
-            <ExaminationPicker examSpace={isDraft ? externalExamSpace : undefined} setExamSpace={isDraft ? externalSetExamSpace : undefined} />
+            <ExaminationNoteCard examNotes={isDraft ? externalExamNotes : undefined} setExamNotes={isDraft ? externalSetExamNotes : undefined} />
             <TraumaPicker open={isDraft ? externalTraumaOpen : undefined} setOpen={isDraft ? externalSetTraumaOpen : undefined} />
             <DisasterManagementPicker disasterValues={isDraft ? externalDisasterValues : undefined} setDisasterValues={isDraft ? externalSetDisasterValues : undefined} open={isDraft ? externalDisasterOpen : undefined} setOpen={isDraft ? externalSetDisasterOpen : undefined} />
             <PoisoningPicker poisoningValues={isDraft ? externalPoisoningValues : undefined} setPoisoningValues={isDraft ? externalSetPoisoningValues : undefined} open={isDraft ? externalPoisoningOpen : undefined} setOpen={isDraft ? externalSetPoisoningOpen : undefined} />
@@ -15604,7 +15593,7 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
 // the tools they need for this encounter from a palette; each added tool
 // is the exact same component used in the full flow (no duplicate logic,
 // no risk of the two flows drifting apart over time).
-function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examSpace, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, addedTools, triageHistory, programmeTag, disposal, consentRecords, mlcRecords }) {
+function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examNotes, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, addedTools, triageHistory, programmeTag, disposal, consentRecords, mlcRecords }) {
   const d = patientDetails;
   const identityLine = [
     d.name || "(name not entered)",
@@ -15628,22 +15617,7 @@ function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examSpace
     );
   }
   if (addedTools.includes("examination")) {
-    lines.push("EXAMINATION");
-    if (examSpace.length === 0) {
-      lines.push("(no systems added)");
-    } else {
-      examSpace.forEach((entry) => {
-        const t = EXAM_TEMPLATES[entry.key];
-        lines.push(`  ${t.name}`);
-        t.sections.forEach((sec) => {
-          const signsText = formatExamSigns(entry.signs && entry.signs[sec.title]);
-          const note = entry.notes[sec.title];
-          const combined = [signsText, note].filter(Boolean).join("; ");
-          if (combined) lines.push(`    ${sec.title}: ${combined}`);
-        });
-      });
-    }
-    lines.push("");
+    lines.push("EXAMINATION", examNotes && examNotes.trim() ? examNotes.trim() : "(no findings recorded)", "");
   }
   if (addedTools.includes("ddx")) {
     lines.push("DIFFERENTIAL DIAGNOSIS");
@@ -15731,7 +15705,7 @@ function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examSpace
 // (toggles, inserted HPI/exam templates per topic) that was never designed
 // to be lifted, and doing that properly is a separate, larger effort. The
 // slip says so explicitly rather than silently omitting them.
-function buildIcuWardSlipText({ details, vitals, hpi, examSpace, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, disasterValues, poisoningValues, ssValues, envValues }) {
+function buildIcuWardSlipText({ details, vitals, hpi, examNotes, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, disasterValues, poisoningValues, ssValues, envValues }) {
   const identityLine = [
     details.name || "(name not entered)",
     details.age ? `${details.age} yrs` : null,
@@ -15749,22 +15723,7 @@ function buildIcuWardSlipText({ details, vitals, hpi, examSpace, ddxSpace, ddxSp
 
   lines.push("HISTORY OF PRESENT ILLNESS", hpi || "(not filled in)", "");
 
-  lines.push("EXAMINATION");
-  if (examSpace.length === 0) {
-    lines.push("(no systems added)");
-  } else {
-    examSpace.forEach((entry) => {
-      const t = EXAM_TEMPLATES[entry.key];
-      lines.push(`  ${t.name}`);
-      t.sections.forEach((sec) => {
-        const signsText = formatExamSigns(entry.signs && entry.signs[sec.title]);
-        const note = entry.notes[sec.title];
-        const combined = [signsText, note].filter(Boolean).join("; ");
-        if (combined) lines.push(`    ${sec.title}: ${combined}`);
-      });
-    });
-  }
-  lines.push("");
+  lines.push("EXAMINATION", examNotes && examNotes.trim() ? examNotes.trim() : "(no findings recorded)", "");
 
   lines.push("DIFFERENTIAL DIAGNOSIS");
   if (ddxSpace.length === 0) {
@@ -15892,10 +15851,7 @@ function buildIcuWardSlipText({ details, vitals, hpi, examSpace, ddxSpace, ddxSp
 const OPD_TOOL_DEFS = [
   { key: "hpi", label: "History of present illness", icon: FileText },
   { key: "vitals", label: "Vitals", icon: Activity },
-  // "examination" deliberately not here — Ribbon's Insert tab (the 11
-  // body-system buttons) is the only way to add it now, via
-  // insertExamTemplate (which itself calls addTool("examination")); this
-  // icon used to duplicate that.
+  { key: "examination", label: "Examination", icon: Stethoscope },
   { key: "ddx", label: "Differential diagnosis", icon: ListChecks },
   { key: "workup", label: "Workup", icon: FlaskConical },
   { key: "diagnosisplan", label: "Provisional diagnosis & treatment plan", icon: ClipboardList },
@@ -16282,7 +16238,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
   const [showTemplates, setShowTemplates] = useState(false); // Insert → Templates flyout
   const [hpi, setHpi] = useState("");
   const [vitals, setVitals] = useState({ hr: "", bp: "", t: "", spo2: "", spo2On: "", pain: "" });
-  const [examSpace, setExamSpace] = useState([]);
+  const [examNotes, setExamNotes] = useState("");
   const [ddxSpace, setDdxSpace] = useState([]);
   const [ddxSpaceNotes, setDdxSpaceNotes] = useState("");
   const [workupSpace, setWorkupSpace] = useState([]);
@@ -16399,7 +16355,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
   };
 
   const buildSlip = () => buildOpdSlipText({
-    patientDetails, freeNoteText, hpi, vitals, examSpace, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, addedTools,
+    patientDetails, freeNoteText, hpi, vitals, examNotes, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, addedTools,
     triageHistory, programmeTag, disposal, consentRecords, mlcRecords,
   });
 
@@ -16436,21 +16392,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
     return true;
   };
 
-  // Ribbon → Insert → Examination Templates targets this directly (same
-  // shape/dedupe rule as ExaminationPicker's own "+" button — see
-  // buildExamSpaceEntry) so a ribbon click and the picker's own button do
-  // the exact same thing to examSpace. Also turns on the "examination" tool
-  // card itself (addTool) — without that, the section stays hidden and
-  // buildOpdSlipText (which also gates on addedTools.includes("examination"))
-  // would silently drop it from the saved note.
-  const insertExamTemplate = (key) => {
-    addTool("examination");
-    if (examSpace.some((e) => e.key === key)) return;
-    const entry = buildExamSpaceEntry(key);
-    if (entry) setExamSpace((prev) => [...prev, entry]);
-  };
-
-  React.useImperativeHandle(ref, () => ({ attemptSave: handleSave, insertExamTemplate }));
+  React.useImperativeHandle(ref, () => ({ attemptSave: handleSave }));
 
   return (
     <div>
@@ -16686,7 +16628,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
           )}
           {addedTools.includes("examination") && (
             <OpdToolCard label="Examination" onRemove={() => removeTool("examination")}>
-              <ExaminationPicker examSpace={examSpace} setExamSpace={setExamSpace} />
+              <ExaminationNoteCard examNotes={examNotes} setExamNotes={setExamNotes} />
             </OpdToolCard>
           )}
           {addedTools.includes("ddx") && (
@@ -16904,157 +16846,235 @@ function EncounterWorkupCard({
   );
 }
 
-// Reusable Present/Absent toggle row for a list of finding labels — clicking
-// the already-active button clears it back to unset (a finding is never
-// silently defaulted either way). `values` is a plain { [label]: "present"|"absent" }
-// map; `onToggle(label, status)` is called with the status that was clicked.
-function PresentAbsentGrid({ labels, values, onToggle }) {
+/* ---------- Segmented control: Not examined / Normal / Abnormal ---------- */
+function ExamStatusToggle({ value, onChange }) {
+  const opts = [
+    { key: "unset", label: "Not examined" },
+    { key: "normal", label: "Normal" },
+    { key: "abnormal", label: "Abnormal" },
+  ];
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 bg-white border border-[#D8DED9] rounded-sm p-2 mb-2">
-      {labels.map((label) => {
-        const status = values && values[label];
+    <div className="flex border border-[#D8DED9] rounded-sm overflow-hidden">
+      {opts.map((o, i) => {
+        const active = value === o.key;
+        const bg = !active ? "#FFFFFF" : o.key === "abnormal" ? "#FBF3EC" : o.key === "normal" ? "#EDF3F2" : "#F2F4F3";
+        const fg = !active ? "#5B6B63" : o.key === "abnormal" ? "#8A5A2A" : o.key === "normal" ? "#0F5C56" : "#5B6B63";
         return (
-          <div key={label} className="flex items-center justify-between gap-2 text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-            <span className="text-[#3C4A42]">{label}</span>
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => onToggle(label, "present")}
-                title={`${label} — present`}
-                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
-                  status === "present" ? "text-white border-[#0F5C56]" : "border-[#D8DED9] text-[#5B6B63] hover:bg-[#F2F7F5]"
-                }`}
-                style={status === "present" ? { backgroundColor: "#0F5C56" } : {}}
-              >
-                Present
-              </button>
-              <button
-                type="button"
-                onClick={() => onToggle(label, "absent")}
-                title={`${label} — absent`}
-                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
-                  status === "absent" ? "text-white border-[#5B6B63]" : "border-[#D8DED9] text-[#5B6B63] hover:bg-[#F2F7F5]"
-                }`}
-                style={status === "absent" ? { backgroundColor: "#5B6B63" } : {}}
-              >
-                Absent
-              </button>
-            </div>
-          </div>
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onChange(o.key)}
+            className={`flex-1 py-1.5 px-1 text-[11px] ${i > 0 ? "border-l border-[#D8DED9]" : ""}`}
+            style={{ background: bg, color: fg, fontWeight: active ? 600 : 400, fontFamily: "'IBM Plex Sans', sans-serif" }}
+          >
+            {o.label}
+          </button>
         );
       })}
     </div>
   );
 }
 
-// Renders a section's toggled signs as "Label: Present" / "Label: Absent"
-// joined by "; " — used to fold the structured Present/Absent picks into
-// the plain-text note alongside whatever the doctor typed freehand.
-function formatExamSigns(signValues) {
-  if (!signValues) return "";
-  return Object.entries(signValues)
-    .map(([label, status]) => `${label}: ${status === "present" ? "Present" : "Absent"}`)
-    .join("; ");
+/* ---------- Measurement field: raw value + unit, no toggle, no interpretation ---------- */
+function ExamMeasureField({ value, onChange, unit, placeholder }) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        value={value || ""}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || "Enter value"}
+        inputMode="decimal"
+        className="flex-1 border border-[#D8DED9] rounded-sm px-2.5 py-2 text-sm focus:outline-none focus:border-[#0F5C56]"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+      />
+      {unit && <span className="text-[11px] text-[#8A958E] min-w-[44px]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{unit}</span>}
+    </div>
+  );
 }
 
-function ExaminationPicker({ examSpace: externalExamSpace, setExamSpace: externalSetExamSpace } = {}) {
-  const [internalExamSpace, setInternalExamSpace] = useState([]); // [{ key, notes: { [sectionTitle]: string }, signs: { [sectionTitle]: { [label]: "present"|"absent" } } }]
-  const examSpace = externalExamSpace !== undefined ? externalExamSpace : internalExamSpace;
-  const setExamSpace = externalSetExamSpace !== undefined ? externalSetExamSpace : setInternalExamSpace;
+// Standalone reference popup for one body system's examination checklist.
+// Not tied to any note's state — the doctor marks findings here, then hits
+// "Copy findings as text" and pastes into whichever note is open. See
+// EXAM_TEMPLATES's header comment for why this is a copy-paste tool rather
+// than something that writes into a note directly.
+// LEGAL SAFETY RULE — do not weaken this: a row is only ever written to the
+// note if it was actually recorded (status is exactly "normal" or
+// "abnormal", or a measurement field has a non-empty value). An unexamined
+// item must NEVER produce a line — not "Not examined", not a blank value,
+// nothing. Writing a note that implies an item was checked when it wasn't
+// is a documentation integrity problem, not just a UI nicety.
+function ExamPopup({ examKey, onClose }) {
+  const template = EXAM_TEMPLATES[examKey];
+  const [status, setStatus] = useState({});     // "section|item" -> "normal" | "abnormal"
+  const [notes, setNotes] = useState({});       // "section|item" -> free text, shown when abnormal
+  const [measures, setMeasures] = useState({}); // "section|item" -> raw entered value
+  const [copied, setCopied] = useState(false);
 
-  const removeSystem = (key) => setExamSpace((prev) => prev.filter((e) => e.key !== key));
-  const clearAll = () => setExamSpace([]);
-  const updateNote = (key, sectionTitle, value) =>
-    setExamSpace((prev) => prev.map((e) => (e.key === key ? { ...e, notes: { ...e.notes, [sectionTitle]: value } } : e)));
-  // Clicking the already-active Present/Absent button clears it back to
-  // unset — a sign is never silently defaulted to either state.
-  const toggleSign = (key, sectionTitle, label, status) =>
-    setExamSpace((prev) => prev.map((e) => {
-      if (e.key !== key) return e;
-      const sectionSigns = { ...(e.signs && e.signs[sectionTitle]) };
-      if (sectionSigns[label] === status) delete sectionSigns[label];
-      else sectionSigns[label] = status;
-      return { ...e, signs: { ...e.signs, [sectionTitle]: sectionSigns } };
-    }));
+  const itemKey = (sec, item) => `${sec}|${typeof item === "string" ? item : item.measure}`;
+
+  const setItem = (sec, item, val) => {
+    const k = itemKey(sec, item);
+    setStatus((s) => ({ ...s, [k]: val }));
+    if (val !== "abnormal") setNotes((n) => { const c = { ...n }; delete c[k]; return c; });
+  };
+  const setMeasure = (sec, item, val) => {
+    const k = itemKey(sec, item);
+    setMeasures((m) => ({ ...m, [k]: val }));
+  };
+
+  const allItems = template.sections.flatMap((s) => s.items.map((i) => ({ sec: s.title, item: i })));
+  const answeredCount =
+    Object.values(status).filter(Boolean).length +
+    Object.entries(measures).filter(([, v]) => v && v.trim()).length;
+  const totalCount = allItems.length;
+  const abnormalCount = Object.values(status).filter((v) => v === "abnormal").length;
+
+  function buildNote() {
+    const lines = [`${template.name} — examination findings`];
+    let any = false;
+    template.sections.forEach((sec) => {
+      const secLines = [];
+      sec.items.forEach((item) => {
+        const k = itemKey(sec.title, item);
+        if (typeof item === "string") {
+          const v = status[k];
+          if (v === "normal") secLines.push(`  • ${item}: Normal`);
+          else if (v === "abnormal") {
+            const note = notes[k]?.trim();
+            secLines.push(`  • ${item}: Abnormal${note ? " — " + note : ""}`);
+          }
+        } else {
+          const val = measures[k]?.trim();
+          if (val) secLines.push(`  • ${item.measure}: ${val}${item.unit ? " " + item.unit : ""}`);
+        }
+      });
+      if (secLines.length) { lines.push(`${sec.title}:`); lines.push(...secLines); any = true; }
+    });
+    if (!any) return `${template.name} — no findings recorded yet.`;
+    return lines.join("\n");
+  }
+
+  function copyNote() {
+    const text = buildNote();
+    if (navigator.clipboard) navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  }
+  function resetAll() { setStatus({}); setNotes({}); setMeasures({}); }
+
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(26,36,31,0.5)" }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full bg-[#F7F9F7] rounded-t-2xl overflow-y-auto" style={{ maxWidth: 520, maxHeight: "88vh", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <div className="sticky top-0 bg-white border-b border-[#E8EDE9] px-4 py-3.5 z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Stethoscope size={16} className="text-[#0F5C56]" />
+              <span className="text-[15px] font-semibold text-[#16241F]">{template.name}</span>
+            </div>
+            <button onClick={onClose} className="text-[#8A958E] p-1"><X size={18} /></button>
+          </div>
+          <p className="text-[11px] text-[#8A958E] mt-1.5 leading-snug">
+            Reference checklist only. Marking a finding or entering a value does not assess, score, or diagnose — it only helps you capture what you observed, to copy into your note.
+          </p>
+          {answeredCount > 0 && (
+            <div className="flex items-center gap-2 mt-2 text-[11px] text-[#8A958E]">
+              <span>{answeredCount} of {totalCount} recorded</span>
+              {abnormalCount > 0 && <span className="text-[#8A5A2A]">· {abnormalCount} abnormal</span>}
+            </div>
+          )}
+        </div>
+
+        <div className="px-4 py-3">
+          {template.sections.map((sec) => (
+            <div key={sec.title} className="mb-4">
+              <div className="text-[11px] uppercase tracking-wide text-[#0F5C56] font-semibold mb-2">{sec.title}</div>
+              <div className="flex flex-col gap-2.5">
+                {sec.items.map((item) => {
+                  const isMeasure = typeof item !== "string";
+                  const k = itemKey(sec.title, item);
+                  if (isMeasure) {
+                    return (
+                      <div key={item.measure} className="bg-white border border-[#E8EDE9] rounded-md p-2.5">
+                        <div className="text-xs text-[#16241F] mb-2 leading-snug">{item.measure}</div>
+                        <ExamMeasureField value={measures[k]} onChange={(v) => setMeasure(sec.title, item, v)} unit={item.unit} placeholder={item.placeholder} />
+                      </div>
+                    );
+                  }
+                  const v = status[k];
+                  return (
+                    <div key={item} className="bg-white rounded-md p-2.5" style={{ border: `1px solid ${v === "abnormal" ? "#E8CBA8" : "#E8EDE9"}` }}>
+                      <div className="text-xs text-[#16241F] mb-2 leading-snug">{item}</div>
+                      <ExamStatusToggle value={v || "unset"} onChange={(val) => setItem(sec.title, item, val === "unset" ? undefined : val)} />
+                      {v === "abnormal" && (
+                        <textarea
+                          value={notes[k] || ""}
+                          onChange={(e) => setNotes((n) => ({ ...n, [k]: e.target.value }))}
+                          placeholder="Describe the specific finding..."
+                          rows={2}
+                          className="w-full mt-2 rounded-sm px-2.5 py-2 text-xs resize-y"
+                          style={{ border: "1px solid #E8CBA8", background: "#FBF3EC", fontFamily: "'IBM Plex Sans', sans-serif" }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          <div className="text-[10.5px] text-[#B4BDB7] mt-1 mb-4 leading-snug">
+            Source: {template.source.title} — {template.source.org}.{" "}
+            <a href={template.source.url} target="_blank" rel="noopener noreferrer" className="text-[#0F5C56]">{template.source.url}</a>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-white border-t border-[#E8EDE9] p-3 flex gap-2">
+          <button
+            onClick={resetAll}
+            disabled={answeredCount === 0}
+            className="px-3.5 py-2.5 text-xs rounded-sm border border-[#D8DED9] text-[#5B6B63] flex items-center gap-1.5"
+            style={{ opacity: answeredCount ? 1 : 0.4 }}
+          >
+            <RotateCcw size={13} /> Reset
+          </button>
+          <button
+            onClick={copyNote}
+            disabled={answeredCount === 0}
+            className="flex-1 px-3.5 py-2.5 text-[13px] rounded-sm text-white flex items-center justify-center gap-1.5"
+            style={{ background: answeredCount ? "#0F5C56" : "#B4BDB7" }}
+          >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            {copied ? "Copied — paste into note" : "Copy findings as text"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Plain free-text home for whatever the doctor copies out of ExamPopup
+// (Ribbon → Insert → Examination Templates) and pastes in — replaces the
+// old structured examSpace/signs model with a single string per note,
+// matching the copy-paste workflow ExamPopup is built around.
+function ExaminationNoteCard({ examNotes: externalExamNotes, setExamNotes: externalSetExamNotes } = {}) {
+  const [internalExamNotes, setInternalExamNotes] = useState("");
+  const examNotes = externalExamNotes !== undefined ? externalExamNotes : internalExamNotes;
+  const setExamNotes = externalSetExamNotes !== undefined ? externalSetExamNotes : setInternalExamNotes;
 
   return (
     <div className="mt-4 pt-4 border-t-2 border-[#0F5C56]">
-      <div className="flex items-center justify-between mb-2">
-        {/* Plain label, not a button — browsing/adding the 11 body systems
-            now happens only via the Ribbon's Insert tab, so there's no
-            "+/-" browse panel here to toggle open anymore (used to
-            duplicate exactly what those 11 ribbon buttons already do). */}
-        <div className="flex items-center gap-1.5 text-[#0F5C56]">
-          <Stethoscope size={14} />
-          <span className="text-xs uppercase tracking-wide font-semibold">Examination</span>
-        </div>
-        {examSpace.length > 0 && (
-          <button
-            type="button"
-            onClick={clearAll}
-            className="text-[11px] px-2.5 py-1 rounded-sm border border-[#EFC9C1] text-[#B34A3C] hover:bg-[#FBEFEC] font-medium"
-            style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
-          >
-            Clear all
-          </button>
-        )}
+      <div className="flex items-center gap-1.5 mb-2 text-[#0F5C56]">
+        <Stethoscope size={14} />
+        <span className="text-xs uppercase tracking-wide font-semibold">Examination</span>
       </div>
-
-      {examSpace.length === 0 ? (
-        <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          Use Insert → Examination Templates on the ribbon above to add a body system's checklist here.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {examSpace.map((entry) => {
-            const t = EXAM_TEMPLATES[entry.key];
-            return (
-              <div key={entry.key} className="bg-[#F7F9F7] border border-[#D8DED9] rounded-md p-4">
-                <div className="flex items-center justify-between mb-1">
-                  <h4 className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{t.name}</h4>
-                  <button type="button" onClick={() => removeSystem(entry.key)} className="flex items-center gap-1 text-[11px] text-[#B34A3C] hover:text-[#7A2F25]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                    <Undo2 size={11} /> Remove
-                  </button>
-                </div>
-                <p className="text-[11px] text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  Reference checklist — tap Present/Absent for common findings instead of typing them, and add anything else in the notes below. This does not assess findings, generate a score, or suggest a diagnosis.
-                </p>
-                <div className="space-y-3">
-                  {t.sections.map((sec) => (
-                    <div key={sec.title}>
-                      <div className="text-[11px] uppercase tracking-wide text-[#0F5C56] font-semibold mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{sec.title}</div>
-                      <ul className="space-y-1 mb-2">
-                        {sec.items.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                            <span className="w-1 h-1 rounded-full bg-[#0F5C56] mt-1.5 shrink-0" />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                      {sec.signs && sec.signs.length > 0 && (
-                        <PresentAbsentGrid
-                          labels={sec.signs}
-                          values={entry.signs && entry.signs[sec.title]}
-                          onToggle={(label, status) => toggleSign(entry.key, sec.title, label, status)}
-                        />
-                      )}
-                      <AutoExpandingTextarea
-                        value={entry.notes[sec.title] || ""}
-                        onChange={(e) => updateNote(entry.key, sec.title, e.target.value)}
-                        placeholder={`Additional findings — ${sec.title.toLowerCase()}…`}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 pt-3 border-t border-[#EEF1EE] text-[11px] text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  Source: {t.source.title} — {t.source.org}.{" "}
-                  <a href={t.source.url} target="_blank" rel="noopener noreferrer" className="text-[#0F5C56] underline">{t.source.url}</a>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <p className="text-xs text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Use Insert → Examination Templates on the ribbon above to open a body system's reference checklist, then paste what you copy from it here.
+      </p>
+      <AutoExpandingTextarea
+        value={examNotes}
+        onChange={(e) => setExamNotes(e.target.value)}
+        placeholder="Paste examination findings here…"
+      />
     </div>
   );
 }
@@ -23311,7 +23331,7 @@ const TUTORIAL_SECTIONS = [
   },
   {
     title: "2. The ribbon toolbar",
-    body: "Home has text formatting for the note itself. Insert has the 11 body-system Examination Templates — click one to drop that system's checklist straight into whichever note you have open. Review has spelling and find.",
+    body: "Home has text formatting for the note itself. Insert has the 11 body-system Examination Templates — click one to open a reference checklist, mark what you found, then copy it into whichever note you have open. Review has spelling and find.",
   },
   {
     title: "3. Library",
@@ -25540,6 +25560,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const opdBuilderRef = useRef(null);
   const [quickCheckOpen, setQuickCheckOpen] = useState(false);
   const [openCalcId, setOpenCalcId] = useState(null); // null | "bmi" | "ibw" | "pbw" | "crcl" | "bsa"
+  const [openExamKey, setOpenExamKey] = useState(null); // null | one of EXAM_TEMPLATES's 11 keys
   // Backend-sync status shared across save flows that don't stay mounted
   // long enough to show their own inline message (e.g. ICU/Ward's "Save
   // and go back" immediately navigates away) — rendered as a fixed toast
@@ -25549,7 +25570,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [draftDetails, setDraftDetails] = useState({ name: "", localId: "", age: "", gender: "", phone: "", address: "" });
   const [draftVitals, setDraftVitals] = useState({ hr: "", bp: "", t: "", spo2: "", spo2On: "", pain: "" });
   const [draftHpi, setDraftHpi] = useState("");
-  const [draftExamSpace, setDraftExamSpace] = useState([]);
+  const [draftExamNotes, setDraftExamNotes] = useState("");
   const [draftDisasterValues, setDraftDisasterValues] = useState({});
   const [draftPoisoningValues, setDraftPoisoningValues] = useState({});
   const [draftSsValues, setDraftSsValues] = useState({});
@@ -25729,7 +25750,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       return;
                     }
                     const icuWardSlipText = buildIcuWardSlipText({
-                      details: draftDetails, vitals: draftVitals, hpi: draftHpi, examSpace: draftExamSpace,
+                      details: draftDetails, vitals: draftVitals, hpi: draftHpi, examNotes: draftExamNotes,
                       ddxSpace: draftDdxSpace, ddxSpaceNotes: draftDdxSpaceNotes, workupSpace: draftWorkupSpace,
                       workupNotes: draftWorkupNotes, diagnosisPlanEntries: draftDiagnosisPlanEntries,
                       disasterValues: draftDisasterValues, poisoningValues: draftPoisoningValues, ssValues: draftSsValues, envValues: draftEnvValues,
@@ -26009,14 +26030,11 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                   // OPD keeps its doctorPlan-aware lock via ribbonTabs above,
                   // not here — a disabled button never fires onClick, so no
                   // extra guard is needed in this handler. Examination
-                  // Templates route into whichever note is actually open —
-                  // OPD via OpdBuilderTab's own examSpace (through its ref,
-                  // same as attemptSave), ICU/Ward via draftExamSpace
-                  // directly (already lifted up here, same state
-                  // RecordsTab's ExaminationPicker reads/writes). Both use
-                  // buildExamSpaceEntry so a ribbon click and the picker's
-                  // own "+" button build the identical shape. Special
-                  // Situations (Trauma/Disaster Management/Poisoning/
+                  // Templates open ExamPopup directly (see below) — it's a
+                  // standalone reference/copy-paste tool, not tied to
+                  // whichever note is open, so no OPD/ICU-Ward branching is
+                  // needed here the way the rest of this handler needs.
+                  // Special Situations (Trauma/Disaster Management/Poisoning/
                   // Environmental Injuries/Special Situations) route into
                   // ICU/Ward only, via the same open-toggle lifting pattern
                   // (draftTraumaOpen etc. above) — OPD's OpdBuilderTab never
@@ -26032,16 +26050,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                   } else if (command.id?.startsWith("mod-")) {
                     setSidebarView(command.id.slice(4));
                   } else if (command.id?.startsWith("exam-")) {
-                    const key = command.id.slice(5);
-                    if (newEntryMode === "opd") {
-                      opdBuilderRef.current?.insertExamTemplate(key);
-                    } else if (newEntryMode === "icuward") {
-                      setDraftExamSpace((prev) => {
-                        if (prev.some((e) => e.key === key)) return prev;
-                        const entry = buildExamSpaceEntry(key);
-                        return entry ? [...prev, entry] : prev;
-                      });
-                    }
+                    setOpenExamKey(command.id.slice(5));
                   } else if (command.id?.startsWith("situ-")) {
                     // Only ICU/Ward has these 5 pickers mounted at all —
                     // RecordsTab is where TraumaPicker/DisasterManagementPicker/
@@ -26125,7 +26134,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       />
                     </div>
                     <div style={{ display: tab === "records" ? "block" : "none" }}>
-                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} examSpace={draftExamSpace} setExamSpace={setDraftExamSpace} disasterValues={draftDisasterValues} setDisasterValues={setDraftDisasterValues} poisoningValues={draftPoisoningValues} setPoisoningValues={setDraftPoisoningValues} ssValues={draftSsValues} setSsValues={setDraftSsValues} envValues={draftEnvValues} setEnvValues={setDraftEnvValues} traumaOpen={draftTraumaOpen} setTraumaOpen={setDraftTraumaOpen} disasterOpen={draftDisasterOpen} setDisasterOpen={setDraftDisasterOpen} poisoningOpen={draftPoisoningOpen} setPoisoningOpen={setDraftPoisoningOpen} envOpen={draftEnvOpen} setEnvOpen={setDraftEnvOpen} ssOpen={draftSsOpen} setSsOpen={setDraftSsOpen} />
+                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} examNotes={draftExamNotes} setExamNotes={setDraftExamNotes} disasterValues={draftDisasterValues} setDisasterValues={setDraftDisasterValues} poisoningValues={draftPoisoningValues} setPoisoningValues={setDraftPoisoningValues} ssValues={draftSsValues} setSsValues={setDraftSsValues} envValues={draftEnvValues} setEnvValues={setDraftEnvValues} traumaOpen={draftTraumaOpen} setTraumaOpen={setDraftTraumaOpen} disasterOpen={draftDisasterOpen} setDisasterOpen={setDraftDisasterOpen} poisoningOpen={draftPoisoningOpen} setPoisoningOpen={setDraftPoisoningOpen} envOpen={draftEnvOpen} setEnvOpen={setDraftEnvOpen} ssOpen={draftSsOpen} setSsOpen={setDraftSsOpen} />
                     </div>
                     <div style={{ display: tab === "workup" ? "block" : "none" }}>
                       <DifferentialWorkupTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} ddxSpace={draftDdxSpace} setDdxSpace={setDraftDdxSpace} ddxSpaceNotes={draftDdxSpaceNotes} setDdxSpaceNotes={setDraftDdxSpaceNotes} workupSpace={draftWorkupSpace} setWorkupSpace={setDraftWorkupSpace} workupNotes={draftWorkupNotes} setWorkupNotes={setDraftWorkupNotes} />
@@ -26251,6 +26260,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           prefillSex={newEntryMode === "icuward" ? genderTextToSex(draftDetails.gender) : ""}
         />
       )}
+      {openExamKey && <ExamPopup examKey={openExamKey} onClose={() => setOpenExamKey(null)} />}
       {globalSyncMessage && (
         <div
           className="fixed bottom-4 right-4 max-w-xs px-3 py-2 rounded-sm shadow-xl text-xs bg-white border"
