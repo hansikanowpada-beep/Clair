@@ -14,9 +14,47 @@ import {
   LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass, Calculator, Check, RotateCcw,
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
-import { WORKFLOWS, WORKFLOWS_BY_ID, findWorkflowsForText } from "./data/surgicalWorkflows.js";
+import { WORKFLOWS, WORKFLOWS_BY_ID } from "./data/surgicalWorkflows.js";
+import { MEDICAL_WORKFLOWS, MEDICAL_WORKFLOWS_BY_ID } from "./data/medicalWorkflows.js";
 import Ribbon, { NoteTypeToolbar, DEFAULT_TABS as RIBBON_DEFAULT_TABS } from "./Ribbon.jsx";
 import { getApiBase, getAuthToken, setAuthToken, apiRequest, backendSignup, backendLogin, backendLogout } from "./api.js";
+
+// Matches a phrase (e.g. selected in the HPI, or the diagnosis just picked
+// in a note) against BOTH diagnostic-workflow libraries — the surgical one
+// (WORKFLOWS) and the general-medicine one (MEDICAL_WORKFLOWS) — and
+// returns combined results ranked together, best match first. Re-derived
+// here (rather than importing surgicalWorkflows.js's own findWorkflowsForText
+// and merging its output post-hoc) because that function already sorts and
+// unwraps its own scores before returning, so two separately-sorted lists
+// can't be re-ranked against each other after the fact.
+function normaliseWorkflowQuery(s) {
+  return (s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+}
+function findAnyWorkflowForText(selection) {
+  const q = normaliseWorkflowQuery(selection);
+  if (!q) return [];
+  const qWords = {};
+  q.split(" ").forEach((t) => { qWords[t] = true; });
+  const hits = [];
+  [...WORKFLOWS, ...MEDICAL_WORKFLOWS].forEach((w) => {
+    let best = 0;
+    [w.condition].concat(w.synonyms || []).forEach((name) => {
+      const n = normaliseWorkflowQuery(name);
+      if (!n) return;
+      if (q === n) best = Math.max(best, 4);
+      else if (q.indexOf(n) !== -1) best = Math.max(best, 3);
+      else if (n.indexOf(q) !== -1 && q.length >= 4) best = Math.max(best, 1);
+      else {
+        const parts = n.split(" ").filter((p) => p.length >= 3);
+        if (parts.length && parts.every((p) => qWords[p])) best = Math.max(best, 2);
+      }
+    });
+    if (best > 0) hits.push({ workflow: w, score: best });
+  });
+  return hits
+    .sort((a, b) => b.score - a.score || a.workflow.condition.localeCompare(b.workflow.condition))
+    .map((h) => h.workflow);
+}
 
 // ---------------------------------------------------------------------------
 // Design tokens
@@ -20119,7 +20157,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
     const menuWidth = 200, menuHeight = 230;
     setShowTemplates(false);
     const selected = window.getSelection().toString().trim();
-    setNoteDxMatches(selected ? findWorkflowsForText(selected).slice(0, 4) : []);
+    setNoteDxMatches(selected ? findAnyWorkflowForText(selected).slice(0, 4) : []);
     setNoteCtxMenu({
       x: Math.max(8, Math.min(e.clientX, window.innerWidth - menuWidth - 8)),
       y: Math.max(8, Math.min(e.clientY, window.innerHeight - menuHeight - 8)),
@@ -26484,29 +26522,34 @@ const LIBRARY_MODAL_CONFIG = {
     title: "Medical Condition",
     icon: BookOpen,
     searchPlaceholder: "Search medical conditions…",
-    // Combines two independently-built libraries into one browsable,
-    // alphabetical list: general-medicine conditions (DIAGNOSIS_META) and
-    // the surgical diagnostic workflow library (WORKFLOWS, Das Ch. 3–40).
-    // Kept as one list rather than two separate tabs because the doctor
-    // searching here doesn't know or care which library a condition came
-    // from — only that ClairMD covers it.
+    // Combines three independently-built libraries into one browsable,
+    // alphabetical list: general-medicine conditions (DIAGNOSIS_META), the
+    // surgical diagnostic workflow library (WORKFLOWS, Das Ch. 3–40), and
+    // the general-medicine diagnostic workflow library (MEDICAL_WORKFLOWS —
+    // a pilot batch, same shape as WORKFLOWS, kept in its own file so
+    // WORKFLOWS itself is never edited). Kept as one list rather than
+    // separate tabs because the doctor searching here doesn't know or care
+    // which library a condition came from — only that ClairMD covers it.
     getItems: () => {
-      // Keys are namespaced by source ("dx-"/"wf-") because a DIAGNOSIS_META
-      // key and a WORKFLOWS id can be the identical string for the same
-      // everyday condition (e.g. both use "erysipelas"). Unprefixed keys
-      // collided across the two libraries once merged, which made React
-      // misrender the list (duplicate/stale rows) whenever it re-filtered.
+      // Keys are namespaced by source ("dx-"/"wf-"/"mw-") because a
+      // DIAGNOSIS_META key and a WORKFLOWS id can be the identical string
+      // for the same everyday condition (e.g. both use "erysipelas").
+      // Unprefixed keys collided across libraries once merged, which made
+      // React misrender the list (duplicate/stale rows) whenever it
+      // re-filtered. MEDICAL_WORKFLOWS ids are already "med-"-prefixed at
+      // the source, but "mw-" is added here too for the same reason.
       const general = Object.keys(DIAGNOSIS_META).map((k) => ({ key: `dx-${k}`, name: DIAGNOSIS_LABEL[k], meta: DIAGNOSIS_META[k], kind: "diagnosisMeta" }));
       const surgical = WORKFLOWS.map((w) => ({ key: `wf-${w.id}`, name: w.condition, workflow: w, kind: "surgicalWorkflow" }));
-      return [...general, ...surgical].sort((a, b) => a.name.localeCompare(b.name));
+      const medicalWorkflow = MEDICAL_WORKFLOWS.map((w) => ({ key: `mw-${w.id}`, name: w.condition, workflow: w, kind: "medicalWorkflow" }));
+      return [...general, ...surgical, ...medicalWorkflow].sort((a, b) => a.name.localeCompare(b.name));
     },
     filterItem: (item, q) => item.name.toLowerCase().includes(q),
     renderListItem: (item, theme, onClick) => (
-      <ListRow key={item.key} name={item.name} subtitle={item.kind === "surgicalWorkflow" ? item.workflow.dasChapter : undefined} onClick={onClick} />
+      <ListRow key={item.key} name={item.name} subtitle={item.kind !== "diagnosisMeta" ? (item.workflow.dasChapter || item.workflow.chapterRef) : undefined} onClick={onClick} />
     ),
-    renderDetail: (item) => item.kind === "surgicalWorkflow" ? (
+    renderDetail: (item) => item.kind !== "diagnosisMeta" ? (
       <div>
-        <div className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.workflow.dasChapter}</div>
+        <div className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.workflow.dasChapter || item.workflow.chapterRef}</div>
         <WorkflowDetailBody workflow={item.workflow} idPrefix={`lib-node-${item.key}`} />
       </div>
     ) : (
@@ -26765,20 +26808,21 @@ function ResizeHandles({ chrome }) {
   );
 }
 
-// Displays one workflow from clair-frontend/src/data/surgicalWorkflows.js —
-// opened when a doctor selects text matching a known condition (in the OPD
-// note, HPI, or other prescription-space text fields) and picks "Diagnostic
-// workflow" from the right-click menu. A branch whose `to` matches another
-// workflow's id navigates there (with a Back trail); a branch whose `to`
+// Displays one workflow from either clair-frontend/src/data/surgicalWorkflows.js
+// or clair-frontend/src/data/medicalWorkflows.js — opened when a doctor
+// selects text matching a known condition (in the OPD note, HPI, or other
+// prescription-space text fields) and picks "Diagnostic workflow" from the
+// right-click menu. A branch whose `to` matches another workflow's id (in
+// either library) navigates there (with a Back trail); a branch whose `to`
 // matches a node id within the same workflow just scrolls to it — this is
-// reference navigation only, never a computed decision (see the library's
-// own CDSCO Class A note at the top of that file).
+// reference navigation only, never a computed decision (see each library's
+// own CDSCO Class A note at the top of its file).
 const DX_ACCENT = "#0F5C56";
 function DiagnosticWorkflowModal({ workflowId, onClose }) {
   const [currentId, setCurrentId] = useState(workflowId);
   const [history, setHistory] = useState([]);
   const chrome = useWindowChrome();
-  const workflow = WORKFLOWS_BY_ID[currentId];
+  const workflow = WORKFLOWS_BY_ID[currentId] || MEDICAL_WORKFLOWS_BY_ID[currentId];
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -26798,7 +26842,7 @@ function DiagnosticWorkflowModal({ workflowId, onClose }) {
     });
   };
   const handleBranchClick = (to) => {
-    if (WORKFLOWS_BY_ID[to]) { goToWorkflow(to); return; }
+    if (WORKFLOWS_BY_ID[to] || MEDICAL_WORKFLOWS_BY_ID[to]) { goToWorkflow(to); return; }
     const el = document.getElementById(`dx-node-${currentId}-${to}`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
   };
@@ -26822,7 +26866,7 @@ function DiagnosticWorkflowModal({ workflowId, onClose }) {
             <Stethoscope size={18} style={{ color: DX_ACCENT }} className="shrink-0" />
             <div className="min-w-0">
               <h2 className="text-lg truncate" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{workflow.condition}</h2>
-              <div className="text-[11px] text-[#8A958E] truncate" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{workflow.dasChapter}</div>
+              <div className="text-[11px] text-[#8A958E] truncate" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{workflow.dasChapter || workflow.chapterRef}</div>
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -26983,7 +27027,7 @@ function useDiagnosticLookup() {
   }, [dxMenu]);
 
   // Selecting a phrase and right-clicking is the library's intended lookup
-  // gesture (findWorkflowsForText's own doc comment: "Match a phrase
+  // gesture (findAnyWorkflowForText's own doc comment: "Match a phrase
   // selected in the HPI"). No selection, or a selection matching nothing,
   // falls through to the field's normal (browser) context menu.
   const handleContextMenu = (e) => {
@@ -26991,7 +27035,7 @@ function useDiagnosticLookup() {
     if (typeof el.selectionStart !== "number") return;
     const selected = el.value.substring(el.selectionStart, el.selectionEnd).trim();
     if (!selected) return;
-    const matches = findWorkflowsForText(selected);
+    const matches = findAnyWorkflowForText(selected);
     if (!matches.length) return;
     e.preventDefault();
     setDxMenu({ x: e.clientX, y: e.clientY, matches: matches.slice(0, 4) });
