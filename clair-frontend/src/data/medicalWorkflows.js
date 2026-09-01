@@ -3634,6 +3634,264 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Infection and Neutropenia During Cancer Treatment", publisher: "National Cancer Institute (NCI), NIH, USA", url: "https://www.cancer.gov/about-cancer/treatment/side-effects/infection", licence: "US Government work — public domain" },
     ],
   },
+
+  // ── Cluster 21: Severe electrolyte emergency ────────────────────────────────
+  {
+    id: "med-electrolyte-emergency-entry",
+    condition: "Severe electrolyte emergency (entry pathway)",
+    region: "ABDOMEN",
+    synonyms: ["electrolyte emergency", "severe electrolyte disturbance", "electrolyte imbalance"],
+    status: "cited",
+    redFlags: [
+      "Cardiac arrhythmia or significant ECG changes",
+      "Reduced consciousness or seizures",
+      "Severe muscle weakness or paralysis",
+      "Cardiac arrest risk",
+    ],
+    algorithm: [
+      {
+        id: "cn1",
+        stage: "Presentation",
+        title: "Nonspecific weakness, confusion, cardiac or neuromuscular symptoms — a blood test showing a significantly abnormal electrolyte is what confirms the cause",
+        next: ["cn2"],
+      },
+      {
+        id: "cn2",
+        stage: "Differentiate",
+        title: "Use the abnormal result to identify which electrolyte emergency this is",
+        branches: [
+          { label: "High serum potassium, especially with ECG changes", to: "med-hyperkalaemia" },
+          { label: "Low serum sodium with confusion, seizures or reduced consciousness", to: "med-severe-hyponatraemia" },
+          { label: "High serum calcium with confusion, abdominal pain, constipation or polyuria", to: "med-severe-hypercalcaemia" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "High Potassium Level", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/001179.htm", licence: "US Government work — public domain" },
+      { title: "Low Blood Sodium", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000394.htm", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-hyperkalaemia",
+    condition: "Hyperkalaemia",
+    region: "ABDOMEN",
+    synonyms: ["hyperkalaemia", "hyperkalemia", "high potassium"],
+    status: "cited",
+    redFlags: [
+      "ECG changes — peaked T waves, widened QRS, or a sine-wave pattern",
+      "Very high serum potassium",
+      "Cardiac arrhythmia or arrest",
+      "Severe muscle weakness or paralysis",
+    ],
+    algorithm: [
+      {
+        id: "co1",
+        stage: "Confirm",
+        title: "A raised serum potassium, cross-checked against the ECG for signs of cardiac toxicity",
+        detail: "A haemolysed sample can falsely raise the result — repeat testing if the result is unexpected and the patient is well.",
+        next: ["co2"],
+      },
+      {
+        id: "co2",
+        stage: "Decision",
+        title: "Any ECG change or a very high level needs immediate cardiac membrane stabilisation, followed by measures that shift potassium into cells and then remove it from the body",
+        detail: "ClairMD does not select or dose calcium, insulin/dextrose, or other potassium-lowering treatments — these are set by the clinician. Identify and stop any contributing medication or cause.",
+        next: ["co3"],
+      },
+      {
+        id: "co3",
+        stage: "Note",
+        title: "Continuous cardiac monitoring and repeat potassium levels are needed until the level and ECG have normalised",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "High Potassium Level", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/001179.htm", licence: "US Government work — public domain" },
+      { title: "Hyperkalemia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470284/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-severe-hyponatraemia",
+    condition: "Severe hyponatraemia",
+    region: "ABDOMEN",
+    synonyms: ["severe hyponatraemia", "severe hyponatremia", "low sodium"],
+    status: "cited",
+    redFlags: [
+      "Seizures",
+      "Reduced consciousness or coma",
+      "Very low or rapidly falling serum sodium",
+      "Respiratory arrest",
+    ],
+    algorithm: [
+      {
+        id: "cp1",
+        stage: "Confirm",
+        title: "A low serum sodium, assessed alongside volume status, serum and urine osmolality, and symptom severity",
+        detail: "Severity of symptoms — not the sodium number alone — determines urgency of correction.",
+        next: ["cp2"],
+      },
+      {
+        id: "cp2",
+        stage: "Decision",
+        title: "Severe symptoms need urgent, carefully controlled correction; asymptomatic or chronic hyponatraemia is corrected more cautiously",
+        detail: "ClairMD does not select or dose hypertonic saline or fluid restriction — these are set and closely monitored by the clinician. Correcting sodium too quickly risks osmotic demyelination syndrome.",
+        next: ["cp3"],
+      },
+      {
+        id: "cp3",
+        stage: "Note",
+        title: "Identify the underlying cause (e.g. SIADH, diuretics, adrenal or thyroid disease, heart/liver/kidney failure) to guide ongoing management",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Low Blood Sodium", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000394.htm", licence: "US Government work — public domain" },
+      { title: "Hyponatremia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470386/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-severe-hypercalcaemia",
+    condition: "Severe hypercalcaemia",
+    region: "ABDOMEN",
+    synonyms: ["severe hypercalcaemia", "severe hypercalcemia", "high calcium"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or coma",
+      "Very high serum calcium",
+      "Marked dehydration or acute kidney injury",
+      "Cardiac arrhythmia or a shortened QT interval",
+    ],
+    algorithm: [
+      {
+        id: "cq1",
+        stage: "Confirm",
+        title: "A raised corrected serum calcium — malignancy and primary hyperparathyroidism together account for most cases",
+        next: ["cq2"],
+      },
+      {
+        id: "cq2",
+        stage: "Decision",
+        title: "IV fluid rehydration first, followed by a bone-resorption-inhibiting agent for levels that remain significantly raised",
+        detail: "ClairMD does not select or dose IV fluids or bisphosphonates — these are set by the clinician. Identify and treat the underlying cause once the patient is stabilised.",
+        next: ["cq3"],
+      },
+      {
+        id: "cq3",
+        stage: "Note",
+        title: "Stop any contributing medication or supplement (e.g. calcium, vitamin D, thiazide diuretics, lithium)",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "High Blood Calcium", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000365.htm", licence: "US Government work — public domain" },
+      { title: "Hypercalcemia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430714/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+
+  // ── Cluster 22: Drug-induced hyperthermia and rigidity ──────────────────────
+  {
+    id: "med-drug-induced-hyperthermia-entry",
+    condition: "Drug-induced hyperthermia and rigidity (entry pathway)",
+    region: "NEURO",
+    synonyms: ["drug-induced hyperthermia", "drug-induced rigidity", "serotonin toxicity", "neuroleptic malignant syndrome"],
+    status: "cited",
+    redFlags: [
+      "Temperature above 38.5°C in this setting",
+      "Muscle rigidity",
+      "Autonomic instability — labile blood pressure, tachycardia, sweating",
+      "Rhabdomyolysis",
+      "Reduced consciousness or seizures",
+    ],
+    algorithm: [
+      {
+        id: "cr1",
+        stage: "Presentation",
+        title: "Fever, altered mental status and muscle abnormalities after starting, stopping or changing a psychiatric or serotonergic medication",
+        detail: "The specific drug history and time course are what separate these syndromes from each other and from other causes.",
+        next: ["cr2"],
+      },
+      {
+        id: "cr2",
+        stage: "Differentiate",
+        title: "Use the causative drug class, examination findings and time course to identify which syndrome this is",
+        branches: [
+          { label: "Recent serotonergic drug (SSRI/SNRI, triptan, tramadol, MAOI) — hyperreflexia and clonus, more marked in the legs, rapid onset over hours", to: "med-serotonin-syndrome" },
+          { label: "Recent antipsychotic, or abrupt withdrawal of a dopaminergic drug — severe 'lead-pipe' rigidity, slower onset over 1-3 days", to: "med-neuroleptic-malignant-syndrome" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Serotonin Syndrome", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/007272.htm", licence: "US Government work — public domain" },
+      { title: "Neuroleptic Malignant Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482282/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-serotonin-syndrome",
+    condition: "Serotonin syndrome",
+    region: "NEURO",
+    synonyms: ["serotonin syndrome", "serotonin toxicity"],
+    status: "cited",
+    redFlags: [
+      "Hyperthermia above 41°C",
+      "Marked autonomic instability",
+      "Seizures",
+      "Rhabdomyolysis with acute kidney injury",
+    ],
+    algorithm: [
+      {
+        id: "cs1",
+        stage: "Confirm",
+        title: "Diagnosis is clinical — a history of a serotonergic drug together with hyperreflexia, clonus (most marked in the lower limbs), agitation, diaphoresis and tachycardia",
+        next: ["cs2"],
+      },
+      {
+        id: "cs2",
+        stage: "Decision",
+        title: "Stop the causative drug(s), give supportive care and benzodiazepines for agitation",
+        detail: "A specific serotonin antagonist may be used in more severe cases. ClairMD does not select or dose medication — this is set by the clinician. Most cases resolve within 24 hours of stopping the causative drug.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Serotonin Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482377/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Serotonin Syndrome", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/007272.htm", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-neuroleptic-malignant-syndrome",
+    condition: "Neuroleptic malignant syndrome (NMS)",
+    region: "NEURO",
+    synonyms: ["neuroleptic malignant syndrome", "nms"],
+    status: "cited",
+    redFlags: [
+      "Hyperthermia",
+      "Severe generalised rigidity",
+      "Autonomic instability",
+      "Reduced consciousness",
+      "Rhabdomyolysis with acute kidney injury",
+    ],
+    algorithm: [
+      {
+        id: "ct1",
+        stage: "Confirm",
+        title: "Diagnosis is clinical — a history of a dopamine-blocking drug (or abrupt withdrawal of a dopaminergic drug) together with fever, severe rigidity, autonomic instability and altered mental status, usually developing over 1-3 days",
+        next: ["ct2"],
+      },
+      {
+        id: "ct2",
+        stage: "Decision",
+        title: "Stop the causative drug immediately, provide aggressive supportive care and active cooling",
+        detail: "Specific pharmacological treatment (e.g. a dopamine agonist or a muscle relaxant) may be used in severe cases. ClairMD does not select or dose medication — this is set by the clinician.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Neuroleptic Malignant Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482282/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Serotonin Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482377/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
