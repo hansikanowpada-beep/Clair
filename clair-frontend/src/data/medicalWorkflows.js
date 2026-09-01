@@ -1897,6 +1897,166 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Baker's Cyst", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430774/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 9: Upper gastrointestinal bleeding ────────────────────────────
+  {
+    id: "med-upper-gi-bleeding-entry",
+    condition: "Upper gastrointestinal bleeding (entry pathway)",
+    region: "ABDOMEN",
+    synonyms: ["upper gi bleed", "haematemesis", "hematemesis", "melaena", "melena", "vomiting blood"],
+    status: "cited",
+    redFlags: [
+      "Haemodynamic instability (hypotension, tachycardia)",
+      "Ongoing large-volume bleeding",
+      "Reduced consciousness",
+    ],
+    algorithm: [
+      {
+        id: "at1",
+        stage: "Presentation",
+        title: "Haematemesis or melaena — establish volume, duration, and associated symptoms",
+        next: ["at2"],
+      },
+      {
+        id: "at2",
+        stage: "Stabilise first",
+        title: "Assess haemodynamic status; secure IV access and begin fluid resuscitation if unstable",
+        next: ["at3"],
+      },
+      {
+        id: "at3",
+        stage: "Risk stratify",
+        title: "A named risk score exists (Glasgow-Blatchford score) — name only",
+        detail: "ClairMD does not calculate the score. The clinician calculates it to help decide on timing of endoscopy and the safety of outpatient management for low-risk patients.",
+        next: ["at4"],
+      },
+      {
+        id: "at4",
+        stage: "Characterise the likely source",
+        title: "History and examination findings point towards the likely cause",
+        branches: [
+          { label: "History of peptic ulcer disease, NSAID or aspirin use", to: "med-peptic-ulcer-bleeding" },
+          { label: "Known or suspected cirrhosis, or signs of chronic liver disease", to: "med-variceal-bleeding" },
+          { label: "Forceful vomiting or retching immediately before the bleeding began", to: "med-mallory-weiss-tear" },
+        ],
+        next: ["at5"],
+      },
+      {
+        id: "at5",
+        stage: "Decision",
+        title: "Urgent upper endoscopy, timed according to risk stratification and response to resuscitation",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Diagnosis of GI Bleeding", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/digestive-diseases/gastrointestinal-bleeding/diagnosis", licence: "US Government work — public domain" },
+      { title: "Upper Gastrointestinal Bleeding", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470300/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-peptic-ulcer-bleeding",
+    condition: "Peptic ulcer bleeding",
+    region: "ABDOMEN",
+    synonyms: ["peptic ulcer bleeding", "bleeding ulcer", "gastric ulcer bleeding", "duodenal ulcer bleeding"],
+    status: "cited",
+    redFlags: [
+      "Rebleeding after initial endoscopic control",
+      "Perforation (sudden severe pain, peritonism)",
+    ],
+    algorithm: [
+      {
+        id: "au1",
+        stage: "History",
+        title: "Known peptic ulcer disease, or a history of NSAID, aspirin or anticoagulant use",
+        next: ["au2"],
+      },
+      {
+        id: "au2",
+        stage: "Decision",
+        title: "Start a proton pump inhibitor and proceed to endoscopy",
+        detail: "Endoscopic haemostasis (injection, thermal, or mechanical) is used for high-risk stigmata of bleeding.",
+        next: ["au3"],
+      },
+      {
+        id: "au3",
+        stage: "Stratify",
+        title: "Named endoscopic classifications exist (e.g. Forrest classification) — name only",
+        detail: "ClairMD does not classify the ulcer appearance itself; the endoscopist does, and this guides the need for endoscopic therapy and follow-up.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Stomach Ulcer (Peptic Ulcer)", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/pepticulcer.html", licence: "US Government work — public domain" },
+      { title: "Peptic Ulcer Disease", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK534792/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-variceal-bleeding",
+    condition: "Variceal bleeding",
+    region: "ABDOMEN",
+    synonyms: ["variceal bleeding", "oesophageal varices", "esophageal varices bleeding", "variceal haemorrhage"],
+    status: "cited",
+    redFlags: [
+      "Massive haemorrhage with haemodynamic collapse",
+      "Signs of hepatic encephalopathy developing alongside the bleed",
+    ],
+    algorithm: [
+      {
+        id: "av1",
+        stage: "History",
+        title: "Known or suspected cirrhosis, with haematemesis or melaena",
+        next: ["av2"],
+      },
+      {
+        id: "av2",
+        stage: "Decision",
+        title: "Start a vasoactive drug (e.g. terlipressin) and prophylactic antibiotics as soon as variceal bleeding is suspected",
+        detail: "ClairMD does not select the specific agent or dose — start per local protocol without waiting for endoscopic confirmation.",
+        next: ["av3"],
+      },
+      {
+        id: "av3",
+        stage: "Definitive treatment",
+        title: "Urgent endoscopy with band ligation",
+        detail: "A Sengstaken-Blakemore tube (or similar balloon tamponade device) is a named rescue option for uncontrolled bleeding while arranging definitive treatment.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Cirrhosis", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/liver-disease/cirrhosis", licence: "US Government work — public domain" },
+      { title: "Esophageal Varices", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK448078/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-mallory-weiss-tear",
+    condition: "Mallory-Weiss tear",
+    region: "ABDOMEN",
+    synonyms: ["mallory-weiss tear", "mallory weiss syndrome", "retching tear"],
+    status: "cited",
+    redFlags: [
+      "Ongoing significant bleeding despite the usually self-limiting nature of this condition",
+    ],
+    algorithm: [
+      {
+        id: "aw1",
+        stage: "History",
+        title: "Forceful vomiting or retching immediately before the onset of haematemesis",
+        detail: "Often follows a bout of alcohol excess, but can follow any cause of forceful vomiting.",
+        next: ["aw2"],
+      },
+      {
+        id: "aw2",
+        stage: "Decision",
+        title: "Usually self-limiting",
+        detail: "Endoscopy confirms the diagnosis and can provide haemostasis if bleeding continues.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Mallory-Weiss tear", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000269.htm", licence: "US Government work — public domain" },
+      { title: "Mallory-Weiss Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK538190/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
