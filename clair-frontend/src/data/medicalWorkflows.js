@@ -2609,6 +2609,300 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Epiglottitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430960/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 13: Hyperglycaemic emergencies ────────────────────────────────
+  {
+    id: "med-hyperglycaemic-emergency-entry",
+    condition: "Hyperglycaemic emergency (entry pathway)",
+    region: "ABDOMEN",
+    synonyms: ["hyperglycaemic emergency", "hyperglycemic emergency", "very high blood sugar", "dka", "hhs"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or coma",
+      "Severe dehydration or haemodynamic instability",
+      "Very low pH or bicarbonate on blood gas",
+      "Significant hypokalaemia or hyperkalaemia",
+    ],
+    algorithm: [
+      {
+        id: "bm1",
+        stage: "Presentation",
+        title: "Very high blood glucose — assess conscious level, hydration status and vital signs urgently",
+        next: ["bm2"],
+      },
+      {
+        id: "bm2",
+        stage: "Stabilise first",
+        title: "Secure IV access, begin fluid resuscitation, and check blood ketones and pH promptly",
+        detail: "Named diagnostic criteria exist for both DKA and HHS. ClairMD does not apply the criteria itself — the clinician uses glucose, ketones, pH/bicarbonate and osmolality together to differentiate the two.",
+        next: ["bm3"],
+      },
+      {
+        id: "bm3",
+        stage: "Differentiate",
+        title: "Use the ketone and acid-base picture to distinguish DKA from HHS",
+        branches: [
+          { label: "Significant ketosis and acidosis (low pH/bicarbonate)", to: "med-diabetic-ketoacidosis" },
+          { label: "Very high glucose and osmolality without significant ketosis or acidosis", to: "med-hyperosmolar-hyperglycaemic-state" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Hyperglycemia", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/hyperglycemia.html", licence: "US Government work — public domain" },
+      { title: "Hyperglycemia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430900/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-diabetic-ketoacidosis",
+    condition: "Diabetic ketoacidosis",
+    region: "ABDOMEN",
+    synonyms: ["diabetic ketoacidosis", "dka", "ketoacidosis"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness",
+      "Severe acidosis (very low pH or bicarbonate)",
+      "Hypokalaemia or hyperkalaemia — potassium needs urgent monitoring throughout treatment",
+    ],
+    algorithm: [
+      {
+        id: "bn1",
+        stage: "Confirm",
+        title: "Hyperglycaemia, ketosis (blood or urine ketones), and acidosis (low pH/bicarbonate) together confirm the diagnosis",
+        next: ["bn2"],
+      },
+      {
+        id: "bn2",
+        stage: "Decision",
+        title: "Fluid resuscitation, fixed-rate intravenous insulin, and close potassium monitoring and replacement",
+        detail: "ClairMD does not calculate fluid or insulin rates — these are set and titrated by the clinician per local protocol. Look for and treat the precipitant (infection, missed insulin, new-onset diabetes).",
+        next: ["bn3"],
+      },
+      {
+        id: "bn3",
+        stage: "Monitor",
+        title: "Recheck glucose, ketones and potassium regularly until resolution criteria are met",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Diabetic ketoacidosis", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000320.htm", licence: "US Government work — public domain" },
+      { title: "Adult Diabetic Ketoacidosis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK560723/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-hyperosmolar-hyperglycaemic-state",
+    condition: "Hyperosmolar hyperglycaemic state",
+    region: "ABDOMEN",
+    synonyms: ["hyperosmolar hyperglycaemic state", "hhs", "hyperosmolar hyperglycemic state", "hyperosmolar coma"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or coma",
+      "Significant haemodynamic instability from profound dehydration",
+      "Thromboembolic complications — HHS carries a high risk of venous thromboembolism",
+    ],
+    algorithm: [
+      {
+        id: "bo1",
+        stage: "Confirm",
+        title: "Very high glucose and high serum osmolality, without significant ketosis or acidosis",
+        next: ["bo2"],
+      },
+      {
+        id: "bo2",
+        stage: "Decision",
+        title: "Cautious, slower fluid replacement than DKA",
+        detail: "Insulin is often started only once glucose stops falling with fluids alone. ClairMD does not calculate fluid or insulin rates — correcting the profound fluid deficit too quickly risks cerebral oedema and other complications, so the clinician titrates carefully.",
+        next: ["bo3"],
+      },
+      {
+        id: "bo3",
+        stage: "Note",
+        title: "Consider prophylactic anticoagulation given the significant thromboembolic risk in HHS",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Diabetic hyperglycemic hyperosmolar syndrome", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000304.htm", licence: "US Government work — public domain" },
+      { title: "Hyperosmolar Hyperglycemic Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482142/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+
+  // ── Cluster 14: Red eye ────────────────────────────────────────────────────
+  {
+    id: "med-red-eye-entry",
+    condition: "Red eye (entry pathway)",
+    region: "HEAD",
+    synonyms: ["red eye", "eye redness", "painful eye", "conjunctival injection"],
+    status: "cited",
+    redFlags: [
+      "Severe eye pain, especially with haloes around lights or a fixed, mid-dilated pupil",
+      "Reduced visual acuity",
+      "Photophobia with a small, irregular pupil",
+      "A corneal opacity or infiltrate, particularly in a contact lens wearer",
+      "Recent eye trauma or a penetrating injury",
+    ],
+    algorithm: [
+      {
+        id: "bp1",
+        stage: "Presentation",
+        title: "Red eye — establish pain severity, vision, discharge pattern, and any history of trauma or contact lens use",
+        detail: "Vision-threatening causes need urgent same-day ophthalmology assessment; most causes of red eye are benign, but the exceptions matter.",
+        next: ["bp2"],
+      },
+      {
+        id: "bp2",
+        stage: "Characterise it",
+        title: "Use the pattern of symptoms and examination findings to narrow the cause",
+        branches: [
+          { label: "Discharge, mild irritation, normal vision", to: "med-conjunctivitis" },
+          { label: "Severe pain, haloes around lights, a fixed mid-dilated pupil", to: "med-acute-angle-closure-glaucoma" },
+          { label: "Photophobia, ciliary flush, a small or irregular pupil", to: "med-anterior-uveitis" },
+          { label: "Corneal opacity or infiltrate, especially with contact lens use", to: "med-microbial-keratitis" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Conjunctivitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK541034/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Subconjunctival Hemorrhage", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK551666/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-conjunctivitis",
+    condition: "Conjunctivitis",
+    region: "HEAD",
+    synonyms: ["conjunctivitis", "pink eye", "viral conjunctivitis", "bacterial conjunctivitis"],
+    status: "cited",
+    redFlags: [
+      "Reduced vision, significant pain, or a corneal abnormality — reconsider the diagnosis",
+    ],
+    algorithm: [
+      {
+        id: "bq1",
+        stage: "History and examination",
+        title: "Discharge (watery for viral, purulent for bacterial), mild irritation, normal vision",
+        detail: "Viral conjunctivitis is highly contagious and often accompanies an upper respiratory infection.",
+        next: ["bq2"],
+      },
+      {
+        id: "bq2",
+        stage: "Decision",
+        title: "Supportive care for viral conjunctivitis; topical antibiotics for confirmed or clinically likely bacterial conjunctivitis",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Conjunctivitis (Pink Eye)", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/conjunctivitis/index.html", licence: "US Government work — public domain" },
+      { title: "Pink Eye", publisher: "National Eye Institute (NEI), NIH, USA", url: "https://www.nei.nih.gov/eye-health-information/eye-conditions-and-diseases/pink-eye", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-acute-angle-closure-glaucoma",
+    condition: "Acute angle-closure glaucoma",
+    region: "HEAD",
+    synonyms: ["acute angle-closure glaucoma", "angle closure glaucoma", "acute glaucoma"],
+    status: "cited",
+    redFlags: [
+      "Any delay in treatment risks permanent vision loss — this is an ophthalmic emergency",
+    ],
+    algorithm: [
+      {
+        id: "br1",
+        stage: "History and examination",
+        title: "Severe eye pain, headache, nausea and vomiting, haloes around lights, and a red eye with a hazy cornea",
+        next: ["br2"],
+      },
+      {
+        id: "br2",
+        stage: "Examine",
+        title: "A fixed, mid-dilated pupil and a firm eye on gentle palpation support the diagnosis",
+        next: ["br3"],
+      },
+      {
+        id: "br3",
+        stage: "Decision",
+        title: "Urgent intraocular pressure reduction and same-day ophthalmology referral",
+        detail: "ClairMD does not select specific medications or doses — treatment is directed by the treating clinician/ophthalmologist.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Types of Glaucoma", publisher: "National Eye Institute (NEI), NIH, USA", url: "https://www.nei.nih.gov/eye-health-information/eye-conditions-and-diseases/glaucoma/types-glaucoma", licence: "US Government work — public domain" },
+      { title: "Acute Angle-Closure Glaucoma", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430857/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-anterior-uveitis",
+    condition: "Anterior uveitis (iritis)",
+    region: "HEAD",
+    synonyms: ["anterior uveitis", "iritis", "uveitis"],
+    status: "cited",
+    redFlags: [
+      "Reduced vision or hypopyon (pus in the anterior chamber) — needs urgent assessment",
+    ],
+    algorithm: [
+      {
+        id: "bs1",
+        stage: "History and examination",
+        title: "Photophobia, aching eye pain, and a red eye especially around the cornea (ciliary flush)",
+        next: ["bs2"],
+      },
+      {
+        id: "bs2",
+        stage: "Examine",
+        title: "A small or irregularly shaped pupil supports the diagnosis",
+        detail: "Consider an association with systemic inflammatory or autoimmune conditions, particularly with recurrent episodes.",
+        next: ["bs3"],
+      },
+      {
+        id: "bs3",
+        stage: "Decision",
+        title: "Urgent ophthalmology referral for slit-lamp examination and treatment",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Uveitis", publisher: "National Eye Institute (NEI), NIH, USA", url: "https://www.nei.nih.gov/eye-health-information/eye-conditions-and-diseases/uveitis", licence: "US Government work — public domain" },
+      { title: "Iritis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK430909/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-microbial-keratitis",
+    condition: "Microbial keratitis (corneal ulcer)",
+    region: "HEAD",
+    synonyms: ["microbial keratitis", "corneal ulcer", "bacterial keratitis", "contact lens keratitis"],
+    status: "cited",
+    redFlags: [
+      "Rapidly progressive symptoms, especially in a contact lens wearer — same-day ophthalmology assessment is needed",
+    ],
+    algorithm: [
+      {
+        id: "bt1",
+        stage: "History and examination",
+        title: "Eye pain, redness, discharge, and reduced vision",
+        detail: "Often with a history of contact lens use or corneal trauma.",
+        next: ["bt2"],
+      },
+      {
+        id: "bt2",
+        stage: "Examine",
+        title: "Fluorescein staining highlights a corneal defect; a visible corneal infiltrate or opacity supports the diagnosis",
+        next: ["bt3"],
+      },
+      {
+        id: "bt3",
+        stage: "Decision",
+        title: "Urgent ophthalmology referral for corneal scraping and targeted antimicrobial therapy",
+        detail: "Avoid topical steroids until infection has been excluded or is being treated — steroids can worsen an untreated infective keratitis.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Corneal Conditions", publisher: "National Eye Institute (NEI), NIH, USA", url: "https://www.nei.nih.gov/eye-health-information/eye-conditions-and-diseases/corneal-conditions", licence: "US Government work — public domain" },
+      { title: "Bacterial Keratitis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK574509/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
