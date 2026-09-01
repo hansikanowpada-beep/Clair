@@ -3212,6 +3212,234 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Cerebellar Infarction", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470416/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 17: Thyroid emergencies ─────────────────────────────────────────
+  {
+    id: "med-thyroid-emergency-entry",
+    condition: "Thyroid emergency (entry pathway)",
+    region: "NECK",
+    synonyms: ["thyroid emergency", "thyroid crisis", "thyrotoxic crisis", "myxedema crisis"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or coma",
+      "Very high fever or marked hypothermia",
+      "Severe tachycardia, arrhythmia or heart failure",
+      "Marked agitation, delirium or psychosis",
+      "A clear precipitant — infection, recent thyroid or other surgery, iodine load, or medication non-adherence",
+    ],
+    algorithm: [
+      {
+        id: "cc1",
+        stage: "Presentation",
+        title: "Known or suspected thyroid disease with an acute, severe systemic deterioration",
+        detail: "Establish baseline thyroid status, medication adherence, and any precipitant (infection, surgery, trauma, iodine load, drug withdrawal).",
+        next: ["cc2"],
+      },
+      {
+        id: "cc2",
+        stage: "Differentiate",
+        title: "Use the direction of thyroid dysfunction and systemic features to identify which crisis this is",
+        branches: [
+          { label: "High fever, marked tachycardia, agitation or delirium, on a background of hyperthyroidism", to: "med-thyroid-storm" },
+          { label: "Hypothermia, bradycardia, reduced consciousness, on a background of hypothyroidism", to: "med-myxedema-coma" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Hyperthyroidism (Overactive Thyroid)", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/endocrine-diseases/hyperthyroidism", licence: "US Government work — public domain" },
+      { title: "Hypothyroidism (Underactive Thyroid)", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/endocrine-diseases/hypothyroidism", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-thyroid-storm",
+    condition: "Thyroid storm",
+    region: "NECK",
+    synonyms: ["thyroid storm", "thyrotoxic crisis", "thyrotoxicosis crisis"],
+    status: "cited",
+    redFlags: [
+      "Hyperthermia, often above 40°C",
+      "Severe tachycardia, atrial fibrillation or heart failure",
+      "Marked agitation, delirium, psychosis or coma",
+      "Severe vomiting, diarrhoea or jaundice",
+    ],
+    algorithm: [
+      {
+        id: "cd1",
+        stage: "Confirm",
+        title: "Diagnosis is clinical, on a background of thyrotoxicosis with multi-system decompensation",
+        detail: "A named scoring system (the Burch-Wartofsky Point Scale) may be used by the clinician to support the diagnosis — ClairMD does not calculate or apply this score.",
+        next: ["cd2"],
+      },
+      {
+        id: "cd2",
+        stage: "Decision",
+        title: "Treatment targets hormone synthesis, release and peripheral conversion together, alongside adrenergic control and aggressive supportive care",
+        detail: "ClairMD does not select or dose antithyroid drugs, iodine, beta-blockers or corticosteroids — these are set by the clinician. Treating the precipitant is essential.",
+        next: ["cd3"],
+      },
+      {
+        id: "cd3",
+        stage: "Note",
+        title: "Mortality remains high even with treatment — early recognition and same-day escalation to critical care are essential",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Thyroid Storm", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK448095/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Hyperthyroidism (Overactive Thyroid)", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/endocrine-diseases/hyperthyroidism", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-myxedema-coma",
+    condition: "Myxedema coma",
+    region: "NECK",
+    synonyms: ["myxedema coma", "myxoedema coma", "severe hypothyroidism crisis"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or coma",
+      "Hypothermia",
+      "Bradycardia or hypotension",
+      "Hypoventilation with CO2 retention",
+      "Hyponatraemia",
+      "Hypoglycaemia",
+    ],
+    algorithm: [
+      {
+        id: "ce1",
+        stage: "Confirm",
+        title: "Severe hypothyroidism with altered mentation, hypothermia and multi-organ dysfunction, usually with an identifiable precipitant",
+        detail: "Common precipitants include infection, cold exposure, sedating drugs, and surgery.",
+        next: ["ce2"],
+      },
+      {
+        id: "ce2",
+        stage: "Decision",
+        title: "IV thyroid hormone replacement plus stress-dose corticosteroids, alongside aggressive supportive care",
+        detail: "Corticosteroids are given before or with thyroid hormone, since replacement can unmask underlying adrenal insufficiency. ClairMD does not select or dose thyroid hormone or corticosteroids — these are set by the clinician.",
+        next: ["ce3"],
+      },
+      {
+        id: "ce3",
+        stage: "Note",
+        title: "Passive rewarming is preferred over rapid active rewarming, which can worsen cardiovascular collapse",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Myxedema Coma", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK545193/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Hypothyroidism (Underactive Thyroid)", publisher: "National Institute of Diabetes and Digestive and Kidney Diseases (NIDDK), NIH, USA", url: "https://www.niddk.nih.gov/health-information/endocrine-diseases/hypothyroidism", licence: "US Government work — public domain" },
+    ],
+  },
+
+  // ── Cluster 18: Hypertensive emergency ──────────────────────────────────────
+  {
+    id: "med-hypertensive-emergency-entry",
+    condition: "Hypertensive emergency (entry pathway)",
+    region: "CHEST",
+    synonyms: ["hypertensive emergency", "hypertensive crisis", "malignant hypertension", "very high blood pressure with symptoms"],
+    status: "cited",
+    redFlags: [
+      "Chest or back pain, or unequal pulses/blood pressures — possible aortic dissection",
+      "Breathlessness, crackles or low oxygen saturation — possible acute pulmonary oedema",
+      "New neurological deficit, severe headache, seizures or reduced consciousness",
+      "Visual disturbance or papilloedema",
+      "Reduced urine output or acute kidney injury",
+      "Pregnant or postpartum, with headache, visual change or epigastric pain",
+    ],
+    algorithm: [
+      {
+        id: "cf1",
+        stage: "Presentation",
+        title: "Very high blood pressure — the diagnosis of a hypertensive emergency rests on evidence of new or worsening target-organ damage, not on the blood pressure number alone",
+        detail: "Without target-organ damage, this is hypertensive urgency, which is managed with gradual oral treatment rather than an emergency parenteral pathway.",
+        next: ["cf2"],
+      },
+      {
+        id: "cf2",
+        stage: "Identify the organ affected",
+        title: "Look specifically for the affected organ system — this determines the treatment pathway and how quickly blood pressure should be lowered",
+        branches: [
+          { label: "Chest/back pain radiating through, unequal pulses or blood pressures", to: "med-aortic-dissection" },
+          { label: "Breathlessness, crackles, low oxygen saturation — acute pulmonary oedema", to: "med-acute-heart-failure" },
+          { label: "Severe headache, seizures, reduced consciousness or visual disturbance, without a clear alternative cause", to: "med-hypertensive-encephalopathy" },
+          { label: "Pregnant or postpartum, with headache, visual change, epigastric pain or oedema", to: "med-pre-eclampsia-eclampsia" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "High Blood Pressure — Symptoms", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/high-blood-pressure/symptoms", licence: "US Government work — public domain" },
+      { title: "Hypertensive Emergency", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470371/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-hypertensive-encephalopathy",
+    condition: "Hypertensive encephalopathy",
+    region: "HEAD",
+    synonyms: ["hypertensive encephalopathy", "malignant hypertension with encephalopathy"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness, confusion or coma",
+      "Seizures",
+      "Visual disturbance or papilloedema",
+      "Any focal neurological deficit — reassess for stroke as an alternative or coexisting diagnosis",
+    ],
+    algorithm: [
+      {
+        id: "cg1",
+        stage: "Confirm",
+        title: "Very high blood pressure with headache, confusion, visual disturbance or seizures, which improve as blood pressure is controlled",
+        detail: "Neuroimaging helps exclude stroke and haemorrhage, which can coexist with or mimic hypertensive encephalopathy.",
+        next: ["cg2"],
+      },
+      {
+        id: "cg2",
+        stage: "Decision",
+        title: "Controlled, gradual reduction in blood pressure using IV agents, with close neurological monitoring",
+        detail: "ClairMD does not select or dose antihypertensive agents — this is set and titrated by the clinician, since lowering blood pressure too quickly risks cerebral hypoperfusion.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Hypertensive Encephalopathy", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK554499/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Hypertensive Emergency", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470371/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-pre-eclampsia-eclampsia",
+    condition: "Pre-eclampsia and eclampsia",
+    region: "ABDOMEN",
+    synonyms: ["pre-eclampsia", "preeclampsia", "eclampsia", "pregnancy-induced hypertension with seizures"],
+    status: "cited",
+    redFlags: [
+      "Seizures (eclampsia)",
+      "Severe headache or visual disturbance",
+      "Epigastric or right upper quadrant pain",
+      "Reduced urine output",
+      "Signs of HELLP syndrome — haemolysis, elevated liver enzymes, low platelets, named here for reference only",
+    ],
+    algorithm: [
+      {
+        id: "ch1",
+        stage: "Confirm",
+        title: "New hypertension after 20 weeks of pregnancy (or postpartum), usually with proteinuria or other features of organ involvement",
+        detail: "A seizure in this setting, not explained by another cause, defines eclampsia.",
+        next: ["ch2"],
+      },
+      {
+        id: "ch2",
+        stage: "Decision",
+        title: "Magnesium sulfate for seizure prophylaxis or treatment, blood pressure control, and involvement of obstetric and anaesthetic teams without delay",
+        detail: "ClairMD does not select or dose magnesium sulfate or antihypertensive agents — these are set by the clinician. Definitive treatment is delivery, timed against maternal and fetal status.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Preeclampsia and Eclampsia", publisher: "Eunice Kennedy Shriver National Institute of Child Health and Human Development (NICHD), NIH, USA", url: "https://www.nichd.nih.gov/health/topics/preeclampsia", licence: "US Government work — public domain" },
+      { title: "Preeclampsia", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK570611/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
