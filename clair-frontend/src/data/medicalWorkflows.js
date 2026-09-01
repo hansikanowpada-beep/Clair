@@ -2249,6 +2249,163 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Syncope and Related Paroxysmal Spells", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK459292/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 11: Acute kidney injury ────────────────────────────────────────
+  {
+    id: "med-aki-entry",
+    condition: "Acute kidney injury (entry pathway)",
+    region: "ABDOMEN",
+    synonyms: ["acute kidney injury", "aki", "acute renal failure", "kidney failure"],
+    status: "cited",
+    redFlags: [
+      "Anuria or a rapidly rising creatinine",
+      "Life-threatening hyperkalaemia (arrhythmia risk)",
+      "Fluid overload with pulmonary oedema unresponsive to diuretics",
+      "Severe metabolic acidosis",
+    ],
+    algorithm: [
+      {
+        id: "bc1",
+        stage: "Presentation",
+        title: "A new rise in creatinine or fall in urine output — confirm this represents a genuine acute change",
+        detail: "Named staging criteria exist (e.g. KDIGO). ClairMD does not stage the AKI itself — the clinician applies the criteria using the creatinine trend and urine output.",
+        next: ["bc2"],
+      },
+      {
+        id: "bc2",
+        stage: "Screen for reversible causes and complications",
+        title: "Check potassium, bicarbonate, and fluid status urgently",
+        detail: "These can be immediately life-threatening independent of the underlying cause.",
+        next: ["bc3"],
+      },
+      {
+        id: "bc3",
+        stage: "Categorise it",
+        title: "Use the history, examination and initial investigations to localise the cause",
+        branches: [
+          { label: "History of volume loss, hypotension, or heart failure", to: "med-pre-renal-aki" },
+          { label: "Known nephrotoxic exposure, or urinalysis suggesting intrinsic renal disease", to: "med-intrinsic-renal-aki" },
+          { label: "Anuria, a palpable bladder, or hydronephrosis on imaging", to: "med-post-renal-aki" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Acute kidney failure", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000501.htm", licence: "US Government work — public domain" },
+      { title: "Acute Kidney Injury", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK441896/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-pre-renal-aki",
+    condition: "Pre-renal acute kidney injury",
+    region: "ABDOMEN",
+    synonyms: ["pre-renal aki", "prerenal acute kidney injury", "prerenal failure"],
+    status: "cited",
+    redFlags: [
+      "Ongoing haemodynamic instability despite initial fluid resuscitation — reconsider the diagnosis or look for a complicating intrinsic injury",
+    ],
+    algorithm: [
+      {
+        id: "bd1",
+        stage: "History",
+        title: "Volume loss (vomiting, diarrhoea, haemorrhage, poor oral intake), hypotension, or reduced cardiac output",
+        detail: "Reduced cardiac output can come from heart failure or sepsis, not only primary blood or fluid loss.",
+        next: ["bd2"],
+      },
+      {
+        id: "bd2",
+        stage: "Investigate",
+        title: "Urea:creatinine ratio and, where relevant, fractional excretion of sodium (name only) support the diagnosis",
+        detail: "ClairMD does not calculate the fractional excretion of sodium — the clinician calculates it from paired blood and urine sodium/creatinine.",
+        next: ["bd3"],
+      },
+      {
+        id: "bd3",
+        stage: "Decision",
+        title: "Careful fluid resuscitation and treatment of the underlying cause",
+        detail: "A prompt improvement in renal function with adequate volume replacement supports a pre-renal cause; failure to improve raises the possibility of established intrinsic injury.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Prerenal Kidney Failure", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK560678/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Kidney Tests", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/kidneytests.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-intrinsic-renal-aki",
+    condition: "Intrinsic renal acute kidney injury",
+    region: "ABDOMEN",
+    synonyms: ["intrinsic aki", "acute tubular necrosis", "atn", "intrinsic renal failure"],
+    status: "cited",
+    redFlags: [
+      "Rapidly progressive glomerulonephritis features (haematuria, red cell casts, rapidly worsening function) — needs urgent nephrology involvement",
+    ],
+    algorithm: [
+      {
+        id: "be1",
+        stage: "History",
+        title: "Prolonged hypotension or sepsis, nephrotoxic drug exposure, or features suggesting glomerulonephritis or interstitial nephritis",
+        detail: "Common nephrotoxic exposures include NSAIDs, iodinated contrast, and aminoglycosides.",
+        next: ["be2"],
+      },
+      {
+        id: "be2",
+        stage: "Investigate",
+        title: "Urinalysis and urine microscopy",
+        detail: "Muddy brown granular casts suggest acute tubular necrosis; red cell casts suggest glomerulonephritis; eosinophiluria may suggest interstitial nephritis, though this finding is not always reliable.",
+        next: ["be3"],
+      },
+      {
+        id: "be3",
+        stage: "Decision",
+        title: "Stop nephrotoxic drugs, treat the underlying cause, and involve nephrology",
+        detail: "Nephrology involvement is particularly important for suspected glomerulonephritis or when the diagnosis remains unclear.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Acute tubular necrosis", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000512.htm", licence: "US Government work — public domain" },
+      { title: "Acute Renal Tubular Necrosis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK507815/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-post-renal-aki",
+    condition: "Post-renal (obstructive) acute kidney injury",
+    region: "ABDOMEN",
+    synonyms: ["post-renal aki", "obstructive uropathy", "obstructive aki", "urinary obstruction"],
+    status: "cited",
+    redFlags: [
+      "Anuria with a palpable bladder — needs urgent catheterisation",
+      "Bilateral obstruction, or obstruction of a single functioning kidney",
+    ],
+    algorithm: [
+      {
+        id: "bf1",
+        stage: "History and examination",
+        title: "Urinary retention symptoms, anuria, or a palpable bladder",
+        detail: "Consider causes such as benign prostatic hyperplasia, pelvic malignancy, or ureteric stones, depending on the clinical context.",
+        next: ["bf2"],
+      },
+      {
+        id: "bf2",
+        stage: "Investigate",
+        title: "Bladder scan and renal ultrasound, looking for hydronephrosis",
+        next: ["bf3"],
+      },
+      {
+        id: "bf3",
+        stage: "Decision",
+        title: "Relieve the obstruction",
+        detail: "Urinary catheterisation for bladder outlet obstruction, or nephrostomy for upper tract obstruction. Renal function often improves rapidly once the obstruction is relieved, though a post-obstructive diuresis needs monitoring.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Obstructive uropathy", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/000507.htm", licence: "US Government work — public domain" },
+      { title: "Obstructive Uropathy", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK558921/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
