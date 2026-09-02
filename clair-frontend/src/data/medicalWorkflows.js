@@ -4107,6 +4107,253 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Hereditary angioedema", publisher: "MedlinePlus Genetics, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/genetics/condition/hereditary-angioedema/", licence: "US Government work — public domain" },
     ],
   },
+
+  // ── Cluster 25: Acute poisoning ──────────────────────────────────────────────
+  {
+    id: "med-acute-poisoning-entry",
+    condition: "Acute poisoning (entry pathway)",
+    region: "SYSTEMIC",
+    synonyms: ["acute poisoning", "suspected poisoning", "overdose", "ingestion of poison"],
+    status: "cited",
+    redFlags: [
+      "Reduced consciousness or coma",
+      "Seizures",
+      "Respiratory depression or airway compromise",
+      "Cardiovascular instability — arrhythmia or hypotension",
+      "Excessive secretions, sweating, or pinpoint pupils",
+    ],
+    algorithm: [
+      {
+        id: "da1",
+        stage: "Presentation",
+        title: "Known or suspected poisoning or overdose — establish exactly what was taken (or exposed to), how much, when, and by what route, wherever possible",
+        next: ["da2"],
+      },
+      {
+        id: "da2",
+        stage: "Stabilise first",
+        title: "Airway, breathing and circulation take priority over identifying the specific poison",
+        detail: "Treat the clinical toxidrome and instability first — do not wait for identification of the exact substance before starting supportive care.",
+        next: ["da3"],
+      },
+      {
+        id: "da3",
+        stage: "Differentiate",
+        title: "Use the exposure history and clinical picture to identify which pathway this is",
+        branches: [
+          { label: "Excessive salivation, sweating, lacrimation, urination, pinpoint pupils, muscle fasciculation — pesticide/insecticide exposure", to: "med-organophosphate-poisoning" },
+          { label: "Deliberate or accidental ingestion of a paracetamol (acetaminophen)-containing product", to: "med-paracetamol-overdose" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Insecticide Poisoning", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/002832.htm", licence: "US Government work — public domain" },
+      { title: "Acetaminophen Overdose", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/002598.htm", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-organophosphate-poisoning",
+    condition: "Organophosphate poisoning",
+    region: "SYSTEMIC",
+    synonyms: ["organophosphate poisoning", "organophosphorus poisoning", "pesticide poisoning", "insecticide poisoning"],
+    status: "cited",
+    redFlags: [
+      "Respiratory failure from bronchorrhoea, bronchospasm or muscle weakness",
+      "Seizures",
+      "Reduced consciousness",
+      "Cardiac arrhythmia",
+    ],
+    algorithm: [
+      {
+        id: "db1",
+        stage: "Confirm",
+        title: "A cholinergic toxidrome — excess salivation, lacrimation, urination, diarrhoea, GI upset and emesis, plus miosis, bradycardia, bronchorrhoea and muscle fasciculation — after exposure to an organophosphate pesticide",
+        detail: "Onset is usually within minutes to hours of exposure.",
+        next: ["db2"],
+      },
+      {
+        id: "db2",
+        stage: "Decision",
+        title: "Decontaminate (remove contaminated clothing, wash skin), secure the airway, and give atropine, titrated to drying of secretions, alongside an oxime if available",
+        detail: "ClairMD does not select or dose atropine, oximes or other antidotes — these are set by the clinician per local protocol and toxicology advice. Very large atropine doses may be needed.",
+        next: ["db3"],
+      },
+      {
+        id: "db3",
+        stage: "Note",
+        title: "Staff should wear appropriate personal protective equipment to avoid secondary contamination from the patient's clothing or skin",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Organophosphate Toxicity", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK470430/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Insecticide Poisoning", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/002832.htm", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-paracetamol-overdose",
+    condition: "Paracetamol (acetaminophen) overdose",
+    region: "SYSTEMIC",
+    synonyms: ["paracetamol overdose", "acetaminophen overdose", "acetaminophen toxicity", "paracetamol poisoning"],
+    status: "cited",
+    redFlags: [
+      "Presentation more than 24 hours after a large ingestion",
+      "Signs of liver failure — jaundice, encephalopathy, or coagulopathy",
+      "A very high reported or estimated dose",
+      "A staggered or unclear ingestion history",
+    ],
+    algorithm: [
+      {
+        id: "dc1",
+        stage: "Confirm",
+        title: "Ask the exact amount taken, the time of ingestion, and whether it was a single or staggered dose",
+        detail: "A paracetamol level, taken at the appropriate time after ingestion, is plotted against a treatment nomogram to guide the need for treatment. ClairMD does not calculate or apply the treatment nomogram — this is done by the clinician.",
+        next: ["dc2"],
+      },
+      {
+        id: "dc2",
+        stage: "Decision",
+        title: "N-acetylcysteine is highly effective when started within 8 hours of a significant single ingestion",
+        detail: "It is still given later, or empirically for staggered/unclear ingestions, though it becomes less effective with delay. ClairMD does not select or dose N-acetylcysteine — this is set by the clinician.",
+        next: ["dc3"],
+      },
+      {
+        id: "dc3",
+        stage: "Note",
+        title: "Involve a liver unit or poisons information service early for a large ingestion, a staggered overdose, or any evidence of liver injury",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Acetaminophen Toxicity", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK441917/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Acetaminophen Overdose", publisher: "MedlinePlus, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/ency/article/002598.htm", licence: "US Government work — public domain" },
+    ],
+  },
+
+  // ── Cluster 26: Snake bite / envenomation ───────────────────────────────────
+  {
+    id: "med-snake-bite-entry",
+    condition: "Snake bite (entry pathway)",
+    region: "LIMB",
+    synonyms: ["snake bite", "snakebite", "suspected envenomation", "venomous snake bite"],
+    status: "cited",
+    redFlags: [
+      "Rapidly spreading swelling or tissue necrosis at the bite site",
+      "Spontaneous systemic bleeding or non-clotting blood",
+      "Neurological signs — ptosis, diplopia, dysphagia, weakness, or respiratory difficulty",
+      "Hypotension or shock",
+      "Reduced urine output",
+    ],
+    algorithm: [
+      {
+        id: "dd1",
+        stage: "Presentation",
+        title: "A bite from a snake, confirmed or suspected — note the time of the bite, any description of the snake, and the affected limb",
+        detail: "Many bites, even from a venomous species, do not result in significant envenomation ('dry bites') — clinical and laboratory monitoring over time is what distinguishes envenomation from a bite alone.",
+        next: ["dd2"],
+      },
+      {
+        id: "dd2",
+        stage: "First aid",
+        title: "Immobilise the bitten limb at or below heart level and keep the patient calm and still",
+        detail: "A pressure-immobilisation bandage may be used for neurotoxic-type bites per local protocol. Do not cut, suck, apply ice, apply a tourniquet, or attempt to catch or kill the snake for identification — these traditional first-aid measures do not help and can cause harm.",
+        next: ["dd3"],
+      },
+      {
+        id: "dd3",
+        stage: "Differentiate",
+        title: "Use the pattern of local and systemic findings to identify the type of envenomation",
+        branches: [
+          { label: "Local swelling, pain, bruising or blistering, with bleeding or clotting abnormalities", to: "med-haemotoxic-envenomation" },
+          { label: "Ptosis, diplopia, dysphagia, or progressive weakness, with minimal local swelling", to: "med-neurotoxic-envenomation" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Venomous Snakes at Work", publisher: "National Institute for Occupational Safety and Health (NIOSH), CDC, USA", url: "https://www.cdc.gov/niosh/outdoor-workers/about/venomous-snakes.html", licence: "US Government work — public domain" },
+      { title: "Evaluation and Treatment of Snake Envenomations", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK553151/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-haemotoxic-envenomation",
+    condition: "Haemotoxic (coagulopathic) snake envenomation",
+    region: "LIMB",
+    synonyms: ["haemotoxic envenomation", "coagulopathic snake bite", "viper bite", "viperid envenomation"],
+    status: "cited",
+    redFlags: [
+      "Spontaneous systemic bleeding (gums, venepuncture sites, haematuria)",
+      "Non-clotting blood on a bedside whole blood clotting test",
+      "Rapidly progressive local swelling or necrosis",
+      "Hypotension or shock",
+      "Acute kidney injury",
+    ],
+    algorithm: [
+      {
+        id: "de1",
+        stage: "Confirm",
+        title: "Local swelling, pain and bruising at the bite site, progressing to systemic bleeding and a coagulopathy",
+        detail: "A bedside 20-minute whole blood clotting test is a simple way to detect venom-induced coagulopathy where laboratory coagulation studies are not immediately available.",
+        next: ["de2"],
+      },
+      {
+        id: "de2",
+        stage: "Decision",
+        title: "Antivenom is the definitive treatment, given based on clinical and/or laboratory evidence of envenomation, not on the appearance of the bite alone",
+        detail: "ClairMD does not select the antivenom product or dose, or decide when to give it — these are set by the clinician per local antivenom protocol and species. Have treatment for anaphylaxis ready, since antivenom reactions can occur.",
+        next: ["de3"],
+      },
+      {
+        id: "de3",
+        stage: "Note",
+        title: "Monitor closely for acute kidney injury and recheck clotting status regularly, since coagulopathy can recur after initial antivenom treatment",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Evaluation and Treatment of Snake Envenomations", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK553151/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Snake Toxicity", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK557565/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-neurotoxic-envenomation",
+    condition: "Neurotoxic snake envenomation",
+    region: "LIMB",
+    synonyms: ["neurotoxic envenomation", "neurotoxic snake bite", "elapid envenomation", "cobra bite", "krait bite"],
+    status: "cited",
+    redFlags: [
+      "Ptosis or diplopia progressing to bulbar or respiratory muscle weakness",
+      "Respiratory failure",
+      "Descending paralysis",
+    ],
+    algorithm: [
+      {
+        id: "df1",
+        stage: "Confirm",
+        title: "Progressive neurological signs — ptosis, diplopia, dysarthria, dysphagia and descending weakness — typically with less prominent local swelling than a coagulopathic bite",
+        detail: "Neurotoxic effects can develop or progress over several hours, so a patient with a normal early neurological exam still needs a period of monitoring.",
+        next: ["df2"],
+      },
+      {
+        id: "df2",
+        stage: "Decision",
+        title: "Antivenom is the definitive treatment; airway and ventilatory support are provided proactively as weakness progresses",
+        detail: "ClairMD does not select the antivenom product or dose, or decide when to intubate — these are set by the clinician. Anticholinesterase agents may help in some neurotoxic envenomations, per local protocol.",
+        next: ["df3"],
+      },
+      {
+        id: "df3",
+        stage: "Note",
+        title: "Respiratory failure from progressive paralysis, not the bite itself, is the usual cause of death — proactive airway monitoring is essential",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Evaluation and Treatment of Snake Envenomations", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK553151/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Snake Toxicity", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK557565/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
