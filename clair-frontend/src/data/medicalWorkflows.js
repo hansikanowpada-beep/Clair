@@ -4354,6 +4354,231 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Snake Toxicity", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK557565/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 27: Sickle cell crisis ──────────────────────────────────────────
+  {
+    id: "med-sickle-cell-crisis-entry",
+    condition: "Sickle cell crisis (entry pathway)",
+    region: "SYSTEMIC",
+    synonyms: ["sickle cell crisis", "sickle cell pain crisis", "vaso-occlusive crisis", "sickle cell disease crisis"],
+    status: "cited",
+    redFlags: [
+      "Chest pain, cough, fever or hypoxia — acute chest syndrome until proven otherwise",
+      "Severe unremitting pain despite adequate analgesia",
+      "Stroke-like focal neurological signs",
+      "Priapism",
+      "Sudden severe pallor or splenic enlargement — possible sequestration",
+      "Very high fever — increased risk of severe bacterial infection due to functional asplenia",
+    ],
+    algorithm: [
+      {
+        id: "dg1",
+        stage: "Presentation",
+        title: "A person with known sickle cell disease presenting with acute pain, fever, breathlessness or another acute deterioration",
+        detail: "Establish the pattern of symptoms and check specifically for any red flag feature.",
+        next: ["dg2"],
+      },
+      {
+        id: "dg2",
+        stage: "Stabilise first",
+        title: "Give analgesia early and adequately, alongside oxygen if hypoxic, IV fluids, and warmth",
+        detail: "Under-treatment of pain is common and should be avoided. ClairMD does not select or dose analgesia — this is set by the clinician per the patient's individualised pain plan where one exists.",
+        next: ["dg3"],
+      },
+      {
+        id: "dg3",
+        stage: "Differentiate",
+        title: "Use the pattern of symptoms to identify which pathway this is",
+        branches: [
+          { label: "Chest pain, cough, fever, tachypnoea or hypoxia, with a new infiltrate on chest imaging", to: "med-acute-chest-syndrome" },
+          { label: "Bone, joint, back or abdominal pain, without chest or neurological features", to: "med-vaso-occlusive-crisis" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Sickle Cell Disease — Treatment", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/sickle-cell-disease/treatment", licence: "US Government work — public domain" },
+      { title: "Sickle Cell Crisis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK526064/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-vaso-occlusive-crisis",
+    condition: "Vaso-occlusive (pain) crisis",
+    region: "SYSTEMIC",
+    synonyms: ["vaso-occlusive crisis", "sickle cell pain crisis", "voc"],
+    status: "cited",
+    redFlags: [
+      "Pain not responding to standard analgesia",
+      "New chest, respiratory or neurological symptoms — reassess for acute chest syndrome or stroke",
+      "High fever",
+    ],
+    algorithm: [
+      {
+        id: "dh1",
+        stage: "Confirm",
+        title: "Acute bone, joint, back, chest or abdominal pain, typical of the patient's previous crises, without a new focal cause identified",
+        next: ["dh2"],
+      },
+      {
+        id: "dh2",
+        stage: "Decision",
+        title: "Rapid, adequate analgesia (opioid-based for moderate-severe pain), IV fluids, oxygen if hypoxic, and treatment of any precipitant",
+        detail: "Common precipitants include infection, dehydration and cold exposure. ClairMD does not select or dose analgesia or fluids — these are set by the clinician.",
+        next: ["dh3"],
+      },
+      {
+        id: "dh3",
+        stage: "Note",
+        title: "Reassess pain and vital signs regularly, and watch closely for evolution into acute chest syndrome",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Sickle Cell Crisis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK526064/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Sickle Cell Disease — Treatment", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/sickle-cell-disease/treatment", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-acute-chest-syndrome",
+    condition: "Acute chest syndrome",
+    region: "CHEST",
+    synonyms: ["acute chest syndrome", "sickle cell acute chest syndrome"],
+    status: "cited",
+    redFlags: [
+      "Hypoxia",
+      "Rapidly progressive respiratory distress",
+      "Multilobar involvement on imaging",
+      "Neurological changes",
+      "Rapidly falling haemoglobin",
+    ],
+    algorithm: [
+      {
+        id: "di1",
+        stage: "Confirm",
+        title: "A new radiodensity (infiltrate) on chest imaging together with respiratory symptoms (chest pain, cough, tachypnoea) and/or fever, in a person with sickle cell disease",
+        detail: "Often follows a vaso-occlusive crisis or surgery.",
+        next: ["di2"],
+      },
+      {
+        id: "di2",
+        stage: "Decision",
+        title: "Oxygen, incentive spirometry, empirical antibiotics, and early involvement of a haematologist for possible transfusion (simple or exchange)",
+        detail: "This is the leading cause of death in sickle cell disease and can progress rapidly. ClairMD does not select antibiotics, or the type or timing of transfusion — these are set by the clinician.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Acute Chest Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK441872/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Sickle Cell Disease — Treatment", publisher: "National Heart, Lung, and Blood Institute (NHLBI), NIH, USA", url: "https://www.nhlbi.nih.gov/health/sickle-cell-disease/treatment", licence: "US Government work — public domain" },
+    ],
+  },
+
+  // ── Cluster 28: Heat-related illness ────────────────────────────────────────
+  {
+    id: "med-heat-illness-entry",
+    condition: "Heat-related illness (entry pathway)",
+    region: "SYSTEMIC",
+    synonyms: ["heat-related illness", "heat illness", "heat exhaustion", "heat stroke"],
+    status: "cited",
+    redFlags: [
+      "Temperature above 40°C",
+      "Altered mental status, confusion, ataxia or seizures",
+      "Hot, dry skin with absent sweating — though sweating may still be present in exertional heat stroke",
+      "Signs of organ dysfunction — acute kidney injury, liver injury, coagulopathy, or rhabdomyolysis",
+    ],
+    algorithm: [
+      {
+        id: "dj1",
+        stage: "Presentation",
+        title: "Exposure to high ambient temperature, exertion in the heat, or an at-risk patient (elderly, infant, or on medications that impair heat loss) with symptoms of overheating",
+        next: ["dj2"],
+      },
+      {
+        id: "dj2",
+        stage: "Differentiate",
+        title: "Use the temperature and mental status to identify which pathway this is",
+        branches: [
+          { label: "Heavy sweating, weakness, dizziness, nausea, normal or mildly raised temperature, normal mental status", to: "med-heat-exhaustion" },
+          { label: "Very high temperature with altered mental status, confusion, ataxia or seizures", to: "med-heat-stroke" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Heat-Related Illnesses", publisher: "National Institute for Occupational Safety and Health (NIOSH), CDC, USA", url: "https://www.cdc.gov/niosh/heat-stress/about/illnesses.html", licence: "US Government work — public domain" },
+      { title: "Heat Illness", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK553117/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-heat-exhaustion",
+    condition: "Heat exhaustion",
+    region: "SYSTEMIC",
+    synonyms: ["heat exhaustion", "heat cramps", "heat syncope"],
+    status: "cited",
+    redFlags: [
+      "Progression to confusion or altered mental status — reassess for heat stroke",
+      "Persistent vomiting preventing oral rehydration",
+      "Temperature continuing to rise despite cooling",
+    ],
+    algorithm: [
+      {
+        id: "dk1",
+        stage: "Confirm",
+        title: "Heavy sweating, weakness, dizziness, headache, nausea and muscle cramps after heat exposure or exertion, with a normal or only mildly raised temperature and normal mental status",
+        next: ["dk2"],
+      },
+      {
+        id: "dk2",
+        stage: "Decision",
+        title: "Move to a cool place, remove excess clothing, and give oral fluids with electrolytes if tolerating them",
+        detail: "Most cases improve within a few hours with rest and cooling. ClairMD does not select or dose IV fluids for cases needing them — this is set by the clinician.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Heat Illness", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK553117/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Heat-Related Illnesses", publisher: "National Institute for Occupational Safety and Health (NIOSH), CDC, USA", url: "https://www.cdc.gov/niosh/heat-stress/about/illnesses.html", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-heat-stroke",
+    condition: "Heat stroke",
+    region: "SYSTEMIC",
+    synonyms: ["heat stroke", "heatstroke", "exertional heat stroke", "classic heat stroke"],
+    status: "cited",
+    redFlags: [
+      "Temperature typically above 40°C",
+      "Altered mental status, delirium, ataxia or seizures",
+      "Multi-organ dysfunction — acute kidney injury, liver injury, coagulopathy, or rhabdomyolysis",
+      "Cardiovascular collapse",
+    ],
+    algorithm: [
+      {
+        id: "dl1",
+        stage: "Confirm",
+        title: "Severe hyperthermia with central nervous system dysfunction (confusion, delirium, ataxia or seizures) in the setting of heat exposure or exertion",
+        detail: "Can occur with or without sweating.",
+        next: ["dl2"],
+      },
+      {
+        id: "dl2",
+        stage: "Decision",
+        title: "Rapid cooling is the single most important treatment — the method and target should not delay other resuscitation",
+        detail: "ClairMD does not select the specific cooling method or fluid/medication doses — these are set by the clinician per local protocol; cold water immersion is generally the fastest method where feasible.",
+        next: ["dl3"],
+      },
+      {
+        id: "dl3",
+        stage: "Note",
+        title: "Monitor closely for multi-organ dysfunction, since this can evolve rapidly even after cooling begins",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Heat Stroke", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK537135/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Heat-Related Illnesses", publisher: "National Institute for Occupational Safety and Health (NIOSH), CDC, USA", url: "https://www.cdc.gov/niosh/heat-stress/about/illnesses.html", licence: "US Government work — public domain" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
