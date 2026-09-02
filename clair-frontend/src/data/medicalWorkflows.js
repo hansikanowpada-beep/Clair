@@ -4579,6 +4579,91 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Heat-Related Illnesses", publisher: "National Institute for Occupational Safety and Health (NIOSH), CDC, USA", url: "https://www.cdc.gov/niosh/heat-stress/about/illnesses.html", licence: "US Government work — public domain" },
     ],
   },
+
+  // ── Cluster 29: Haemoptysis ──────────────────────────────────────────────────
+  {
+    id: "med-haemoptysis-entry",
+    condition: "Haemoptysis (entry pathway)",
+    region: "CHEST",
+    synonyms: ["haemoptysis", "hemoptysis", "coughing up blood", "blood in sputum"],
+    status: "cited",
+    redFlags: [
+      "Massive haemoptysis — large volume or life-threatening bleeding",
+      "Airway compromise",
+      "Hypoxia or respiratory distress",
+      "Hypotension or haemodynamic instability",
+    ],
+    algorithm: [
+      {
+        id: "dm1",
+        stage: "Presentation",
+        title: "Coughing up blood — establish the volume, whether it is frank blood or blood-streaked sputum, and any associated symptoms",
+        detail: "Ask specifically about fever, weight loss, night sweats, chest pain and breathlessness.",
+        next: ["dm2"],
+      },
+      {
+        id: "dm2",
+        stage: "Stabilise first",
+        title: "Massive haemoptysis is a medical emergency — position the bleeding lung down if known, secure the airway, and involve interventional radiology or thoracic surgery early",
+        detail: "ClairMD does not select airway or bleeding-control interventions — these are set by the clinician.",
+        next: ["dm3"],
+      },
+      {
+        id: "dm3",
+        stage: "Differentiate",
+        title: "Use the associated symptoms and risk factors to identify the likely cause",
+        branches: [
+          { label: "Chronic cough, weight loss, night sweats, or known TB contact/endemic exposure", to: "med-pulmonary-tuberculosis" },
+          { label: "Pleuritic chest pain and breathlessness, with risk factors for venous thromboembolism", to: "med-pulmonary-embolism" },
+          { label: "Fever, productive cough and focal chest signs", to: "med-community-acquired-pneumonia" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Clinical Overview of Tuberculosis Disease", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/tb/hcp/clinical-overview/tuberculosis-disease.html", licence: "US Government work — public domain" },
+      { title: "Pulmonary Hemorrhage", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK538278/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-pulmonary-tuberculosis",
+    condition: "Pulmonary tuberculosis",
+    region: "CHEST",
+    synonyms: ["pulmonary tuberculosis", "tb", "tuberculosis", "pulmonary tb"],
+    status: "cited",
+    redFlags: [
+      "Massive haemoptysis",
+      "Respiratory failure",
+      "Signs of disseminated (miliary) TB",
+      "Significant immunosuppression (e.g. HIV) with TB symptoms",
+    ],
+    algorithm: [
+      {
+        id: "dn1",
+        stage: "Confirm",
+        title: "Chronic cough (over 2-3 weeks), haemoptysis, fever, night sweats and weight loss",
+        detail: "Sputum testing (smear, culture, or a rapid molecular test) confirms the diagnosis, and chest imaging supports it.",
+        next: ["dn2"],
+      },
+      {
+        id: "dn2",
+        stage: "Decision",
+        title: "Isolate (airborne precautions) while infectious, notify per local public health requirements, and start a multi-drug anti-TB regimen",
+        detail: "ClairMD does not select or dose anti-tuberculosis therapy — this is set by the clinician per national/WHO guidance, and requires directly observed therapy or equivalent adherence support in many settings.",
+        next: ["dn3"],
+      },
+      {
+        id: "dn3",
+        stage: "Note",
+        title: "Screen close contacts, and test for HIV given the strong association between the two conditions",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Tuberculosis Overview", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK441916/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Clinical Treatment of Tuberculosis", publisher: "Centers for Disease Control and Prevention (CDC), USA", url: "https://www.cdc.gov/tb/hcp/treatment/index.html", licence: "US Government work — public domain" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
