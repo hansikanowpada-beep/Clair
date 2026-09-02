@@ -3892,6 +3892,221 @@ export const MEDICAL_WORKFLOWS = [
       { title: "Serotonin Syndrome", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482377/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
     ],
   },
+
+  // ── Cluster 23: Severe cutaneous adverse drug reaction ──────────────────────
+  {
+    id: "med-severe-drug-reaction-entry",
+    condition: "Severe cutaneous adverse drug reaction (entry pathway)",
+    region: "SURFACE",
+    synonyms: ["severe drug reaction", "severe cutaneous adverse reaction", "drug-induced skin reaction"],
+    status: "cited",
+    redFlags: [
+      "Skin pain out of proportion to visible changes",
+      "Mucosal involvement (eyes, mouth, genitals)",
+      "Skin blistering, detachment, or a positive Nikolsky sign",
+      "Fever with facial swelling and lymphadenopathy",
+      "A rapidly progressive rash",
+    ],
+    algorithm: [
+      {
+        id: "cu1",
+        stage: "Presentation",
+        title: "A widespread new skin eruption, typically 1-6 weeks after starting a new medication",
+        detail: "The specific pattern, mucosal involvement and systemic features are what separate these reactions from each other and from milder drug rashes.",
+        next: ["cu2"],
+      },
+      {
+        id: "cu2",
+        stage: "Differentiate",
+        title: "Use the pattern of skin, mucosal and systemic involvement to identify which reaction this is",
+        branches: [
+          { label: "Skin pain, mucosal erosions, blistering and skin detachment (positive Nikolsky sign)", to: "med-sjs-ten" },
+          { label: "Facial oedema, widespread rash with fever, lymphadenopathy and organ involvement, onset 2-6 weeks after the drug", to: "med-dress-syndrome" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Stevens-Johnson syndrome/toxic epidermal necrolysis", publisher: "MedlinePlus Genetics, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/genetics/condition/stevens-johnson-syndrome-toxic-epidermal-necrolysis/", licence: "US Government work — public domain" },
+      { title: "Cutaneous Adverse Drug Reaction", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK533000/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-sjs-ten",
+    condition: "Stevens-Johnson syndrome / toxic epidermal necrolysis (SJS/TEN)",
+    region: "SURFACE",
+    synonyms: ["stevens-johnson syndrome", "toxic epidermal necrolysis", "sjs", "ten", "sjs/ten"],
+    status: "cited",
+    redFlags: [
+      "Skin detachment involving a large body surface area",
+      "Mucosal involvement — ocular, oral or genital",
+      "Sepsis or multi-organ failure",
+      "A positive Nikolsky sign",
+    ],
+    algorithm: [
+      {
+        id: "cv1",
+        stage: "Confirm",
+        title: "A drug-induced reaction (implicated in over 80% of cases) with skin pain, a spreading erythematous or purpuric rash, mucosal erosions, and blistering with skin detachment",
+        detail: "The extent of detachment defines SJS (under 10% of body surface area), SJS/TEN overlap (10-30%), and TEN (over 30%).",
+        next: ["cv2"],
+      },
+      {
+        id: "cv2",
+        stage: "Decision",
+        title: "Stop the causative drug immediately and manage in a burns unit or intensive care setting, with early ophthalmology and dermatology involvement",
+        detail: "ClairMD does not select or dose immunomodulatory or supportive therapies — these are set by the specialist team. Fluid and temperature management follow a burns-style approach given the extent of skin loss.",
+        next: ["cv3"],
+      },
+      {
+        id: "cv3",
+        stage: "Note",
+        title: "Mortality and long-term morbidity, especially ocular, are significant — early recognition and same-day escalation are essential",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Stevens-Johnson Syndrome and Toxic Epidermal Necrolysis", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK459323/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Stevens-Johnson syndrome/toxic epidermal necrolysis", publisher: "MedlinePlus Genetics, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/genetics/condition/stevens-johnson-syndrome-toxic-epidermal-necrolysis/", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-dress-syndrome",
+    condition: "DRESS syndrome (drug reaction with eosinophilia and systemic symptoms)",
+    region: "SURFACE",
+    synonyms: ["dress syndrome", "drug reaction with eosinophilia and systemic symptoms", "drug-induced hypersensitivity syndrome"],
+    status: "cited",
+    redFlags: [
+      "Facial or periorbital oedema",
+      "High fever",
+      "Widespread lymphadenopathy",
+      "Signs of organ involvement — jaundice, breathlessness, or reduced urine output",
+    ],
+    algorithm: [
+      {
+        id: "cw1",
+        stage: "Confirm",
+        title: "A late-onset reaction, typically 2-6 weeks after starting the causative drug, with a widespread rash, fever, facial oedema, lymphadenopathy and eosinophilia",
+        detail: "Look specifically for liver, kidney, lung and cardiac involvement.",
+        next: ["cw2"],
+      },
+      {
+        id: "cw2",
+        stage: "Decision",
+        title: "Stop the causative drug immediately — corticosteroids are the mainstay of treatment for significant organ involvement",
+        detail: "ClairMD does not select or dose corticosteroids or other immunomodulatory therapy — this is set by the clinician. Relapse can occur even after stopping the drug and starting treatment, so ongoing monitoring is needed.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Cutaneous Adverse Drug Reaction", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK533000/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Stevens-Johnson syndrome/toxic epidermal necrolysis", publisher: "MedlinePlus Genetics, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/genetics/condition/stevens-johnson-syndrome-toxic-epidermal-necrolysis/", licence: "US Government work — public domain" },
+    ],
+  },
+
+  // ── Cluster 24: Angioedema without anaphylaxis ──────────────────────────────
+  {
+    id: "med-angioedema-entry",
+    condition: "Angioedema without anaphylaxis (entry pathway)",
+    region: "NECK",
+    synonyms: ["angioedema", "facial swelling", "lip swelling", "tongue swelling"],
+    status: "cited",
+    redFlags: [
+      "Stridor, voice change or difficulty breathing — same-day airway assessment regardless of the cause",
+      "Rapidly progressive swelling",
+      "Tongue or floor-of-mouth involvement",
+      "Any associated urticaria, hypotension or wheeze — reassess for anaphylaxis instead",
+    ],
+    algorithm: [
+      {
+        id: "cx1",
+        stage: "Presentation",
+        title: "Swelling of the face, lips, tongue or upper airway without urticaria, itch or a clear allergen exposure",
+        detail: "This pattern points away from an IgE-mediated (anaphylactic) cause and towards a bradykinin-mediated one, which does not respond to adrenaline.",
+        branches: [{ label: "Urticaria, itch, hypotension or wheeze also present", to: "med-anaphylaxis" }],
+        next: ["cx2"],
+      },
+      {
+        id: "cx2",
+        stage: "Differentiate",
+        title: "Use drug history and pattern of episodes to identify the likely cause",
+        branches: [
+          { label: "Taking an ACE inhibitor (or, less often, an ARB), first episode", to: "med-ace-inhibitor-angioedema" },
+          { label: "Recurrent episodes, often with a family history, abdominal attacks, or no response to antihistamines/adrenaline", to: "med-hereditary-angioedema" },
+        ],
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Angioedema", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK538489/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Hereditary angioedema", publisher: "MedlinePlus Genetics, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/genetics/condition/hereditary-angioedema/", licence: "US Government work — public domain" },
+    ],
+  },
+  {
+    id: "med-ace-inhibitor-angioedema",
+    condition: "ACE inhibitor-induced angioedema",
+    region: "NECK",
+    synonyms: ["ace inhibitor angioedema", "ace-inhibitor angioedema", "drug-induced angioedema"],
+    status: "cited",
+    redFlags: [
+      "Stridor or voice change",
+      "Tongue or floor-of-mouth swelling",
+      "Rapidly progressive swelling",
+    ],
+    algorithm: [
+      {
+        id: "cy1",
+        stage: "Confirm",
+        title: "Asymmetric swelling of the face, lips, tongue or upper airway, without urticaria or itch, in someone taking an ACE inhibitor",
+        detail: "Can occur at any point during treatment, though most often in the first few months.",
+        next: ["cy2"],
+      },
+      {
+        id: "cy2",
+        stage: "Decision",
+        title: "Stop the ACE inhibitor immediately and permanently — do not switch to another ACE inhibitor, and use caution with ARBs given some cross-reactivity",
+        detail: "ClairMD does not select or dose airway or supportive treatment — this is set by the clinician. Antihistamines, corticosteroids and adrenaline are typically ineffective, since this is a bradykinin-mediated (not histamine-mediated) reaction.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Angioedema", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK538489/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Angiotensin-Converting Enzyme Inhibitors (ACEI)", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK431051/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+    ],
+  },
+  {
+    id: "med-hereditary-angioedema",
+    condition: "Hereditary angioedema",
+    region: "NECK",
+    synonyms: ["hereditary angioedema", "hae", "c1 esterase inhibitor deficiency"],
+    status: "cited",
+    redFlags: [
+      "Stridor or voice change",
+      "Tongue or floor-of-mouth swelling",
+      "Severe abdominal pain during an attack",
+      "Laryngeal involvement in a previous attack",
+    ],
+    algorithm: [
+      {
+        id: "cz1",
+        stage: "Confirm",
+        title: "Recurrent, self-limiting episodes of swelling (face, limbs, genitals, gut or airway) without urticaria or itch, often with a family history",
+        detail: "A reduced C1 esterase inhibitor level or function, with low C4, supports the diagnosis — but attacks are treated on clinical grounds without waiting for results. No response to antihistamines or adrenaline is typical.",
+        next: ["cz2"],
+      },
+      {
+        id: "cz2",
+        stage: "Decision",
+        title: "Specific on-demand treatment is given as early as possible in an attack, especially with any airway or severe abdominal involvement",
+        detail: "ClairMD does not select or dose C1 esterase inhibitor concentrate, bradykinin receptor antagonists, kallikrein inhibitors or other agents — this is set by the clinician per the patient's individualised emergency plan. Long-term prophylaxis is arranged by an allergy/immunology specialist.",
+        next: [],
+      },
+    ],
+    citations: [
+      { title: "Hereditary Angioedema", publisher: "StatPearls, NCBI Bookshelf (NLM/NIH)", url: "https://www.ncbi.nlm.nih.gov/books/NBK482266/", licence: "CC BY-NC-ND 4.0 — link/cite only, do not copy text into product" },
+      { title: "Hereditary angioedema", publisher: "MedlinePlus Genetics, National Library of Medicine, NIH, USA", url: "https://medlineplus.gov/genetics/condition/hereditary-angioedema/", licence: "US Government work — public domain" },
+    ],
+  },
 ];
 
 export const MEDICAL_WORKFLOWS_BY_ID = MEDICAL_WORKFLOWS.reduce(function (acc, w) {
