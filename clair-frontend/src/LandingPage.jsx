@@ -196,7 +196,7 @@ function MedicalStudentForm() {
       <button type="submit" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white" style={{ background: TEAL }}>
         <ArrowRight size={15} /> Request early access
       </button>
-      <p className="text-[11px] text-[#16241F]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+      <p className="text-xs text-[#16241F]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
     </form>
   );
 }
@@ -225,7 +225,7 @@ function OthersContact() {
       <button type="submit" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white" style={{ background: TEAL }}>
         <Mail size={15} /> Send
       </button>
-      <p className="text-[11px] text-[#16241F]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+      <p className="text-xs text-[#16241F]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
     </form>
   );
 }
@@ -402,7 +402,7 @@ function MockDonateCheckout() {
         {stage === "processing" ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
         {stage === "processing" ? "Processing…" : `Pay ₹${finalAmount || 0} via Razorpay`}
       </button>
-      <p className="text-[11px] text-[#16241F] flex items-start gap-1">
+      <p className="text-xs text-[#16241F] flex items-start gap-1">
         <AlertTriangle size={12} className="mt-0.5 shrink-0" />
         Preview only — no real Razorpay integration is connected yet, and no payment is actually processed. This shows what the flow will look like once ClairMD is Section 8 registered and a real Razorpay account is wired up.
       </p>
