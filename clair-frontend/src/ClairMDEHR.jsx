@@ -19003,7 +19003,7 @@ function ExaminationTab({ examNotes: externalExamNotes, setExamNotes: externalSe
   const setExamNotes = externalSetExamNotes !== undefined ? externalSetExamNotes : setInternalExamNotes;
   return (
     <div className="bg-white border border-[#D8DED9] rounded-md p-5">
-      <BareEditableTextarea value={examNotes} onChange={(e) => setExamNotes(e.target.value)} rows={25} scrollable placeholder="Click here to start typing examination findings…" />
+      <BareEditableTextarea value={examNotes} onChange={(e) => setExamNotes(e.target.value)} rows={25} scrollable placeholder={"Click here to start typing examination findings…\nClick on templates to add them here."} />
     </div>
   );
 }
