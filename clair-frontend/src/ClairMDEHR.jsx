@@ -18982,6 +18982,38 @@ function AutoExpandingTextarea({ value, onChange, placeholder }) {
   );
 }
 
+// No border, no background fill, no label — a click gives a native blinking
+// caret and nothing else. Used where a section header/instructional text/box
+// has been deliberately stripped down to a bare editable space (Records'
+// History of Present Illness and Examination). minHeight is a floor so an
+// empty textarea (scrollHeight not yet reflecting any content) still renders
+// visibly and is clickable, rather than collapsing to 0 height.
+function BareEditableTextarea({ value, onChange }) {
+  const ref = useRef(null);
+  const { handleContextMenu, portal } = useDiagnosticLookup();
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = "auto";
+      ref.current.style.height = ref.current.scrollHeight + "px";
+    }
+  }, [value]);
+
+  return (
+    <>
+      <textarea
+        ref={ref}
+        value={value}
+        onChange={onChange}
+        onContextMenu={handleContextMenu}
+        rows={1}
+        className="w-full text-sm bg-transparent resize-none overflow-hidden border-none outline-none focus:outline-none"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif", lineHeight: 1.5, minHeight: "1.5em" }}
+      />
+      {portal}
+    </>
+  );
+}
+
 function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examNotes: externalExamNotes, setExamNotes: externalSetExamNotes }) {
   const [internalDraftHpi, setInternalDraftHpi] = useState("");
   const draftHpi = externalDraftHpi !== undefined ? externalDraftHpi : internalDraftHpi;
@@ -19015,8 +19047,7 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
             </p>
             {isDraft ? (
               <div className="mb-4">
-                <div className="text-xs uppercase tracking-wide text-[#16241F] mb-1.5">History of present illness</div>
-                <AutoExpandingTextarea value={draftHpi} onChange={(ev) => setDraftHpi(ev.target.value)} placeholder="Start typing…" />
+                <BareEditableTextarea value={draftHpi} onChange={(ev) => setDraftHpi(ev.target.value)} />
               </div>
             ) : (
               <p className="text-sm mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{e.notes}</p>
@@ -20947,27 +20978,10 @@ function ExaminationNoteCard({ examNotes: externalExamNotes, setExamNotes: exter
   const [internalExamNotes, setInternalExamNotes] = useState("");
   const examNotes = externalExamNotes !== undefined ? externalExamNotes : internalExamNotes;
   const setExamNotes = externalSetExamNotes !== undefined ? externalSetExamNotes : setInternalExamNotes;
-  const ref = useRef(null);
-  const { handleContextMenu, portal } = useDiagnosticLookup();
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.style.height = "auto";
-      ref.current.style.height = ref.current.scrollHeight + "px";
-    }
-  }, [examNotes]);
 
   return (
     <div className="mt-4">
-      <textarea
-        ref={ref}
-        value={examNotes}
-        onChange={(e) => setExamNotes(e.target.value)}
-        onContextMenu={handleContextMenu}
-        rows={1}
-        className="w-full text-sm bg-transparent resize-none overflow-hidden border-none outline-none focus:outline-none"
-        style={{ fontFamily: "'IBM Plex Sans', sans-serif", lineHeight: 1.5, minHeight: "1.5em" }}
-      />
-      {portal}
+      <BareEditableTextarea value={examNotes} onChange={(e) => setExamNotes(e.target.value)} />
     </div>
   );
 }
@@ -29626,7 +29640,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
 
   const tabs = [
     { key: "overview", label: "Overview", icon: Users },
-    { key: "records", label: "Records", icon: FileText },
+    { key: "records", label: "Complaints", icon: FileText },
     { key: "workup", label: "Differential Diagnosis & Workup", icon: ListChecks },
     { key: "diagnosisplan", label: "Provisional Diagnosis & Treatment Plan", icon: ClipboardList },
     { key: "careteam", label: "Care team", icon: Users2 },
@@ -30145,7 +30159,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                         className="text-sm px-5 py-2.5 rounded-sm text-white font-medium"
                         style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}
                       >
-                        Next: Records →
+                        Next: Complaints →
                       </button>
                     </div>
                   )}
