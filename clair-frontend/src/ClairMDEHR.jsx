@@ -21243,7 +21243,6 @@ function LoincCodeSearch({ initialTerm, onSelect, onClose }) {
 }
 
 function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, setWorkupSpace: externalSetWorkupSpace, workupNotes: externalWorkupNotes, setWorkupNotes: externalSetWorkupNotes }) {
-  const [collapsibleOpen, setCollapsibleOpen] = useState(false);
   const [testQuery, setTestQuery] = useState("");
   const [internalWorkupSpace, setInternalWorkupSpace] = useState([]); // [{ test }]
   const [internalWorkupNotes, setInternalWorkupNotes] = useState("");
@@ -21286,18 +21285,12 @@ function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, set
 
   return (
     <div className="mt-4 pt-4 border-t-2 border-[#0F5C56]">
-      <button
-        type="button"
-        onClick={() => setCollapsibleOpen((v) => !v)}
-        className="flex items-center gap-1.5 mb-2 text-[#0F5C56]"
-      >
-        {collapsibleOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+      <div className="flex items-center gap-1.5 mb-2 text-[#0F5C56]">
         <FlaskConical size={14} />
         <span className="text-sm uppercase tracking-wide font-semibold">Workup</span>
-      </button>
+      </div>
 
-      {collapsibleOpen && (
-        <div className="flex gap-4 items-start">
+      <div className="flex gap-4 items-start">
           <div className="shrink-0" style={{ width: "5cm" }}>
             <p className="text-sm text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               Every test on file in this app. Ordered by relevance to what's pushed above under Differential Diagnosis, then this patient's existing diagnoses, then alphabetically — not a recommendation; the physician chooses what to order.
@@ -21402,7 +21395,6 @@ function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, set
             )}
           </div>
         </div>
-      )}
     </div>
   );
 }
