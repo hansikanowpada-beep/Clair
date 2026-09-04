@@ -18019,10 +18019,10 @@ function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel
 
   if (connectedEmail) {
     return (
-      <div className="flex items-center gap-2 text-[11px] text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="flex items-center gap-2 text-[11px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         <span className="w-1.5 h-1.5 rounded-full bg-[#0F5C56]" />
         Backend: connected as {connectedEmail}
-        <button type="button" onClick={() => { backendLogout(); setConnectedEmail(null); }} className="underline text-[#8A958E] hover:text-[#B34A3C]">
+        <button type="button" onClick={() => { backendLogout(); setConnectedEmail(null); }} className="underline text-[#16241F] hover:text-[#B34A3C]">
           Disconnect
         </button>
       </div>
@@ -18031,7 +18031,7 @@ function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel
 
   return (
     <div className="border border-[#D8DED9] rounded-sm bg-[#F7F9F7] p-2.5">
-      <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-1.5 text-[11px] text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-1.5 text-[11px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         {notConnectedLabel}
       </button>
@@ -18043,7 +18043,7 @@ function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel
                 key={m}
                 type="button"
                 onClick={() => setMode(m)}
-                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${mode === m ? "text-white border-[#0F5C56]" : "border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${mode === m ? "text-white border-[#0F5C56]" : "border-[#D8DED9] text-[#16241F]"}`}
                 style={mode === m ? { backgroundColor: "#0F5C56" } : {}}
               >
                 {m === "login" ? "Log in" : "Sign up"}
@@ -18136,7 +18136,7 @@ function NotificationsBell() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         title="Notifications"
-        className="relative w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7] hover:text-[#16241F]"
+        className="relative w-8 h-8 flex items-center justify-center rounded-sm text-[#16241F] hover:bg-[#F7F9F7] hover:text-[#16241F]"
       >
         <Bell size={16} />
         {unreadCount > 0 && (
@@ -18148,23 +18148,23 @@ function NotificationsBell() {
       {open && (
         <div className="absolute right-0 mt-1 w-72 bg-white border border-[#D8DED9] rounded-sm shadow-xl z-50">
           <div className="px-3 py-2 border-b border-[#D8DED9] flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-wide text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Notifications</span>
+            <span className="text-[11px] uppercase tracking-wide text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Notifications</span>
             {getAuthToken() && <button onClick={refresh} className="text-[10px] text-[#0F5C56] underline decoration-dotted">Refresh</button>}
           </div>
           {!connectedEmail ? (
             <div className="p-3">
-              <p className="text-xs text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend to see real notifications — referrals and care-team instructions enqueue these for real once you are.</p>
+              <p className="text-xs text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend to see real notifications — referrals and care-team instructions enqueue these for real once you are.</p>
               <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected" />
             </div>
           ) : notifications.length === 0 ? (
-            <p className="text-xs text-[#8A958E] p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No notifications yet.</p>
+            <p className="text-xs text-[#16241F] p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No notifications yet.</p>
           ) : (
             <div className="max-h-72 overflow-y-auto">
               {notifications.map((n) => (
                 <div key={n.id} className={`px-3 py-2 border-b border-[#EEF1EE] flex items-start justify-between gap-2 ${n.read_at ? "" : "bg-[#F2F7F5]"}`}>
                   <div>
                     <div className="text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "#16241F" }}>{describeNotification(n)}</div>
-                    <div className="text-[10px] text-[#8A958E] mt-0.5">{new Date(n.created_at).toLocaleString()}</div>
+                    <div className="text-[10px] text-[#16241F] mt-0.5">{new Date(n.created_at).toLocaleString()}</div>
                   </div>
                   {!n.read_at && (
                     <button onClick={() => markRead(n.id)} className="text-[10px] text-[#0F5C56] underline decoration-dotted shrink-0">Mark read</button>
@@ -18193,7 +18193,7 @@ function TreatmentSummaryButtons({ patient }) {
       </button>
       <button
         onClick={() => printSummary(text, `Treatment Summary — ${patient.name}`)}
-        className="flex items-center gap-1.5 text-xs px-3 py-2 border border-[#D8DED9] rounded-sm font-medium text-[#5B6B63]"
+        className="flex items-center gap-1.5 text-xs px-3 py-2 border border-[#D8DED9] rounded-sm font-medium text-[#16241F]"
         style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
       >
         <Printer size={13} /> Print
@@ -18223,7 +18223,7 @@ function MedicationSafetyPanel({ patient }) {
         <AlertTriangle size={17} className="text-[#B34A3C]" />
         <h3 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 600 }}>Medication safety check</h3>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Reference information only — always confirm against current prescribing information and the patient's full history before dispensing.
       </p>
 
@@ -18242,11 +18242,11 @@ function MedicationSafetyPanel({ patient }) {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 <div>
-                  <div className="text-[#8A958E] uppercase text-[10px] mb-1">Contraindicated in</div>
+                  <div className="text-[#16241F] uppercase text-[10px] mb-1">Contraindicated in</div>
                   <ul className="space-y-0.5">{info.contraindications.map((c, ci) => <li key={ci}>• {c}</li>)}</ul>
                 </div>
                 <div>
-                  <div className="text-[#8A958E] uppercase text-[10px] mb-1">Adverse events to expect</div>
+                  <div className="text-[#16241F] uppercase text-[10px] mb-1">Adverse events to expect</div>
                   <ul className="space-y-0.5">{info.adverseEvents.map((c, ci) => <li key={ci}>• {c}</li>)}</ul>
                 </div>
               </div>
@@ -18256,9 +18256,9 @@ function MedicationSafetyPanel({ patient }) {
       </div>
 
       <div className="mt-4 pt-4 border-t border-[#EEF1EE]">
-        <div className="text-xs uppercase tracking-wide text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Drug–drug interactions to avoid / monitor</div>
+        <div className="text-xs uppercase tracking-wide text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Drug–drug interactions to avoid / monitor</div>
         {interactions.length === 0 ? (
-          <p className="text-sm text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No known interactions flagged among this patient's current prescriptions.</p>
+          <p className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No known interactions flagged among this patient's current prescriptions.</p>
         ) : (
           <div className="space-y-2">
             {interactions.map((it, i) => (
@@ -18722,7 +18722,7 @@ function Tab({ active, onClick, icon: Icon, children }) {
     <button
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 transition-colors whitespace-nowrap ${
-        active ? "border-[#0F5C56] text-[#0F5C56]" : "border-transparent text-[#5B6B63] hover:text-[#16241F]"
+        active ? "border-[#0F5C56] text-[#0F5C56]" : "border-transparent text-[#16241F] hover:text-[#16241F]"
       }`}
       style={{ fontFamily: "'IBM Plex Sans', sans-serif", fontWeight: 500 }}
     >
@@ -18734,7 +18734,7 @@ function Tab({ active, onClick, icon: Icon, children }) {
 
 function SectionLabel({ children }) {
   return (
-    <h3 className="text-[13px] uppercase tracking-wider text-[#5B6B63] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+    <h3 className="text-[13px] uppercase tracking-wider text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {children}
     </h3>
   );
@@ -18776,7 +18776,7 @@ function VitalsPanel({ isDraft, patientVitals, vitals, updateVital, idPrefix = "
       {isDraft ? (
         OVERVIEW_VITAL_FIELDS.map((f) => (
           <div key={f.key} className="flex items-center justify-between border-b border-[#EEF1EE] pb-2">
-            <span className="text-[#8A958E] uppercase text-xs tracking-wide">{f.label}</span>
+            <span className="text-[#16241F] uppercase text-xs tracking-wide">{f.label}</span>
             {f.key === "spo2" ? (
               <div className="flex items-center gap-1">
                 <input
@@ -18787,7 +18787,7 @@ function VitalsPanel({ isDraft, patientVitals, vitals, updateVital, idPrefix = "
                   className="w-12 px-1.5 py-0.5 border border-[#D8DED9] rounded-sm text-sm text-right focus:outline-none focus:border-[#0F5C56]"
                   style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                 />
-                <span className="text-xs text-[#8A958E]">on</span>
+                <span className="text-xs text-[#16241F]">on</span>
                 <input
                   id={`${idPrefix}-spo2On`}
                   value={vitals.spo2On}
@@ -18807,7 +18807,7 @@ function VitalsPanel({ isDraft, patientVitals, vitals, updateVital, idPrefix = "
                   className="w-16 px-1.5 py-0.5 border border-[#D8DED9] rounded-sm text-sm text-right focus:outline-none focus:border-[#0F5C56]"
                   style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                 />
-                {f.key === "pain" && <span className="text-xs text-[#8A958E]">/10</span>}
+                {f.key === "pain" && <span className="text-xs text-[#16241F]">/10</span>}
               </div>
             )}
           </div>
@@ -18815,7 +18815,7 @@ function VitalsPanel({ isDraft, patientVitals, vitals, updateVital, idPrefix = "
       ) : (
         Object.entries(patientVitals).map(([k, v]) => (
           <div key={k} className="flex justify-between border-b border-[#EEF1EE] pb-2">
-            <span className="text-[#8A958E] uppercase text-xs tracking-wide">{k}</span>
+            <span className="text-[#16241F] uppercase text-xs tracking-wide">{k}</span>
             <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{v}</span>
           </div>
         ))
@@ -18836,7 +18836,7 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
           <SectionLabel>Patient details</SectionLabel>
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             <div className="col-span-2">
-              <div className="text-[#8A958E] text-xs mb-1">Name</div>
+              <div className="text-[#16241F] text-xs mb-1">Name</div>
               {isDraft ? (
                 <input id="draft-name" value={details.name} onChange={(e) => updateDetail("name", e.target.value)} placeholder="Patient name" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" />
               ) : (
@@ -18844,7 +18844,7 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
               )}
             </div>
             <div>
-              <div className="text-[#8A958E] text-xs mb-1">Local ID</div>
+              <div className="text-[#16241F] text-xs mb-1">Local ID</div>
               {isDraft ? (
                 <input id="draft-localId" value={details.localId} onChange={(e) => updateDetail("localId", e.target.value)} placeholder="e.g. AC-0000" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
               ) : (
@@ -18852,7 +18852,7 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
               )}
             </div>
             <div>
-              <div className="text-[#8A958E] text-xs mb-1">Age / Gender</div>
+              <div className="text-[#16241F] text-xs mb-1">Age / Gender</div>
               {isDraft ? (
                 <div className="flex gap-2">
                   <input id="draft-age" value={details.age} onChange={(e) => updateDetail("age", e.target.value)} placeholder="Age" className="w-16 px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" />
@@ -18863,9 +18863,9 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
               )}
             </div>
             <div className="flex items-start gap-1.5">
-              <Phone size={13} className="mt-0.5 text-[#8A958E] shrink-0" />
+              <Phone size={13} className="mt-0.5 text-[#16241F] shrink-0" />
               <div className="flex-1">
-                <div className="text-[#8A958E] text-xs mb-1">Phone</div>
+                <div className="text-[#16241F] text-xs mb-1">Phone</div>
                 {isDraft ? (
                   <input id="draft-phone" value={details.phone} onChange={(e) => updateDetail("phone", e.target.value)} placeholder="Phone number" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" />
                 ) : (
@@ -18874,9 +18874,9 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
               </div>
             </div>
             <div className="flex items-start gap-1.5">
-              <MapPin size={13} className="mt-0.5 text-[#8A958E] shrink-0" />
+              <MapPin size={13} className="mt-0.5 text-[#16241F] shrink-0" />
               <div className="flex-1">
-                <div className="text-[#8A958E] text-xs mb-1">Address</div>
+                <div className="text-[#16241F] text-xs mb-1">Address</div>
                 {isDraft ? (
                   <input id="draft-address" value={details.address} onChange={(e) => updateDetail("address", e.target.value)} placeholder="Address" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" />
                 ) : (
@@ -18930,7 +18930,7 @@ function TestGroup({ label, category, items, patientId, orders, onOrder }) {
   if (!items || items.length === 0) return null;
   return (
     <div className="mb-2">
-      <span className="text-[11px] uppercase tracking-wide text-[#8A958E]">{label}</span>
+      <span className="text-[11px] uppercase tracking-wide text-[#16241F]">{label}</span>
       <div className="flex flex-wrap gap-1.5 mt-1">
         {items.map((t, i) => {
           const order = orders.find((o) => o.patientId === patientId && o.test === t);
@@ -18994,7 +18994,7 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
       <div className="flex items-center justify-between bg-white border border-[#D8DED9] rounded-md p-4">
         <div>
           <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Treatment summary</div>
-          <div className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>History of present illness, tests, course, treatment, and follow-up advice</div>
+          <div className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>History of present illness, tests, course, treatment, and follow-up advice</div>
         </div>
         <TreatmentSummaryButtons patient={patient} />
       </div>
@@ -19003,19 +19003,19 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
         return (
           <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-5">
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-[#5B6B63] text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <div className="flex items-center gap-2 text-[#16241F] text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 <Clock size={13} /> {e.date}
                 {!isDraft && <span className="ml-2 px-1.5 py-0.5 bg-[#EEF1EE] rounded-sm">Locked — immutable</span>}
               </div>
-              <span className="text-[11px] text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>SNOMED CT {e.snomed}</span>
+              <span className="text-[11px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>SNOMED CT {e.snomed}</span>
             </div>
             <h4 className="text-lg mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 600, color: "#16241F" }}>{e.diagnosis}</h4>
-            <p className="text-sm text-[#5B6B63] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-              <span className="text-[#8A958E]">Chief complaint — </span>{e.complaint}
+            <p className="text-sm text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <span className="text-[#16241F]">Chief complaint — </span>{e.complaint}
             </p>
             {isDraft ? (
               <div className="mb-4">
-                <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1.5">History of present illness</div>
+                <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1.5">History of present illness</div>
                 <AutoExpandingTextarea value={draftHpi} onChange={(ev) => setDraftHpi(ev.target.value)} placeholder="Start typing…" />
               </div>
             ) : (
@@ -19052,7 +19052,7 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
           <div className="divide-y divide-[#EEF1EE]">
             {patient.prescriptions.map((rx, i) => (
               <div key={i} className="py-3 flex items-center justify-between text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                <div><div className="font-medium">{rx.drug}</div><div className="text-[#8A958E] text-xs">{rx.dosage}</div></div>
+                <div><div className="font-medium">{rx.drug}</div><div className="text-[#16241F] text-xs">{rx.dosage}</div></div>
                 <div style={{ fontFamily: "'IBM Plex Mono', monospace" }}>₹{rx.cost}</div>
               </div>
             ))}
@@ -19155,11 +19155,11 @@ function SnomedCodeSearch({ initialTerm, onSelect, onClose }) {
   return (
     <div className="absolute z-20 mt-1 w-80 bg-white border border-[#D8DED9] rounded-md shadow-lg p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-[#5B6B63] uppercase tracking-wide">Find SNOMED CT code</span>
-        <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={14} /></button>
+        <span className="text-xs font-semibold text-[#16241F] uppercase tracking-wide">Find SNOMED CT code</span>
+        <button type="button" onClick={onClose} className="text-[#16241F] hover:text-[#16241F]"><X size={14} /></button>
       </div>
       <div className="relative">
-        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8A958E]" />
+        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#16241F]" />
         <input
           autoFocus
           value={term}
@@ -19170,7 +19170,7 @@ function SnomedCodeSearch({ initialTerm, onSelect, onClose }) {
       </div>
       <div className="mt-2 max-h-52 overflow-y-auto">
         {status === "loading" && (
-          <div className="flex items-center gap-2 text-xs text-[#8A958E] py-3 justify-center">
+          <div className="flex items-center gap-2 text-xs text-[#16241F] py-3 justify-center">
             <Loader2 size={13} className="animate-spin" /> Searching BHTS…
           </div>
         )}
@@ -19178,7 +19178,7 @@ function SnomedCodeSearch({ initialTerm, onSelect, onClose }) {
           <p className="text-xs text-[#B34A3C] py-2">{errorMsg}</p>
         )}
         {status === "done" && results.length === 0 && (
-          <p className="text-xs text-[#8A958E] py-2">No matches found.</p>
+          <p className="text-xs text-[#16241F] py-2">No matches found.</p>
         )}
         {status === "done" && results.map((r) => (
           <button
@@ -19188,7 +19188,7 @@ function SnomedCodeSearch({ initialTerm, onSelect, onClose }) {
             className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-[#F2F7F5] flex items-center justify-between gap-2"
           >
             <span className="truncate">{r.term}</span>
-            <span className="text-[10px] text-[#8A958E] shrink-0">{r.conceptId}</span>
+            <span className="text-[10px] text-[#16241F] shrink-0">{r.conceptId}</span>
           </button>
         ))}
       </div>
@@ -19256,12 +19256,12 @@ function Icd10CodeSearch({ initialTerm, onSelect, onClose }) {
   return (
     <div className="absolute z-20 mt-1 w-80 bg-white border border-[#D8DED9] rounded-md shadow-lg p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-[#5B6B63] uppercase tracking-wide">Find ICD-10 code</span>
-        <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={14} /></button>
+        <span className="text-xs font-semibold text-[#16241F] uppercase tracking-wide">Find ICD-10 code</span>
+        <button type="button" onClick={onClose} className="text-[#16241F] hover:text-[#16241F]"><X size={14} /></button>
       </div>
 
       <div className="relative">
-        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8A958E]" />
+        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#16241F]" />
         <input
           autoFocus
           value={nameTerm}
@@ -19272,7 +19272,7 @@ function Icd10CodeSearch({ initialTerm, onSelect, onClose }) {
       </div>
       <div className="mt-2 max-h-40 overflow-y-auto">
         {nameStatus === "loading" && (
-          <div className="flex items-center gap-2 text-xs text-[#8A958E] py-3 justify-center">
+          <div className="flex items-center gap-2 text-xs text-[#16241F] py-3 justify-center">
             <Loader2 size={13} className="animate-spin" /> Searching…
           </div>
         )}
@@ -19280,7 +19280,7 @@ function Icd10CodeSearch({ initialTerm, onSelect, onClose }) {
           <p className="text-xs text-[#B34A3C] py-2">{nameError}</p>
         )}
         {nameStatus === "done" && nameResults.length === 0 && (
-          <p className="text-xs text-[#8A958E] py-2">No matches found.</p>
+          <p className="text-xs text-[#16241F] py-2">No matches found.</p>
         )}
         {nameStatus === "done" && nameResults.map((r) => (
           <button
@@ -19290,13 +19290,13 @@ function Icd10CodeSearch({ initialTerm, onSelect, onClose }) {
             className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-[#F2F7F5] flex items-center justify-between gap-2"
           >
             <span className="truncate">{r.title}</span>
-            <span className="text-[10px] text-[#8A958E] shrink-0">{r.code}</span>
+            <span className="text-[10px] text-[#16241F] shrink-0">{r.code}</span>
           </button>
         ))}
       </div>
 
       <div className="mt-3 pt-3 border-t border-[#D8DED9]">
-        <span className="text-[10px] text-[#8A958E] uppercase tracking-wide">Or enter a code directly</span>
+        <span className="text-[10px] text-[#16241F] uppercase tracking-wide">Or enter a code directly</span>
         <form onSubmit={lookupCode} className="flex items-center gap-1.5 mt-1">
           <input
             value={codeTerm}
@@ -19320,12 +19320,12 @@ function Icd10CodeSearch({ initialTerm, onSelect, onClose }) {
             className="w-full text-left px-2 py-1.5 mt-1.5 text-sm rounded-sm bg-[#F2F7F5] hover:bg-[#E7F0EC] flex items-center justify-between gap-2"
           >
             <span className="truncate">{codeResult.title}</span>
-            <span className="text-[10px] text-[#8A958E] shrink-0">{codeResult.code}</span>
+            <span className="text-[10px] text-[#16241F] shrink-0">{codeResult.code}</span>
           </button>
         )}
       </div>
 
-      <p className="text-[9px] text-[#8A958E] mt-2.5 pt-2 border-t border-[#D8DED9] leading-snug">
+      <p className="text-[9px] text-[#16241F] mt-2.5 pt-2 border-t border-[#D8DED9] leading-snug">
         ICD-10 codes reproduced from the World Health Organization, unmodified — Licence: CC BY-ND 3.0 IGO.
       </p>
     </div>
@@ -19370,7 +19370,7 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
               </div>
             )}
             <div className="flex items-start gap-3 mb-2">
-              <span className="text-xs uppercase tracking-wide text-[#8A958E] shrink-0 pt-2" style={{ width: "140px" }}>{i + 1}. Provisional diagnosis</span>
+              <span className="text-xs uppercase tracking-wide text-[#16241F] shrink-0 pt-2" style={{ width: "140px" }}>{i + 1}. Provisional diagnosis</span>
               <div className="flex-1 min-w-0">
                 <AutoExpandingTextarea
                   value={entry.diagnosis}
@@ -19386,8 +19386,8 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
                   <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm bg-[#F2F7F5] border border-[#D8C5E8] text-xs">
                     <Tag size={11} className="text-[#6B4C93]" />
                     <span className="font-medium">{entry.snomed.term}</span>
-                    <span className="text-[#8A958E]">· SNOMED CT {entry.snomed.conceptId}</span>
-                    <button type="button" onClick={() => setSnomed(i, null)} className="text-[#8A958E] hover:text-[#B34A3C] ml-1"><X size={11} /></button>
+                    <span className="text-[#16241F]">· SNOMED CT {entry.snomed.conceptId}</span>
+                    <button type="button" onClick={() => setSnomed(i, null)} className="text-[#16241F] hover:text-[#B34A3C] ml-1"><X size={11} /></button>
                   </div>
                 ) : (
                   <button
@@ -19414,8 +19414,8 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
                   <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm bg-[#F2F7F5] border border-[#B9CFE0] text-xs">
                     <Tag size={11} className="text-[#2F5C82]" />
                     <span className="font-medium">{entry.icd10.title}</span>
-                    <span className="text-[#8A958E]">· ICD-10 {entry.icd10.code}</span>
-                    <button type="button" onClick={() => setIcd10(i, null)} className="text-[#8A958E] hover:text-[#B34A3C] ml-1"><X size={11} /></button>
+                    <span className="text-[#16241F]">· ICD-10 {entry.icd10.code}</span>
+                    <button type="button" onClick={() => setIcd10(i, null)} className="text-[#16241F] hover:text-[#B34A3C] ml-1"><X size={11} /></button>
                   </div>
                 ) : (
                   <button
@@ -19436,7 +19436,7 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <span className="text-xs uppercase tracking-wide text-[#8A958E] shrink-0 pt-2" style={{ width: "140px" }}>{i + 1}. Treatment plan</span>
+              <span className="text-xs uppercase tracking-wide text-[#16241F] shrink-0 pt-2" style={{ width: "140px" }}>{i + 1}. Treatment plan</span>
               <div className="flex-1 min-w-0">
                 <AutoExpandingTextarea
                   value={entry.treatment}
@@ -19787,7 +19787,7 @@ function TriageProgrammeDisposalPicker({ triageHistory = [], setTriageHistory = 
         <div className="flex items-center justify-between mb-2">
           <SectionLabel>Triage priority</SectionLabel>
           {currentPriority && (
-            <button onClick={() => setRetriageOpen(true)} className="text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <button onClick={() => setRetriageOpen(true)} className="text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#16241F] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               Re-triage
             </button>
           )}
@@ -19802,7 +19802,7 @@ function TriageProgrammeDisposalPicker({ triageHistory = [], setTriageHistory = 
                 style={{ borderColor: tp.color, backgroundColor: `${tp.color}10`, fontFamily: "'IBM Plex Sans', sans-serif" }}
               >
                 <div className="font-medium" style={{ color: tp.color }}>{tp.label}</div>
-                <div className="text-[#8A958E]">{tp.sublabel}</div>
+                <div className="text-[#16241F]">{tp.sublabel}</div>
               </button>
             ))}
           </div>
@@ -19813,7 +19813,7 @@ function TriageProgrammeDisposalPicker({ triageHistory = [], setTriageHistory = 
           </div>
         )}
         {triageHistory.length > 0 && (
-          <div className="mt-2 text-xs text-[#8A958E] space-y-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <div className="mt-2 text-xs text-[#16241F] space-y-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             {triageHistory.map((h, i) => (
               <div key={i}>{TRIAGE_PRIORITIES.find(t => t.key === h.priority)?.label} — {h.at}</div>
             ))}
@@ -19914,7 +19914,7 @@ function ConsentRegisterPicker({ records = [], setRecords = () => {} }) {
     <div>
       <div className="flex items-center justify-between mb-2">
         <SectionLabel>Consent register</SectionLabel>
-        <button onClick={() => setShowAddForm((v) => !v)} className="text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <button onClick={() => setShowAddForm((v) => !v)} className="text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#16241F] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           + Add record
         </button>
       </div>
@@ -19942,7 +19942,7 @@ function ConsentRegisterPicker({ records = [], setRecords = () => {} }) {
           )}
           <input value={draft.witnessName} onChange={(e) => setDraft((v) => ({ ...v, witnessName: e.target.value }))} placeholder="Witness name (optional)" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
           <div className="flex gap-2 justify-end pt-1">
-            <button onClick={() => setShowAddForm(false)} className="text-sm px-3 py-1.5 text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
+            <button onClick={() => setShowAddForm(false)} className="text-sm px-3 py-1.5 text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
             <button onClick={addRecord} className="text-sm px-3 py-1.5 rounded-sm text-white font-medium bg-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Record consent</button>
           </div>
         </div>
@@ -19953,15 +19953,15 @@ function ConsentRegisterPicker({ records = [], setRecords = () => {} }) {
           <div key={r.id} className="flex items-start justify-between gap-2 text-xs bg-white border border-[#D8DED9] rounded-sm p-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             <div>
               <span className="font-medium">{typeMeta(r.type)?.label}</span>
-              {r.procedureName && <span className="text-[#8A958E]"> — {r.procedureName}</span>}
-              <div className="text-[#8A958E]">Signed by {r.signedBy}{r.relationship ? ` (${r.relationship})` : ""} · {r.at}{r.witnessName ? ` · Witness: ${r.witnessName}` : ""}{r.emergencyException ? " · EMERGENCY EXCEPTION" : ""}</div>
+              {r.procedureName && <span className="text-[#16241F]"> — {r.procedureName}</span>}
+              <div className="text-[#16241F]">Signed by {r.signedBy}{r.relationship ? ` (${r.relationship})` : ""} · {r.at}{r.witnessName ? ` · Witness: ${r.witnessName}` : ""}{r.emergencyException ? " · EMERGENCY EXCEPTION" : ""}</div>
             </div>
             <button onClick={() => removeRecord(r.id)} className="text-[#B34A3C] shrink-0">×</button>
           </div>
         ))}
-        {records.length === 0 && <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No consent records yet.</p>}
+        {records.length === 0 && <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No consent records yet.</p>}
       </div>
-      <p className="text-[10px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-[10px] text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Template/register tool, not legal advice — review your consent process with local counsel.
       </p>
     </div>
@@ -20009,7 +20009,7 @@ function MLCRegisterPicker({ records = [], setRecords = () => {} }) {
     <div>
       <div className="flex items-center justify-between mb-2">
         <SectionLabel>MLC register</SectionLabel>
-        <button onClick={() => setShowAddForm((v) => !v)} className="text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <button onClick={() => setShowAddForm((v) => !v)} className="text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#16241F] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           + Add MLC record
         </button>
       </div>
@@ -20033,7 +20033,7 @@ function MLCRegisterPicker({ records = [], setRecords = () => {} }) {
             <option>Verbal (follow up in writing — written is the safer documented form)</option>
           </select>
           <div className="border-t border-[#D8DED9] pt-2 mt-1">
-            <p className="text-xs text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Evidence/articles handed to police (if any)</p>
+            <p className="text-xs text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Evidence/articles handed to police (if any)</p>
             <input value={draft.evidenceDescription} onChange={(e) => setDraft((v) => ({ ...v, evidenceDescription: e.target.value }))} placeholder="Description of article(s)" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
             <div className="grid grid-cols-2 gap-2">
               <label className="flex items-center gap-2 text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -20044,7 +20044,7 @@ function MLCRegisterPicker({ records = [], setRecords = () => {} }) {
             </div>
           </div>
           <div className="flex gap-2 justify-end pt-1">
-            <button onClick={() => setShowAddForm(false)} className="text-sm px-3 py-1.5 text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
+            <button onClick={() => setShowAddForm(false)} className="text-sm px-3 py-1.5 text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
             <button onClick={addRecord} className="text-sm px-3 py-1.5 rounded-sm text-white font-medium bg-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Register MLC</button>
           </div>
         </div>
@@ -20055,18 +20055,18 @@ function MLCRegisterPicker({ records = [], setRecords = () => {} }) {
           <div key={r.id} className="flex items-start justify-between gap-2 text-xs bg-white border border-[#D8DED9] rounded-sm p-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             <div>
               <span className="font-medium">MLC {r.mlcNumber}</span> — {r.category}
-              <div className="text-[#8A958E]">{r.injuryDescription || "(no description)"}</div>
-              <div className="text-[#8A958E]">Police: {r.policeStation || "—"}{r.officerName ? ` (${r.officerName})` : ""} · {r.intimationMethod} · {r.registeredAt}</div>
+              <div className="text-[#16241F]">{r.injuryDescription || "(no description)"}</div>
+              <div className="text-[#16241F]">Police: {r.policeStation || "—"}{r.officerName ? ` (${r.officerName})` : ""} · {r.intimationMethod} · {r.registeredAt}</div>
               {r.evidenceDescription && (
-                <div className="text-[#8A958E]">Evidence: {r.evidenceDescription}{r.evidenceSealed ? " · sealed" : " · NOT sealed"}{r.evidenceReceiptNumber ? ` · receipt ${r.evidenceReceiptNumber}` : ""}</div>
+                <div className="text-[#16241F]">Evidence: {r.evidenceDescription}{r.evidenceSealed ? " · sealed" : " · NOT sealed"}{r.evidenceReceiptNumber ? ` · receipt ${r.evidenceReceiptNumber}` : ""}</div>
               )}
             </div>
             <button onClick={() => removeRecord(r.id)} className="text-[#B34A3C] shrink-0">×</button>
           </div>
         ))}
-        {records.length === 0 && <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No MLC records yet.</p>}
+        {records.length === 0 && <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No MLC records yet.</p>}
       </div>
-      <p className="text-[10px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-[10px] text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         No abbreviations, no unexplained overwriting — any correction should be initialed with date and time by the same doctor who made the original entry.
       </p>
     </div>
@@ -20084,7 +20084,7 @@ function OpdToolCard({ label, onRemove, children }) {
             type="button"
             onClick={() => setMinimized((v) => !v)}
             title={minimized ? "Expand" : "Minimize"}
-            className="w-6 h-6 flex items-center justify-center rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]"
+            className="w-6 h-6 flex items-center justify-center rounded-sm text-[#16241F] hover:bg-[#F7F9F7]"
           >
             {minimized ? <ChevronDown size={14} /> : <Minus size={14} />}
           </button>
@@ -20270,32 +20270,32 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
       <button
         type="button"
         onClick={onBack}
-        className="flex items-center gap-1.5 text-sm font-medium text-[#5B6B63] hover:text-[#16241F] mb-4"
+        className="flex items-center gap-1.5 text-sm font-medium text-[#16241F] hover:text-[#16241F] mb-4"
         style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
       >
         <ChevronLeft size={16} /> Back
       </button>
       <div className="bg-white border border-[#D8DED9] rounded-md p-4 mb-5">
-        <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Patient details</div>
+        <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Patient details</div>
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           <div className="col-span-2">
-            <div className="text-[#8A958E] text-xs mb-1">Name</div>
+            <div className="text-[#16241F] text-xs mb-1">Name</div>
             <input value={patientDetails.name} onChange={(e) => updatePatientDetail("name", e.target.value)} placeholder="Patient name" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" />
           </div>
           <div>
-            <div className="text-[#8A958E] text-xs mb-1">Age</div>
+            <div className="text-[#16241F] text-xs mb-1">Age</div>
             <input value={patientDetails.age} onChange={(e) => updatePatientDetail("age", e.target.value)} placeholder="Age" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" />
           </div>
           <div>
-            <div className="text-[#8A958E] text-xs mb-1">Gender</div>
+            <div className="text-[#16241F] text-xs mb-1">Gender</div>
             <input value={patientDetails.gender} onChange={(e) => updatePatientDetail("gender", e.target.value)} placeholder="Gender" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" />
           </div>
           <div>
-            <div className="text-[#8A958E] text-xs mb-1">Local ID</div>
+            <div className="text-[#16241F] text-xs mb-1">Local ID</div>
             <input value={patientDetails.localId} onChange={(e) => updatePatientDetail("localId", e.target.value)} placeholder="e.g. AC-0000" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
           </div>
           <div>
-            <div className="text-[#8A958E] text-xs mb-1">Phone</div>
+            <div className="text-[#16241F] text-xs mb-1">Phone</div>
             <input value={patientDetails.phone} onChange={(e) => updatePatientDetail("phone", e.target.value)} placeholder="Phone number" className="w-full px-2 py-1 border border-[#D8DED9] rounded-sm text-sm focus:outline-none focus:border-[#0F5C56]" />
           </div>
         </div>
@@ -20315,7 +20315,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
                 title={added ? `${t.label} — already added` : `Add ${t.label}`}
                 aria-label={t.label}
                 className={`flex items-center justify-center w-10 h-10 rounded-sm border-b-2 transition-colors ${
-                  added ? "border-[#0F5C56] text-[#0F5C56] bg-[#EAF3F1] cursor-default" : "border-transparent text-[#5B6B63] hover:text-[#16241F] hover:bg-[#F7F9F7]"
+                  added ? "border-[#0F5C56] text-[#0F5C56] bg-[#EAF3F1] cursor-default" : "border-transparent text-[#16241F] hover:text-[#16241F] hover:bg-[#F7F9F7]"
                 }`}
               >
                 <Icon size={17} strokeWidth={2} />
@@ -20352,7 +20352,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
           onInput={() => setFreeNoteText(freeNoteRef.current ? freeNoteRef.current.innerText : "")}
           onContextMenu={handleNoteContextMenu}
         />
-        <p className="text-[10px] text-[#8A958E] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-[10px] text-[#16241F] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           Select text and right-click for formatting (bold, italic, underline, strikethrough) — or, if it names a condition ClairMD recognises, to open its diagnostic workflow.
         </p>
 
@@ -20387,7 +20387,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
                 {gi > 0 && <div className="my-1 border-t border-[#D8DED9]" />}
                 {group.layout === "dxworkflow" ? (
                   <div>
-                    <div className="px-3 py-1 text-[10px] uppercase tracking-wide text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                    <div className="px-3 py-1 text-[10px] uppercase tracking-wide text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                       Diagnostic workflow
                     </div>
                     {group.items.map((w) => (
@@ -20430,14 +20430,14 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
                       style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
                     >
                       <span className="flex items-center gap-2"><group.icon size={14} />{group.label}</span>
-                      <ChevronRight size={13} className="text-[#8A958E]" />
+                      <ChevronRight size={13} className="text-[#16241F]" />
                     </button>
                     {showTemplates && (
                       <div
                         className="absolute top-0 left-full ml-1 bg-white border border-[#D8DED9] rounded-sm shadow-xl py-1"
                         style={{ minWidth: 230 }}
                       >
-                        <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                        <div className="px-3 py-1 text-[10px] uppercase tracking-wider text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                           {group.subLabel}
                         </div>
                         {group.subItems.map((tpl) => (
@@ -20450,7 +20450,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
                             className="w-full flex items-start gap-2 px-3 py-1.5 text-sm text-left text-[#3C4A42] hover:bg-[#F7F9F7]"
                             style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
                           >
-                            <FileText size={14} className="shrink-0 mt-0.5 text-[#8A958E]" />
+                            <FileText size={14} className="shrink-0 mt-0.5 text-[#16241F]" />
                             {tpl.title}
                           </button>
                         ))}
@@ -20465,12 +20465,12 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => (opt.cmd === "paste" ? pasteIntoNote() : applyNoteFormat(opt.cmd))}
                       className={`w-full flex items-center justify-between gap-4 px-3 py-1.5 text-sm text-left hover:bg-[#F7F9F7] ${
-                        opt.cmd === "removeFormat" ? "text-[#5B6B63]" : "text-[#3C4A42]"
+                        opt.cmd === "removeFormat" ? "text-[#16241F]" : "text-[#3C4A42]"
                       }`}
                       style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
                     >
                       <span className="flex items-center gap-2"><opt.icon size={14} />{opt.label}</span>
-                      {opt.shortcut && <span className="text-[10px] text-[#8A958E]">{opt.shortcut}</span>}
+                      {opt.shortcut && <span className="text-[10px] text-[#16241F]">{opt.shortcut}</span>}
                     </button>
                   ))
                 )}
@@ -20482,7 +20482,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
       {openWorkflowId && <DiagnosticWorkflowModal workflowId={openWorkflowId} onClose={() => setOpenWorkflowId(null)} />}
 
       {addedTools.length === 0 ? (
-        <p className="text-sm text-[#8A958E] mb-6" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-sm text-[#16241F] mb-6" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           Tap a tool above to add it here — build only what this visit needs.
         </p>
       ) : (
@@ -20539,7 +20539,7 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
         <button
           type="button"
           onClick={handlePrint}
-          className="flex items-center gap-1.5 text-sm px-4 py-2 border border-[#D8DED9] rounded-sm font-medium text-[#5B6B63] hover:bg-[#F7F9F7]"
+          className="flex items-center gap-1.5 text-sm px-4 py-2 border border-[#D8DED9] rounded-sm font-medium text-[#16241F] hover:bg-[#F7F9F7]"
           style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
         >
           <Printer size={14} /> Print
@@ -20559,14 +20559,14 @@ const OpdBuilderTab = React.forwardRef(function OpdBuilderTab({ onSaveSlip, onBa
         )}
       </div>
       {syncMessage && (
-        <p className={`text-[11px] mt-1 ${syncMessage.type === "error" ? "text-[#B34A3C]" : syncMessage.type === "pending" ? "text-[#8A958E]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className={`text-[11px] mt-1 ${syncMessage.type === "error" ? "text-[#B34A3C]" : syncMessage.type === "pending" ? "text-[#16241F]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           {syncMessage.text}
         </p>
       )}
       <div className="mt-2">
         <BackendSyncPanel />
       </div>
-      <p className="text-[11px] text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-[11px] text-[#16241F] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Save keeps this slip in the app for this session only — not yet wired to persistent storage in this prototype.
       </p>
     </div>
@@ -20644,7 +20644,7 @@ function EncounterWorkupCard({
   return (
     <div className="bg-white border border-[#D8DED9] rounded-md p-5">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 text-[#5B6B63] text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <div className="flex items-center gap-2 text-[#16241F] text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           <Clock size={13} /> {e.date}
         </div>
         <h4 className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "#16241F" }}>{e.diagnosis}</h4>
@@ -20656,7 +20656,7 @@ function EncounterWorkupCard({
       {meta && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-[#EEF1EE]">
                 <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[#5B6B63]"><ListChecks size={14} /><span className="text-xs uppercase tracking-wide font-medium">Possible complications</span></div>
+                  <div className="flex items-center gap-1.5 mb-2 text-[#16241F]"><ListChecks size={14} /><span className="text-xs uppercase tracking-wide font-medium">Possible complications</span></div>
                   <ul className="text-sm space-y-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     {meta.complications.map((c, ci) => (
                       <li key={ci} className="flex items-start gap-1.5"><span className="text-[#B34A3C] mt-1">•</span>{c}</li>
@@ -20664,22 +20664,22 @@ function EncounterWorkupCard({
                   </ul>
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[#5B6B63]"><Sparkles size={14} /><span className="text-xs uppercase tracking-wide font-medium">Recent advances</span></div>
+                  <div className="flex items-center gap-1.5 mb-2 text-[#16241F]"><Sparkles size={14} /><span className="text-xs uppercase tracking-wide font-medium">Recent advances</span></div>
                   <p className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{meta.advances}</p>
                 </div>
                 <div className="md:col-span-2">
-                  <div className="flex items-center gap-1.5 mb-2 text-[#5B6B63]"><BookOpen size={14} /><span className="text-xs uppercase tracking-wide font-medium">Sources</span></div>
+                  <div className="flex items-center gap-1.5 mb-2 text-[#16241F]"><BookOpen size={14} /><span className="text-xs uppercase tracking-wide font-medium">Sources</span></div>
                   <ul className="text-xs space-y-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     {(meta.sources || []).map((s, si) => (
                       <li key={si}>
                         <a href={s.url} target="_blank" rel="noreferrer" className="text-[#0F5C56] underline decoration-dotted">{s.title}</a>
-                        <span className="text-[#8A958E]"> — {s.org}</span>
+                        <span className="text-[#16241F]"> — {s.org}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div className="md:col-span-2">
-                  <div className="flex items-center gap-1.5 mb-2 text-[#5B6B63]">
+                  <div className="flex items-center gap-1.5 mb-2 text-[#16241F]">
                     <FlaskConical size={14} /><span className="text-xs uppercase tracking-wide font-medium">Suggested tests (not exhaustive)</span>
                     {hasOwnLab && <span className="text-[10px] px-1.5 py-0.5 bg-[#F2F7F5] text-[#0F5C56] rounded-sm">In-house lab · order directly</span>}
                   </div>
@@ -20758,7 +20758,7 @@ function ExamMeasureField({ value, onChange, unit, placeholder }) {
         className="flex-1 border border-[#D8DED9] rounded-sm px-2.5 py-2 text-sm focus:outline-none focus:border-[#0F5C56]"
         style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
       />
-      {unit && <span className="text-[11px] text-[#8A958E] min-w-[44px]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{unit}</span>}
+      {unit && <span className="text-[11px] text-[#16241F] min-w-[44px]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{unit}</span>}
     </div>
   );
 }
@@ -20842,13 +20842,13 @@ function ExamPopup({ examKey, onClose }) {
               <Stethoscope size={16} className="text-[#0F5C56]" />
               <span className="text-[15px] font-semibold text-[#16241F]">{template.name}</span>
             </div>
-            <button onClick={onClose} className="text-[#8A958E] p-1"><X size={18} /></button>
+            <button onClick={onClose} className="text-[#16241F] p-1"><X size={18} /></button>
           </div>
-          <p className="text-[11px] text-[#8A958E] mt-1.5 leading-snug">
+          <p className="text-[11px] text-[#16241F] mt-1.5 leading-snug">
             Reference checklist only. Marking a finding or entering a value does not assess, score, or diagnose — it only helps you capture what you observed, to copy into your note.
           </p>
           {answeredCount > 0 && (
-            <div className="flex items-center gap-2 mt-2 text-[11px] text-[#8A958E]">
+            <div className="flex items-center gap-2 mt-2 text-[11px] text-[#16241F]">
               <span>{answeredCount} of {totalCount} recorded</span>
               {abnormalCount > 0 && <span className="text-[#8A5A2A]">· {abnormalCount} abnormal</span>}
             </div>
@@ -20903,7 +20903,7 @@ function ExamPopup({ examKey, onClose }) {
           <button
             onClick={resetAll}
             disabled={answeredCount === 0}
-            className="px-3.5 py-2.5 text-xs rounded-sm border border-[#D8DED9] text-[#5B6B63] flex items-center gap-1.5"
+            className="px-3.5 py-2.5 text-xs rounded-sm border border-[#D8DED9] text-[#16241F] flex items-center gap-1.5"
             style={{ opacity: answeredCount ? 1 : 0.4 }}
           >
             <RotateCcw size={13} /> Reset
@@ -20938,7 +20938,7 @@ function ExaminationNoteCard({ examNotes: externalExamNotes, setExamNotes: exter
         <Stethoscope size={14} />
         <span className="text-xs uppercase tracking-wide font-semibold">Examination</span>
       </div>
-      <p className="text-xs text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Use Insert → Examination Templates on the ribbon above to open a body system's reference checklist, then paste what you copy from it here.
       </p>
       <AutoExpandingTextarea
@@ -20978,7 +20978,7 @@ function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis,
           <div className="shrink-0" style={{ width: "5cm" }}>
             {!template ? (
               <>
-                <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   Which presenting complaint? Reference list only — conditions to consider, not a ranked or calculated result. The physician weighs and decides.
                 </p>
                 <style>{`
@@ -21009,7 +21009,7 @@ function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis,
                     </button>
                   ))}
                   {filteredComplaints.length === 0 && (
-                    <p className="text-xs text-[#8A958E] text-center py-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches for "{complaintQuery}".</p>
+                    <p className="text-xs text-[#16241F] text-center py-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches for "{complaintQuery}".</p>
                   )}
                 </div>
               </>
@@ -21017,9 +21017,9 @@ function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis,
               <div className="bg-[#FBF3ED] border border-[#E8D3C0] rounded-md p-3">
                 <div className="flex items-center justify-between mb-1">
                   <h4 className="text-xs font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{template.name}</h4>
-                  <button onClick={() => setComplaintKey(null)} className="text-[10px] text-[#5B6B63] hover:text-[#16241F] shrink-0" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back</button>
+                  <button onClick={() => setComplaintKey(null)} className="text-[10px] text-[#16241F] hover:text-[#16241F] shrink-0" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back</button>
                 </div>
-                <p className="text-[10px] text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{template.chapterRef}</p>
+                <p className="text-[10px] text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{template.chapterRef}</p>
                 <ul className="space-y-2 mb-2">
                   {template.differentials.map((d, i) => {
                     const pushed = ddxSpace.some((ds) => ds.condition === d.condition);
@@ -21037,12 +21037,12 @@ function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis,
                             <Plus size={11} />
                           </button>
                         </div>
-                        <div className="text-[#5B6B63] mt-0.5">{d.note}</div>
+                        <div className="text-[#16241F] mt-0.5">{d.note}</div>
                       </li>
                     );
                   })}
                 </ul>
-                <div className="pt-2 border-t border-[#E8D3C0] text-[10px] text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <div className="pt-2 border-t border-[#E8D3C0] text-[10px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   Source: {template.source.title} — {template.source.org}.{" "}
                   <a href={template.source.url} target="_blank" rel="noopener noreferrer" className="text-[#0F5C56] underline">{template.source.url}</a>
                 </div>
@@ -21051,9 +21051,9 @@ function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis,
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Differential diagnosis space</div>
+            <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Differential diagnosis space</div>
             {ddxSpace.length === 0 ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 Search a presenting complaint on the left, open it, then use + next to a condition you suspect to add it here.
               </p>
             ) : (
@@ -21073,7 +21073,7 @@ function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis,
                     </div>
                   ))}
                 </div>
-                <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Notes</div>
+                <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Notes</div>
                 <AutoExpandingTextarea
                   value={ddxSpaceNotes}
                   onChange={(e) => setDdxSpaceNotes(e.target.value)}
@@ -21154,11 +21154,11 @@ function LoincCodeSearch({ initialTerm, onSelect, onClose }) {
   return (
     <div className="absolute z-20 mt-1 w-80 bg-white border border-[#D8DED9] rounded-md shadow-lg p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-[#5B6B63] uppercase tracking-wide">Find LOINC code</span>
-        <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={14} /></button>
+        <span className="text-xs font-semibold text-[#16241F] uppercase tracking-wide">Find LOINC code</span>
+        <button type="button" onClick={onClose} className="text-[#16241F] hover:text-[#16241F]"><X size={14} /></button>
       </div>
       <div className="relative">
-        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#8A958E]" />
+        <Search size={13} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#16241F]" />
         <input
           autoFocus
           value={text}
@@ -21169,7 +21169,7 @@ function LoincCodeSearch({ initialTerm, onSelect, onClose }) {
       </div>
       <div className="mt-2 max-h-52 overflow-y-auto">
         {status === "loading" && (
-          <div className="flex items-center gap-2 text-xs text-[#8A958E] py-3 justify-center">
+          <div className="flex items-center gap-2 text-xs text-[#16241F] py-3 justify-center">
             <Loader2 size={13} className="animate-spin" /> Searching BHTS…
           </div>
         )}
@@ -21177,7 +21177,7 @@ function LoincCodeSearch({ initialTerm, onSelect, onClose }) {
           <p className="text-xs text-[#B34A3C] py-2">{errorMsg}</p>
         )}
         {status === "done" && results.length === 0 && (
-          <p className="text-xs text-[#8A958E] py-2">No matches found.</p>
+          <p className="text-xs text-[#16241F] py-2">No matches found.</p>
         )}
         {status === "done" && results.map((r) => (
           <button
@@ -21187,7 +21187,7 @@ function LoincCodeSearch({ initialTerm, onSelect, onClose }) {
             className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-[#F2F7F5] flex items-center justify-between gap-2"
           >
             <span className="truncate">{r.term}</span>
-            <span className="text-[10px] text-[#8A958E] shrink-0">{r.code}</span>
+            <span className="text-[10px] text-[#16241F] shrink-0">{r.code}</span>
           </button>
         ))}
       </div>
@@ -21252,7 +21252,7 @@ function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, set
       {collapsibleOpen && (
         <div className="flex gap-4 items-start">
           <div className="shrink-0" style={{ width: "5cm" }}>
-            <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               Every test on file in this app. Ordered by relevance to what's pushed above under Differential Diagnosis, then this patient's existing diagnoses, then alphabetically — not a recommendation; the physician chooses what to order.
             </p>
             <style>{`
@@ -21290,15 +21290,15 @@ function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, set
                 );
               })}
               {filteredTests.length === 0 && (
-                <p className="text-xs text-[#8A958E] text-center py-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches for "{testQuery}".</p>
+                <p className="text-xs text-[#16241F] text-center py-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches for "{testQuery}".</p>
               )}
             </div>
           </div>
 
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Workup space</div>
+            <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Workup space</div>
             {workupSpace.length === 0 ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 Use the list on the left to add tests you plan to order here.
               </p>
             ) : (
@@ -21322,8 +21322,8 @@ function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, set
                           <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm bg-[#F2F7F5] border border-[#D8C5E8] text-xs">
                             <Tag size={11} className="text-[#6B4C93]" />
                             <span className="font-medium">{w.loinc.term}</span>
-                            <span className="text-[#8A958E]">· LOINC {w.loinc.code}</span>
-                            <button type="button" onClick={() => setLoincForTest(w.test, null)} className="text-[#8A958E] hover:text-[#B34A3C] ml-1"><X size={11} /></button>
+                            <span className="text-[#16241F]">· LOINC {w.loinc.code}</span>
+                            <button type="button" onClick={() => setLoincForTest(w.test, null)} className="text-[#16241F] hover:text-[#B34A3C] ml-1"><X size={11} /></button>
                           </div>
                         ) : (
                           <button
@@ -21345,7 +21345,7 @@ function WorkupPicker({ ddxSpace, patient, workupSpace: externalWorkupSpace, set
                     </div>
                   ))}
                 </div>
-                <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Notes</div>
+                <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Notes</div>
                 <AutoExpandingTextarea
                   value={workupNotes}
                   onChange={(e) => setWorkupNotes(e.target.value)}
@@ -21372,7 +21372,7 @@ function TraumaTopicCard({ topic }) {
     <div className="border border-[#D8DED9] rounded-md bg-white overflow-hidden">
       <button onClick={() => setExpanded((v) => !v)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left">
         <span className="text-xs font-semibold text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{topic.title}</span>
-        {expanded ? <ChevronDown size={14} className="text-[#8A958E] shrink-0" /> : <ChevronRight size={14} className="text-[#8A958E] shrink-0" />}
+        {expanded ? <ChevronDown size={14} className="text-[#16241F] shrink-0" /> : <ChevronRight size={14} className="text-[#16241F] shrink-0" />}
       </button>
 
       {expanded && (
@@ -21382,7 +21382,7 @@ function TraumaTopicCard({ topic }) {
               <span className="text-[11px] font-semibold text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>History of Present Illness</span>
               <button
                 onClick={() => setHpiOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={hpiOn ? { backgroundColor: "#0F5C56" } : {}}
               >
                 {hpiOn ? "Template on" : "Template off"}
@@ -21396,7 +21396,7 @@ function TraumaTopicCard({ topic }) {
               <span className="text-[11px] font-semibold text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Examination</span>
               <button
                 onClick={() => setExamOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={examOn ? { backgroundColor: "#B34A3C" } : {}}
               >
                 {examOn ? "Template on" : "Template off"}
@@ -21413,11 +21413,11 @@ function TraumaTopicCard({ topic }) {
           )}
 
           <div className="pt-2 border-t border-[#EEF1EE]">
-            <div className="text-[9px] uppercase tracking-wide text-[#8A958E] mb-1">Sources</div>
+            <div className="text-[9px] uppercase tracking-wide text-[#16241F] mb-1">Sources</div>
             <ul className="space-y-0.5">
               {topic.citations.map((c) => (
                 <li key={c.url}>
-                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline">
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline">
                     <ExternalLink size={10} className="shrink-0" />
                     {c.label} — StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA
                   </a>
@@ -21443,7 +21443,7 @@ function OrthoTopicCard({ topic }) {
     <div className="border border-[#D8DED9] rounded-md bg-white overflow-hidden">
       <button onClick={() => setExpanded((v) => !v)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left">
         <span className="text-xs font-semibold text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{topic.title}</span>
-        {expanded ? <ChevronDown size={14} className="text-[#8A958E] shrink-0" /> : <ChevronRight size={14} className="text-[#8A958E] shrink-0" />}
+        {expanded ? <ChevronDown size={14} className="text-[#16241F] shrink-0" /> : <ChevronRight size={14} className="text-[#16241F] shrink-0" />}
       </button>
 
       {expanded && (
@@ -21453,7 +21453,7 @@ function OrthoTopicCard({ topic }) {
               <span className="text-[11px] font-semibold text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>History of Present Illness</span>
               <button
                 onClick={() => setHpiOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={hpiOn ? { backgroundColor: "#0F5C56" } : {}}
               >
                 {hpiOn ? "Template on" : "Template off"}
@@ -21467,7 +21467,7 @@ function OrthoTopicCard({ topic }) {
               <span className="text-[11px] font-semibold text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Examination</span>
               <button
                 onClick={() => setExamOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={examOn ? { backgroundColor: "#B34A3C" } : {}}
               >
                 {examOn ? "Template on" : "Template off"}
@@ -21477,11 +21477,11 @@ function OrthoTopicCard({ topic }) {
           </div>
 
           <div className="pt-2 border-t border-[#EEF1EE]">
-            <div className="text-[9px] uppercase tracking-wide text-[#8A958E] mb-1">Sources</div>
+            <div className="text-[9px] uppercase tracking-wide text-[#16241F] mb-1">Sources</div>
             <ul className="space-y-0.5">
               {topic.citations.map((c) => (
                 <li key={c.url}>
-                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline">
+                  <a href={c.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline">
                     <ExternalLink size={10} className="shrink-0" />
                     {c.label} — StatPearls (NCBI Bookshelf), National Library of Medicine, NIH, USA
                   </a>
@@ -21507,7 +21507,7 @@ function OrthopaedicInjuriesToggle() {
         </span>
         <button
           onClick={() => setOn((v) => !v)}
-          className={`text-[10px] px-2 py-1 rounded-full font-medium ${on ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+          className={`text-[10px] px-2 py-1 rounded-full font-medium ${on ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
           style={on ? { backgroundColor: "#B34A3C" } : {}}
         >
           {on ? "On" : "Off"}
@@ -21517,8 +21517,8 @@ function OrthopaedicInjuriesToggle() {
       {on && (
         <div className="px-3 pb-3 space-y-2 border-t border-[#EEF1EE] pt-3">
           <div className="flex items-start gap-1.5 bg-[#F7F9F7] border border-[#D8DED9] rounded-sm px-2.5 py-2">
-            <ShieldCheck size={13} className="text-[#8A958E] mt-0.5 shrink-0" />
-            <span className="text-[10px] text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <ShieldCheck size={13} className="text-[#16241F] mt-0.5 shrink-0" />
+            <span className="text-[10px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               CDSCO Class A: this section records structured findings only. It does not classify fracture severity, stage a dislocation, or calculate any score or recommendation.
             </span>
           </div>
@@ -21559,7 +21559,7 @@ function TraumaPicker({ open: externalOpen, setOpen: externalSetOpen } = {}) {
       )}
       {collapsibleOpen && (
         <>
-          <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Open a topic, then switch on the History of Present Illness or Examination template to insert blank structured fields. The physician fills in and interprets every field — no score, stage, or risk band (GCS total, hemorrhage class, GTOS, etc.) is calculated here.
           </p>
           <div className="space-y-2">
@@ -21583,7 +21583,7 @@ function DisasterField({ field, value, onChange }) {
   };
   return (
     <div className="mb-2.5">
-      <label className="block text-[10px] font-medium text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
+      <label className="block text-[10px] font-medium text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
       {field.type === "select" ? (
         <select {...commonProps}>
           <option value="">— select —</option>
@@ -21616,7 +21616,7 @@ function DisasterTopicCard({ topic, values: externalValues, setValues: externalS
           <Icon size={13} className="text-[#0F5C56] shrink-0" />
           {topic.title}
         </span>
-        {expanded ? <ChevronDown size={14} className="text-[#8A958E] shrink-0" /> : <ChevronRight size={14} className="text-[#8A958E] shrink-0" />}
+        {expanded ? <ChevronDown size={14} className="text-[#16241F] shrink-0" /> : <ChevronRight size={14} className="text-[#16241F] shrink-0" />}
       </button>
 
       {expanded && (
@@ -21626,7 +21626,7 @@ function DisasterTopicCard({ topic, values: externalValues, setValues: externalS
               <span className="text-[11px] font-semibold text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>History of Present Illness</span>
               <button
                 onClick={() => setHpiOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={hpiOn ? { backgroundColor: "#0F5C56" } : {}}
               >
                 {hpiOn ? "Template on" : "Template off"}
@@ -21644,7 +21644,7 @@ function DisasterTopicCard({ topic, values: externalValues, setValues: externalS
               <span className="text-[11px] font-semibold text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Examination</span>
               <button
                 onClick={() => setExamOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={examOn ? { backgroundColor: "#B34A3C" } : {}}
               >
                 {examOn ? "Template on" : "Template off"}
@@ -21658,7 +21658,7 @@ function DisasterTopicCard({ topic, values: externalValues, setValues: externalS
           </div>
 
           <div className="pt-2 border-t border-[#EEF1EE]">
-            <a href={topic.citation.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline">
+            <a href={topic.citation.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline">
               <ExternalLink size={10} className="shrink-0" />
               {topic.citation.label} — NIH/HHS/CDC (government-hosted, free)
             </a>
@@ -21696,7 +21696,7 @@ function DisasterResponseReference() {
               </div>
             ))}
           </div>
-          <a href="https://asprtracie.hhs.gov/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline mt-2.5 pt-2.5 border-t border-[#E8D3C0]">
+          <a href="https://asprtracie.hhs.gov/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline mt-2.5 pt-2.5 border-t border-[#E8D3C0]">
             <ExternalLink size={10} className="shrink-0" />
             ASPR TRACIE — Healthcare Emergency Preparedness Information Gateway (hhs.gov, free)
           </a>
@@ -21733,7 +21733,7 @@ function DisasterManagementPicker({ disasterValues: externalDisasterValues, setD
             reasoning as TraumaPicker above. */}
         {externalOpen !== undefined ? (
           <span
-            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
             style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
           >
             {moduleOn ? "On" : "Off"}
@@ -21741,7 +21741,7 @@ function DisasterManagementPicker({ disasterValues: externalDisasterValues, setD
         ) : (
           <button
             onClick={() => setModuleOn((v) => !v)}
-            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
             style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
           >
             {moduleOn ? "On" : "Off"}
@@ -21750,7 +21750,7 @@ function DisasterManagementPicker({ disasterValues: externalDisasterValues, setD
       </div>
       {moduleOn && (
         <div className="space-y-2">
-          <p className="text-xs text-[#8A958E] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <p className="text-xs text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Open a topic, then switch on the History of Present Illness or Examination template to record structured findings. No injury severity score, triage category, or radiation dose is calculated by the app — the physician records and interprets every field.
           </p>
           <DisasterResponseReference />
@@ -21774,7 +21774,7 @@ function PoisoningField({ field, value, onChange }) {
     const checked = value || {};
     return (
       <div className="mb-2.5">
-        <label className="block text-[10px] font-medium text-[#5B6B63] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
+        <label className="block text-[10px] font-medium text-[#16241F] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
         <div className="grid grid-cols-2 gap-x-2 gap-y-1 bg-white border border-[#D8DED9] rounded-sm p-2">
           {field.options.map((opt) => (
             <label key={opt} className="flex items-center gap-1.5 text-[10px] text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -21795,7 +21795,7 @@ function PoisoningField({ field, value, onChange }) {
   };
   return (
     <div className="mb-2.5">
-      <label className="block text-[10px] font-medium text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
+      <label className="block text-[10px] font-medium text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
       {field.type === "select" ? (
         <select {...commonProps}>
           <option value="">— select —</option>
@@ -21829,7 +21829,7 @@ function PoisoningTopicCard({ topic, values: externalValues, setValues: external
           <Pill size={13} className="text-[#0F5C56] shrink-0" />
           {topic.title}
         </span>
-        {expanded ? <ChevronDown size={14} className="text-[#8A958E] shrink-0" /> : <ChevronRight size={14} className="text-[#8A958E] shrink-0" />}
+        {expanded ? <ChevronDown size={14} className="text-[#16241F] shrink-0" /> : <ChevronRight size={14} className="text-[#16241F] shrink-0" />}
       </button>
 
       {expanded && (
@@ -21839,7 +21839,7 @@ function PoisoningTopicCard({ topic, values: externalValues, setValues: external
               <span className="text-[11px] font-semibold text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>History of Present Illness</span>
               <button
                 onClick={() => setHpiOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={hpiOn ? { backgroundColor: "#0F5C56" } : {}}
               >
                 {hpiOn ? "Template on" : "Template off"}
@@ -21857,7 +21857,7 @@ function PoisoningTopicCard({ topic, values: externalValues, setValues: external
               <span className="text-[11px] font-semibold text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Examination</span>
               <button
                 onClick={() => setExamOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={examOn ? { backgroundColor: "#B34A3C" } : {}}
               >
                 {examOn ? "Template on" : "Template off"}
@@ -21871,7 +21871,7 @@ function PoisoningTopicCard({ topic, values: externalValues, setValues: external
           </div>
 
           <div className="pt-2 border-t border-[#EEF1EE]">
-            <a href={bookshelfSearch(topic.term)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline">
+            <a href={bookshelfSearch(topic.term)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline">
               <ExternalLink size={10} className="shrink-0" />
               NCBI Bookshelf (NIH, free) — search: {topic.term}
             </a>
@@ -21909,7 +21909,7 @@ function PoisoningManagementReference() {
               </div>
             ))}
           </div>
-          <a href={bookshelfSearch("general management of poisoned patients")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline mt-2.5 pt-2.5 border-t border-[#E8D3C0]">
+          <a href={bookshelfSearch("general management of poisoned patients")} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline mt-2.5 pt-2.5 border-t border-[#E8D3C0]">
             <ExternalLink size={10} className="shrink-0" />
             NCBI Bookshelf (NIH, free) — search: general management of poisoned patients
           </a>
@@ -21941,7 +21941,7 @@ function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisonin
         </div>
         {externalOpen !== undefined ? (
           <span
-            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
             style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
           >
             {moduleOn ? "On" : "Off"}
@@ -21949,7 +21949,7 @@ function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisonin
         ) : (
           <button
             onClick={() => setModuleOn((v) => !v)}
-            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
             style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
           >
             {moduleOn ? "On" : "Off"}
@@ -21958,7 +21958,7 @@ function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisonin
       </div>
       {moduleOn && (
         <div className="space-y-2">
-          <p className="text-xs text-[#8A958E] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <p className="text-xs text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Open a topic, then switch on the History of Present Illness or Examination template to record structured findings. No toxidrome is named, no probable agent is suggested, and no antidote dose is calculated by the app — the physician records and interprets every field.
           </p>
           <PoisoningManagementReference />
@@ -21987,7 +21987,7 @@ function EnvField({ field, value, onChange }) {
   };
   return (
     <div className="mb-2.5">
-      <label className="block text-[10px] font-medium text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
+      <label className="block text-[10px] font-medium text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
       {field.type === "textarea" ? (
         <textarea {...commonProps} onContextMenu={handleContextMenu} className={commonProps.className + " min-h-[52px]"} />
       ) : (
@@ -22034,7 +22034,7 @@ function EnvTopicCard({ topic, values: externalValues, setValues: externalSetVal
           <Icon size={13} className="text-[#0F5C56] shrink-0" />
           {topic.name}
         </span>
-        {expanded ? <ChevronDown size={14} className="text-[#8A958E] shrink-0" /> : <ChevronRight size={14} className="text-[#8A958E] shrink-0" />}
+        {expanded ? <ChevronDown size={14} className="text-[#16241F] shrink-0" /> : <ChevronRight size={14} className="text-[#16241F] shrink-0" />}
       </button>
 
       {expanded && (
@@ -22044,7 +22044,7 @@ function EnvTopicCard({ topic, values: externalValues, setValues: externalSetVal
               <span className="text-[11px] font-semibold text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>History of Present Illness</span>
               <button
                 onClick={() => setHpiOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={hpiOn ? { backgroundColor: "#0F5C56" } : {}}
               >
                 {hpiOn ? "Template on" : "Template off"}
@@ -22063,7 +22063,7 @@ function EnvTopicCard({ topic, values: externalValues, setValues: externalSetVal
               <span className="text-[11px] font-semibold text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Examination</span>
               <button
                 onClick={() => setExamOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={examOn ? { backgroundColor: "#B34A3C" } : {}}
               >
                 {examOn ? "Template on" : "Template off"}
@@ -22073,7 +22073,7 @@ function EnvTopicCard({ topic, values: externalValues, setValues: externalSetVal
               <div className="bg-[#FBEFEC] border border-[#EFC9C1] rounded-sm p-2.5">
                 {ENV_COMMON_EXAM_FIELDS.map((f) => <EnvField key={f.id} field={f} value={values[f.id]} onChange={setExamField} />)}
                 <div>
-                  <label className="block text-[10px] font-medium text-[#5B6B63] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Clinical features checklist (findings present/absent only)</label>
+                  <label className="block text-[10px] font-medium text-[#16241F] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Clinical features checklist (findings present/absent only)</label>
                   <EnvChecklistField items={topic.checklist} values={checklistValues} onToggle={toggleChecklistItem} />
                 </div>
               </div>
@@ -22081,7 +22081,7 @@ function EnvTopicCard({ topic, values: externalValues, setValues: externalSetVal
           </div>
 
           <div className="pt-2 border-t border-[#EEF1EE]">
-            <a href={topic.citation.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline">
+            <a href={topic.citation.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline">
               <ExternalLink size={10} className="shrink-0" />
               {topic.citation.label} — NCBI Bookshelf, National Library of Medicine, NIH, USA
             </a>
@@ -22138,7 +22138,7 @@ function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValue
         </div>
         {externalOpen !== undefined ? (
           <span
-            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
             style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
           >
             {moduleOn ? "On" : "Off"}
@@ -22146,7 +22146,7 @@ function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValue
         ) : (
           <button
             onClick={() => setModuleOn((v) => !v)}
-            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
             style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
           >
             {moduleOn ? "On" : "Off"}
@@ -22155,7 +22155,7 @@ function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValue
       </div>
       {moduleOn && (
         <div className="space-y-2">
-          <p className="text-xs text-[#8A958E] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <p className="text-xs text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Open a topic, then switch on the History of Present Illness or Examination template to record structured findings. No %TBSA, hypothermia stage, altitude-sickness score, or envenomation grade is calculated by the app — the physician records and interprets every field.
           </p>
           <EnvGeneralApproachReference />
@@ -22180,7 +22180,7 @@ function SSField({ field, value, onChange }) {
     const toggle = (opt) => onChange(current.includes(opt) ? current.filter((o) => o !== opt) : [...current, opt]);
     return (
       <div className="mb-2.5">
-        <label className="block text-[10px] font-medium text-[#5B6B63] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
+        <label className="block text-[10px] font-medium text-[#16241F] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
         <div className="flex flex-wrap gap-1.5">
           {field.options.map((opt) => (
             <label
@@ -22205,7 +22205,7 @@ function SSField({ field, value, onChange }) {
   };
   return (
     <div className="mb-2.5">
-      <label className="block text-[10px] font-medium text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
+      <label className="block text-[10px] font-medium text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{field.label}</label>
       {field.type === "select" ? (
         <select {...commonProps}>
           <option value="">— select —</option>
@@ -22235,7 +22235,7 @@ function SSTopicCard({ topic, values: externalValues, setValues: externalSetValu
     <div className="border border-[#D8DED9] rounded-md bg-white overflow-hidden">
       <button onClick={() => setExpanded((v) => !v)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left">
         <span className="text-xs font-semibold text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{topic.title}</span>
-        {expanded ? <ChevronDown size={14} className="text-[#8A958E] shrink-0" /> : <ChevronRight size={14} className="text-[#8A958E] shrink-0" />}
+        {expanded ? <ChevronDown size={14} className="text-[#16241F] shrink-0" /> : <ChevronRight size={14} className="text-[#16241F] shrink-0" />}
       </button>
 
       {expanded && (
@@ -22245,7 +22245,7 @@ function SSTopicCard({ topic, values: externalValues, setValues: externalSetValu
               <span className="text-[11px] font-semibold text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>History of Present Illness</span>
               <button
                 onClick={() => setHpiOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${hpiOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={hpiOn ? { backgroundColor: "#0F5C56" } : {}}
               >
                 {hpiOn ? "Template on" : "Template off"}
@@ -22263,7 +22263,7 @@ function SSTopicCard({ topic, values: externalValues, setValues: externalSetValu
               <span className="text-[11px] font-semibold text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Examination</span>
               <button
                 onClick={() => setExamOn((v) => !v)}
-                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+                className={`text-[10px] px-2 py-1 rounded-full font-medium ${examOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
                 style={examOn ? { backgroundColor: "#B34A3C" } : {}}
               >
                 {examOn ? "Template on" : "Template off"}
@@ -22277,7 +22277,7 @@ function SSTopicCard({ topic, values: externalValues, setValues: externalSetValu
           </div>
 
           <div className="pt-2 border-t border-[#EEF1EE]">
-            <a href={topic.citation.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline">
+            <a href={topic.citation.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline">
               <ExternalLink size={10} className="shrink-0" />
               {topic.citation.label}
             </a>
@@ -22334,7 +22334,7 @@ function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: exte
         </div>
         {externalOpen !== undefined ? (
           <span
-            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
             style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
           >
             {moduleOn ? "On" : "Off"}
@@ -22342,7 +22342,7 @@ function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: exte
         ) : (
           <button
             onClick={() => setModuleOn((v) => !v)}
-            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#5B6B63]"}`}
+            className={`text-[10px] px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
             style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
           >
             {moduleOn ? "On" : "Off"}
@@ -22366,11 +22366,11 @@ function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: exte
               setValues={isExternallyControlled ? (updater) => setTopicValues(topic.id, updater) : undefined}
             />
           ))}
-          <div className="flex items-center gap-1.5 text-[10px] text-[#8A958E] pt-1" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+          <div className="flex items-center gap-1.5 text-[10px] text-[#16241F] pt-1" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
             <UserCheck size={11} className="shrink-0" />
             <span>All three templates above are original content written for this app; no text is reproduced from any copyrighted textbook.</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+          <div className="flex items-center gap-1.5 text-[10px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
             <HandHeart size={11} className="shrink-0" />
             <span>Open, free reference sources only — see the citation link under each topic card above.</span>
           </div>
@@ -22553,16 +22553,16 @@ function ClinicalQuickCheckPopup({ onClose, assessment }) {
             <Stethoscope size={18} className="text-[#0F5C56]" />
             <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>Clinical quick-check</h2>
           </div>
-          <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={18} /></button>
+          <button type="button" onClick={onClose} className="text-[#16241F] hover:text-[#16241F]"><X size={18} /></button>
         </div>
 
         <div className="p-5 space-y-5">
-          <p className="text-xs text-[#8A958E]">
+          <p className="text-xs text-[#16241F]">
             Built from what's entered on this page, checked against ClairMD's own reference library — complications, adverse drug events, and interactions, not AI-generated. Reference links are either already-curated sources or an outbound search you open yourself.
           </p>
 
           {hasNothing && (
-            <p className="text-sm text-[#5B6B63]">Nothing to check yet — add a diagnosis (and, for an existing patient, a prescription) and open this again.</p>
+            <p className="text-sm text-[#16241F]">Nothing to check yet — add a diagnosis (and, for an existing patient, a prescription) and open this again.</p>
           )}
 
           {diagnoses.map((d) => (
@@ -22570,9 +22570,9 @@ function ClinicalQuickCheckPopup({ onClose, assessment }) {
               <h3 className="text-sm font-semibold mb-2" style={{ color: "#16241F" }}>{d.label}</h3>
               {d.meta.complications?.length > 0 && (
                 <div className="mb-2.5">
-                  <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1">Complications to watch for</div>
+                  <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1">Complications to watch for</div>
                   <ul className="list-disc list-inside space-y-0.5">
-                    {d.meta.complications.map((c, i) => <li key={i} className="text-xs text-[#5B6B63]">{c}</li>)}
+                    {d.meta.complications.map((c, i) => <li key={i} className="text-xs text-[#16241F]">{c}</li>)}
                   </ul>
                 </div>
               )}
@@ -22594,9 +22594,9 @@ function ClinicalQuickCheckPopup({ onClose, assessment }) {
               <h3 className="text-sm font-semibold mb-2" style={{ color: "#16241F" }}>{drug.name}</h3>
               {drug.adverseEffects?.length > 0 && (
                 <div className="mb-2.5">
-                  <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1">Adverse drug events</div>
+                  <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1">Adverse drug events</div>
                   <ul className="list-disc list-inside space-y-0.5">
-                    {drug.adverseEffects.map((a, i) => <li key={i} className="text-xs text-[#5B6B63]">{a}</li>)}
+                    {drug.adverseEffects.map((a, i) => <li key={i} className="text-xs text-[#16241F]">{a}</li>)}
                   </ul>
                 </div>
               )}
@@ -22651,7 +22651,7 @@ function genderTextToSex(genderText) {
 function CalcField({ label, unit, value, onChange, placeholder }) {
   return (
     <div className="mb-2.5">
-      <label className="block text-[11px] text-[#5B6B63] mb-1">{label}{unit ? ` (${unit})` : ""}</label>
+      <label className="block text-[11px] text-[#16241F] mb-1">{label}{unit ? ` (${unit})` : ""}</label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -22666,7 +22666,7 @@ function CalcField({ label, unit, value, onChange, placeholder }) {
 function CalcSexToggle({ sex, setSex }) {
   return (
     <div className="mb-2.5">
-      <label className="block text-[11px] text-[#5B6B63] mb-1">Sex</label>
+      <label className="block text-[11px] text-[#16241F] mb-1">Sex</label>
       <div className="flex gap-1.5">
         {["male", "female"].map((s) => (
           <button
@@ -22688,9 +22688,9 @@ function CalcResult({ label, value, note }) {
   if (value === null || value === undefined) return null;
   return (
     <div className="mt-1 p-3 rounded-sm border" style={{ background: "#F2F7F5", borderColor: "#0F5C56" }}>
-      <div className="text-xs text-[#5B6B63]">{label}</div>
+      <div className="text-xs text-[#16241F]">{label}</div>
       <div className="text-xl font-semibold" style={{ color: "#0F5C56" }}>{value}</div>
-      {note && <div className="text-[11px] text-[#8A958E] mt-0.5">{note}</div>}
+      {note && <div className="text-[11px] text-[#16241F] mt-0.5">{note}</div>}
     </div>
   );
 }
@@ -22762,7 +22762,7 @@ function PBWCalcBody({ prefillSex }) {
       {result?.pbw && (
         <>
           <div className="mt-3 mb-1">
-            <label className="block text-[11px] text-[#5B6B63] mb-1">Tidal volume target (mL/kg PBW)</label>
+            <label className="block text-[11px] text-[#16241F] mb-1">Tidal volume target (mL/kg PBW)</label>
             <div className="flex gap-1.5">
               {["4", "6", "8"].map((v) => (
                 <button
@@ -22849,11 +22849,11 @@ function CalculatorModal({ calcId, onClose, prefillAge, prefillSex }) {
             <Calculator size={17} className="text-[#0F5C56]" />
             <h2 className="text-base font-semibold" style={{ color: "#16241F" }}>{title}</h2>
           </div>
-          <button type="button" onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={18} /></button>
+          <button type="button" onClick={onClose} className="text-[#16241F] hover:text-[#16241F]"><X size={18} /></button>
         </div>
         <div className="p-5">
           <Body prefillAge={prefillAge} prefillSex={prefillSex} />
-          <p className="text-[11px] text-[#8A958E] mt-3">
+          <p className="text-[11px] text-[#16241F] mt-3">
             Every field here is editable and pre-filled only where the chart already has the value — nothing is calculated automatically into the note or prescription.
           </p>
         </div>
@@ -22890,7 +22890,7 @@ function RXSectionBrowser() {
   const [openSection, setOpenSection] = useState(null);
   return (
     <div className="mb-3">
-      <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Browse by section (main topic titles)</div>
+      <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Browse by section (main topic titles)</div>
       <div className="space-y-1.5">
         {RX_SECTION_TITLES.map((sec) => {
           const drugs = RX_DRUG_DATABASE.filter((d) => d.section === sec.id);
@@ -22899,17 +22899,17 @@ function RXSectionBrowser() {
             <div key={sec.id} className="border border-[#D8DED9] rounded-sm bg-white overflow-hidden">
               <button onClick={() => setOpenSection(isOpen ? null : sec.id)} className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left">
                 <span className="text-xs font-semibold text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  {sec.id}. {sec.title} <span className="text-[#8A958E] font-normal">({drugs.length} drug{drugs.length !== 1 ? "s" : ""} on file)</span>
+                  {sec.id}. {sec.title} <span className="text-[#16241F] font-normal">({drugs.length} drug{drugs.length !== 1 ? "s" : ""} on file)</span>
                 </span>
-                {isOpen ? <ChevronDown size={13} className="text-[#8A958E] shrink-0" /> : <ChevronRight size={13} className="text-[#8A958E] shrink-0" />}
+                {isOpen ? <ChevronDown size={13} className="text-[#16241F] shrink-0" /> : <ChevronRight size={13} className="text-[#16241F] shrink-0" />}
               </button>
               {isOpen && drugs.length > 0 && (
                 <div className="px-3 pb-2 border-t border-[#EEF1EE]">
                   {drugs.map((d) => (
                     <div key={d.name} className="py-1.5 border-b border-[#F7F9F7] last:border-0 text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                       <span className="font-semibold">{d.name}</span>
-                      <span className="text-[#8A958E] ml-1.5">{d.classification}</span>
-                      <a href={d.citation.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 ml-2 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                      <span className="text-[#16241F] ml-1.5">{d.classification}</span>
+                      <a href={d.citation.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 ml-2 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                         <ExternalLink size={9} /> source
                       </a>
                     </div>
@@ -22917,7 +22917,7 @@ function RXSectionBrowser() {
                 </div>
               )}
               {isOpen && drugs.length === 0 && (
-                <div className="px-3 py-2 border-t border-[#EEF1EE] text-[11px] text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <div className="px-3 py-2 border-t border-[#EEF1EE] text-[11px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   Principles-only section — no individual drug entries.
                 </div>
               )}
@@ -22997,7 +22997,7 @@ function RXAlertCard({ drug, contraFlags, allergyFlags, interactionFlags, enzyme
           Don't add
         </button>
       </div>
-      <div className="text-[10px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="text-[10px] text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         This is a reference alert built from the patient's own recorded conditions/allergies and today's prescription list — it is not a diagnosis, dose calculation, or automated decision. Clinical judgement governs.
       </div>
     </div>
@@ -23026,7 +23026,7 @@ function PrescriptionAlertPicker({ patientConditions = [], patientAllergies = []
         <Pill size={14} />
         <span className="text-xs uppercase tracking-wide font-semibold">Prescription — Contraindication & Interaction Check</span>
       </div>
-      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Cross-checks a drug's on-file tags against this patient's own recorded conditions/allergies and today's prescription list. Nothing is auto-blocked — every alert needs your explicit acknowledgement before the item is added.
       </p>
 
@@ -23037,7 +23037,7 @@ function PrescriptionAlertPicker({ patientConditions = [], patientAllergies = []
 
       <div className="relative mb-2">
         <div className="flex items-center border border-[#D8DED9] rounded-sm px-2.5 py-2 bg-white">
-          <Search size={14} className="text-[#8A958E]" />
+          <Search size={14} className="text-[#16241F]" />
           <input
             type="text"
             value={query}
@@ -23051,13 +23051,13 @@ function PrescriptionAlertPicker({ patientConditions = [], patientAllergies = []
           <div className="absolute z-10 mt-1 w-full bg-white border border-[#D8DED9] rounded-sm shadow-lg">
             {results.map((d) => (
               <div key={d.name} onClick={() => selectDrug(d)} className="px-3 py-2 cursor-pointer text-sm border-b border-[#EEF1EE] last:border-0 hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                <strong>{d.name}</strong> <span className="text-[#8A958E] text-xs">{d.classification}</span>
+                <strong>{d.name}</strong> <span className="text-[#16241F] text-xs">{d.classification}</span>
               </div>
             ))}
           </div>
         )}
         {query.trim() && results.length === 0 && (
-          <div className="absolute z-10 mt-1 w-full bg-white border border-[#D8DED9] rounded-sm shadow-lg px-3 py-2.5 text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <div className="absolute z-10 mt-1 w-full bg-white border border-[#D8DED9] rounded-sm shadow-lg px-3 py-2.5 text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             No data found as of now — this covers 627 drugs across 14 sections, not the full pharmacopoeia. See <span className="font-medium">Browse by section</span> above for what's currently on file.
           </div>
         )}
@@ -23074,7 +23074,7 @@ function PrescriptionAlertPicker({ patientConditions = [], patientAllergies = []
             onAcknowledge={acknowledgeAndAdd}
             onCancel={cancel}
           />
-          <a href={pending.citation.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#8A958E] hover:text-[#0F5C56] hover:underline mt-2">
+          <a href={pending.citation.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] text-[#16241F] hover:text-[#0F5C56] hover:underline mt-2">
             <ExternalLink size={10} className="shrink-0" />
             {pending.citation.label}
           </a>
@@ -23083,13 +23083,13 @@ function PrescriptionAlertPicker({ patientConditions = [], patientAllergies = []
 
       {prescription.length > 0 && (
         <div className="mt-3">
-          <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Today's prescription (this tool)</div>
+          <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Today's prescription (this tool)</div>
           <div className="space-y-1.5">
             {prescription.map((d) => (
               <div key={d.name} className="flex items-center justify-between px-2.5 py-1.5 border border-[#EEF1EE] rounded-sm">
                 <div>
                   <span className="text-xs font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{d.name}</span>
-                  <span className="text-[11px] text-[#8A958E] ml-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{d.classification}</span>
+                  <span className="text-[11px] text-[#16241F] ml-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{d.classification}</span>
                 </div>
                 <button onClick={() => removeFromPrescription(d.name)} className="text-[#B34A3C]">
                   <XCircle size={15} />
@@ -23110,7 +23110,7 @@ function DecisionSupportTab({ patient, scoringSelections, setScoringSelections }
   if (!diagnosisKey || systems.length === 0) {
     return (
       <div className="space-y-5">
-        <div className="bg-white border border-[#D8DED9] rounded-md p-8 text-center text-sm text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <div className="bg-white border border-[#D8DED9] rounded-md p-8 text-center text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           No reference scoring system flagged for this diagnosis yet.
         </div>
         <MedicationSafetyPanel patient={patient} />
@@ -23122,14 +23122,14 @@ function DecisionSupportTab({ patient, scoringSelections, setScoringSelections }
     <div className="space-y-5">
       <div className="bg-white border border-[#D8DED9] rounded-md p-5">
         <SectionLabel><span className="inline-flex items-center gap-2"><AlertTriangle size={15} className="text-[#B3773C]" /> Applicable scoring system(s) for {DIAGNOSIS_LABEL[diagnosisKey]}</span></SectionLabel>
-        <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           This app flags which severity/risk scoring tool is relevant to this diagnosis. It does not collect inputs, calculate the score, or generate a resulting risk band or recommendation — that calculation and the clinical decision it informs remain entirely with the treating physician, outside this app.
         </p>
         <div className="space-y-3">
           {systems.map((s) => (
             <div key={s.id} className="p-4 border border-[#EEF1EE] rounded-md bg-[#FBF3ED]">
               <div className="font-medium text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.name}</div>
-              <div className="text-xs text-[#5B6B63] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.description}</div>
+              <div className="text-xs text-[#16241F] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.description}</div>
               <div className="text-xs text-[#B3773C] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 Applies here — please calculate this using your own clinical judgement or an external reference tool. Not calculated within this app.
               </div>
@@ -23189,9 +23189,9 @@ function AccountPicker({ types, placeholder, selected, onSelect, onClear }) {
       ) : query.trim().length >= 2 && (
         <div className="absolute z-10 mt-1 w-full bg-white border border-[#D8DED9] rounded-sm shadow-lg max-h-48 overflow-y-auto">
           {searching ? (
-            <div className="px-3 py-2 text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Searching…</div>
+            <div className="px-3 py-2 text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Searching…</div>
           ) : results.length === 0 ? (
-            <div className="px-3 py-2 text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matching accounts found.</div>
+            <div className="px-3 py-2 text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matching accounts found.</div>
           ) : (
             results.map((a) => (
               <button
@@ -23283,13 +23283,13 @@ function CareTeamTab({ patient }) {
     <div className="space-y-5">
       <div className="bg-white border border-[#D8DED9] rounded-md p-5">
         <SectionLabel><span className="inline-flex items-center gap-2"><Users2 size={15} /> Care team for {patient.name}</span></SectionLabel>
-        <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Everyone involved in this patient's care, in reporting order.</p>
+        <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Everyone involved in this patient's care, in reporting order.</p>
         <div className="space-y-0">
           {team.map((m, i) => (
             <div key={i} className="flex items-center gap-3 py-3" style={{ borderLeft: i > 0 ? "2px solid #D8DED9" : "none", marginLeft: i > 0 ? "18px" : "0", paddingLeft: i > 0 ? "18px" : "0" }}>
               <div className="w-8 h-8 rounded-full bg-[#F2F7F5] border border-[#D8DED9] flex items-center justify-center shrink-0 text-xs font-semibold text-[#0F5C56]">{i + 1}</div>
               <div className="flex-1">
-                <div className="text-xs text-[#8A958E] mb-1">{m.role}</div>
+                <div className="text-xs text-[#16241F] mb-1">{m.role}</div>
                 <input
                   value={m.name}
                   onChange={(e) => update(i, e.target.value)}
@@ -23301,14 +23301,14 @@ function CareTeamTab({ patient }) {
             </div>
           ))}
         </div>
-        <p className="text-[11px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-[11px] text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           This roster is a local reference list only — clairmd-backend has no "team roster" table, only one-off instructions (below), each sent to one real account.
         </p>
       </div>
 
       <div className="bg-white border border-[#D8DED9] rounded-md p-5">
         <SectionLabel><span className="inline-flex items-center gap-2"><Send size={15} /> Send an instruction</span></SectionLabel>
-        <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           Goes to one real, registered care-team-member account — task-scoped only, never chart or key access.
         </p>
         <div className="space-y-2 mb-3">
@@ -23331,20 +23331,20 @@ function CareTeamTab({ patient }) {
 
         <div className="mt-4 pt-4 border-t border-[#EEF1EE]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] uppercase tracking-wide text-[#8A958E]">Instructions sent (this account)</span>
+            <span className="text-[11px] uppercase tracking-wide text-[#16241F]">Instructions sent (this account)</span>
             <button onClick={refreshSentInstructions} className="text-[11px] text-[#0F5C56] underline decoration-dotted">{instructionsLoading ? "Refreshing…" : "Refresh"}</button>
           </div>
           {!getAuthToken() ? (
-            <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend above to see instructions you've sent.</p>
+            <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend above to see instructions you've sent.</p>
           ) : sentInstructions.length === 0 ? (
-            <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No instructions sent yet.</p>
+            <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No instructions sent yet.</p>
           ) : (
             <div className="space-y-2">
               {sentInstructions.map((i) => (
                 <div key={i.id} className="flex items-start justify-between gap-3 p-3 border border-[#D8DED9] rounded-md">
                   <div>
-                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{i.to_care_team_name} <span className="text-[#8A958E] font-normal">— {i.patient_display_name}</span></div>
-                    <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{i.instruction_text}</div>
+                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{i.to_care_team_name} <span className="text-[#16241F] font-normal">— {i.patient_display_name}</span></div>
+                    <div className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{i.instruction_text}</div>
                   </div>
                   {i.acknowledged_at ? (
                     <span className="text-[10px] px-1.5 py-0.5 bg-[#F2F7F5] text-[#0F5C56] rounded-sm shrink-0 inline-flex items-center gap-1"><CheckCircle2 size={11} />Acknowledged</span>
@@ -23365,14 +23365,14 @@ function CareTeamTab({ patient }) {
             {showForm ? "Cancel" : "Refer for cross-consultation"}
           </button>
         </div>
-        <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           Goes to one real, registered doctor account. Status below reflects what they've actually done — acknowledged or declined — not a local simulation.
         </p>
 
         {showForm && (
           <div className="mb-4 p-4 bg-[#F7F9F7] border border-[#D8DED9] rounded-md space-y-3">
             <div>
-              <label className="text-xs text-[#8A958E]">Refer to</label>
+              <label className="text-xs text-[#16241F]">Refer to</label>
               <div className="mt-1">
                 <AccountPicker
                   types={["individual_doctor", "hospital_doctor"]}
@@ -23384,7 +23384,7 @@ function CareTeamTab({ patient }) {
               </div>
             </div>
             <div>
-              <label className="text-xs text-[#8A958E]">Reason for referral</label>
+              <label className="text-xs text-[#16241F]">Reason for referral</label>
               <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} placeholder="e.g. New-onset arrhythmia, requesting cardiology opinion" className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
             </div>
             <button onClick={sendReferral} disabled={!referralRecipient || !reason.trim()} className="text-xs px-3 py-1.5 rounded-sm text-white disabled:opacity-40 inline-flex items-center gap-1.5" style={{ backgroundColor: "#0F5C56", fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -23402,9 +23402,9 @@ function CareTeamTab({ patient }) {
           </div>
         )}
         {!getAuthToken() ? (
-          <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend below to send or see referrals.</p>
+          <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connect to the backend below to send or see referrals.</p>
         ) : sentReferrals.length === 0 ? (
-          <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No referrals sent yet.</p>
+          <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No referrals sent yet.</p>
         ) : (
           <div className="space-y-2">
             {sentReferrals.map((r) => (
@@ -23412,9 +23412,9 @@ function CareTeamTab({ patient }) {
                 <div className="flex items-start gap-2">
                   {r.status === "acknowledged" ? <CheckCircle2 size={15} className="text-[#0F5C56] mt-0.5 shrink-0" /> : r.status === "declined" ? <XCircle size={15} className="text-[#B34A3C] mt-0.5 shrink-0" /> : <Bell size={15} className="text-[#E8A33D] mt-0.5 shrink-0 animate-pulse" />}
                   <div>
-                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.to_doctor_name} <span className="text-[#8A958E] font-normal">— {r.to_doctor_specialty}</span></div>
-                    <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.reason_summary}</div>
-                    <div className="text-[11px] text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.to_doctor_name} <span className="text-[#16241F] font-normal">— {r.to_doctor_specialty}</span></div>
+                    <div className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.reason_summary}</div>
+                    <div className="text-[11px] text-[#16241F] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                       Sent {new Date(r.created_at).toLocaleString()}{r.responded_at && ` · ${r.status === "acknowledged" ? "Acknowledged" : "Declined"} ${new Date(r.responded_at).toLocaleString()}`}
                     </div>
                   </div>
@@ -23426,13 +23426,13 @@ function CareTeamTab({ patient }) {
 
         {getAuthToken() && referralInbox.filter((r) => r.status === "sent").length > 0 && (
           <div className="mt-4 pt-4 border-t border-[#EEF1EE]">
-            <span className="text-[11px] uppercase tracking-wide text-[#8A958E]">Referrals awaiting your response</span>
+            <span className="text-[11px] uppercase tracking-wide text-[#16241F]">Referrals awaiting your response</span>
             <div className="space-y-2 mt-2">
               {referralInbox.filter((r) => r.status === "sent").map((r) => (
                 <div key={r.id} className="flex items-start justify-between gap-3 p-3 border border-[#F0DDB0] bg-[#FBF6EC] rounded-md">
                   <div>
-                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.from_doctor_name} <span className="text-[#8A958E] font-normal">— {r.from_doctor_specialty}</span></div>
-                    <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.reason_summary}</div>
+                    <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.from_doctor_name} <span className="text-[#16241F] font-normal">— {r.from_doctor_specialty}</span></div>
+                    <div className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.reason_summary}</div>
                   </div>
                   <div className="flex gap-1.5 shrink-0">
                     <button onClick={() => respond(r.id, "acknowledged")} className="text-[11px] px-2 py-1 rounded-sm text-white" style={{ backgroundColor: "#0F5C56" }}>Accept</button>
@@ -23466,10 +23466,10 @@ function ConsentTab({ patient }) {
           <CheckCircle2 size={18} />
           <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Consent recorded — locked</span>
         </div>
-        <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           {template} · Signed by {signerName} · {new Date().toLocaleString()}
         </p>
-        <p className="text-[11px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Like clinical records, this cannot be edited once signed — a correction would create a new, superseding entry.</p>
+        <p className="text-[11px] text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Like clinical records, this cannot be edited once signed — a correction would create a new, superseding entry.</p>
       </div>
     );
   }
@@ -23479,7 +23479,7 @@ function ConsentTab({ patient }) {
   return (
     <div className="bg-white border border-[#D8DED9] rounded-md p-5">
       <SectionLabel><span className="inline-flex items-center gap-2"><FileSignature size={15} /> Informed consent — before starting treatment</span></SectionLabel>
-      <label className="text-xs text-[#8A958E]">Consent type</label>
+      <label className="text-xs text-[#16241F]">Consent type</label>
       <select value={template} onChange={(e) => setTemplate(e.target.value)} className="w-full mt-1 mb-4 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         {CONSENT_TEMPLATES.map((t) => <option key={t} value={t}>{t}</option>)}
       </select>
@@ -23495,7 +23495,7 @@ function ConsentTab({ patient }) {
         </label>
       </div>
 
-      <label className="text-xs text-[#8A958E]">Patient / guardian signature (typed name)</label>
+      <label className="text-xs text-[#16241F]">Patient / guardian signature (typed name)</label>
       <input value={signerName} onChange={(e) => setSignerName(e.target.value)} placeholder="Full name" className="w-full mt-1 mb-4 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
 
       <button
@@ -23506,7 +23506,7 @@ function ConsentTab({ patient }) {
       >
         Record consent
       </button>
-      <p className="text-[11px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>A typed name stands in for a signature in this prototype — a real build would use a proper e-signature capture.</p>
+      <p className="text-[11px] text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>A typed name stands in for a signature in this prototype — a real build would use a proper e-signature capture.</p>
     </div>
   );
 }
@@ -23535,10 +23535,10 @@ function AdvancedCareTab({ patient }) {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="text-base font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{o.therapy}</h4>
-                    <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 bg-[#EEF1EE] text-[#5B6B63] rounded-sm">{o.country}</span>
+                    <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 bg-[#EEF1EE] text-[#16241F] rounded-sm">{o.country}</span>
                   </div>
                   <p className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{o.facility} — {o.location}</p>
-                  <p className="text-xs text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{o.contactNote}</p>
+                  <p className="text-xs text-[#16241F] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{o.contactNote}</p>
                 </div>
                 {o.telemedicine && (
                   <button className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-sm bg-[#0F5C56] text-white shrink-0" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -23558,7 +23558,7 @@ function AdvancedCareTab({ patient }) {
             {tourism.map((h, i) => (
               <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-4">
                 <div className="font-medium text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{h.name}</div>
-                <div className="text-xs text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{h.city}</div>
+                <div className="text-xs text-[#16241F] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{h.city}</div>
                 <div className="text-[11px] mt-2 px-1.5 py-0.5 bg-[#F2F7F5] text-[#0F5C56] rounded-sm inline-block">{h.accreditation}</div>
               </div>
             ))}
@@ -23589,7 +23589,7 @@ function AssistanceTab({ patient }) {
             <span className="text-3xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>
               ₹{patient.prescriptions.reduce((s, rx) => s + rx.cost, 0)}
             </span>
-            <span className="text-sm text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <span className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               for medicines as prescribed
             </span>
           </div>
@@ -23599,16 +23599,16 @@ function AssistanceTab({ patient }) {
       <div>
         <SectionLabel><span className="inline-flex items-center gap-2"><HandHeart size={15} /> Matched schemes & charity funds</span></SectionLabel>
         <div className="space-y-3">
-          {matches.length === 0 && <p className="text-sm text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches found for this patient's category.</p>}
+          {matches.length === 0 && <p className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches found for this patient's category.</p>}
           {matches.map((n, i) => (
             <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-4 flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{n.name}</span>
-                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 bg-[#EEF1EE] text-[#5B6B63] rounded-sm">{n.type}</span>
+                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 bg-[#EEF1EE] text-[#16241F] rounded-sm">{n.type}</span>
                 </div>
-                <p className="text-sm text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{n.covers}</p>
-                <p className="text-xs text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n.contact}</p>
+                <p className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{n.covers}</p>
+                <p className="text-xs text-[#16241F] mt-1" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n.contact}</p>
               </div>
               <Stamp size={28} className="text-[#E8A33D] shrink-0 mt-1" strokeWidth={1.5} />
             </div>
@@ -23698,9 +23698,9 @@ function AdCard({ ad, onOpenPopup }) {
         )}
       </button>
       <div className="p-3">
-        <div className="text-[10px] text-[#8A958E] mb-0.5">{ad.category}</div>
+        <div className="text-[10px] text-[#16241F] mb-0.5">{ad.category}</div>
         <div className="text-xs font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{ad.company}</div>
-        <div className="text-xs text-[#5B6B63] mt-0.5 mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{ad.tagline}</div>
+        <div className="text-xs text-[#16241F] mt-0.5 mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{ad.tagline}</div>
         <button
           onClick={goToSponsor}
           className="text-[11px] px-2.5 py-1 bg-[#0F5C56] text-white rounded-sm font-medium"
@@ -23720,8 +23720,8 @@ function AdPopupModal({ ad, onClose }) {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-6" style={{ zIndex: 60 }}>
       <div className="bg-white rounded-md w-full max-w-sm overflow-hidden border-2 shadow-xl" style={{ borderColor: "#D8DED9" }}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#D8DED9]">
-          <span className="text-[10px] uppercase tracking-wider text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Sponsored</span>
-          <button type="button" onClick={onClose} title="Close" className="w-7 h-7 flex items-center justify-center rounded-sm text-[#5B6B63] hover:bg-[#F2F7F5]">
+          <span className="text-[10px] uppercase tracking-wider text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Sponsored</span>
+          <button type="button" onClick={onClose} title="Close" className="w-7 h-7 flex items-center justify-center rounded-sm text-[#16241F] hover:bg-[#F2F7F5]">
             <X size={15} />
           </button>
         </div>
@@ -23731,9 +23731,9 @@ function AdPopupModal({ ad, onClose }) {
           <img src={ad.image} alt={ad.company} className="w-full h-40 object-cover" />
         )}
         <div className="p-4">
-          <div className="text-[10px] text-[#8A958E] mb-0.5">{ad.category}</div>
+          <div className="text-[10px] text-[#16241F] mb-0.5">{ad.category}</div>
           <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{ad.company}</div>
-          <div className="text-sm text-[#5B6B63] mt-1 mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{ad.tagline}</div>
+          <div className="text-sm text-[#16241F] mt-1 mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{ad.tagline}</div>
           <button
             onClick={() => alert(`In production, this opens ${ad.company}'s landing page in a new tab.`)}
             className="w-full text-sm py-2 rounded-sm text-white font-medium"
@@ -23785,13 +23785,13 @@ function ForgotCredentials() {
         </div>
       ) : (
         <>
-          <p className="text-xs text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <p className="text-xs text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Enter your registered email or phone. We'll send a reset link there — for security, we never display or email a forgotten password directly.
           </p>
           <input value={contact} onChange={(e) => setContact(e.target.value)} placeholder="Registered email or phone" className="w-full mb-2 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
           <div className="flex gap-2">
             <button onClick={() => setSent(true)} className="text-xs px-3 py-1.5 bg-[#0F5C56] text-white rounded-sm font-medium">Send reset link</button>
-            <button onClick={() => setOpen(false)} className="text-xs px-3 py-1.5 text-[#8A958E]">Cancel</button>
+            <button onClick={() => setOpen(false)} className="text-xs px-3 py-1.5 text-[#16241F]">Cancel</button>
           </div>
         </>
       )}
@@ -23868,7 +23868,7 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         ← Back to patient records
       </button>
 
@@ -23876,11 +23876,11 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
         <Building2 size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Profile</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Each account is fully isolated — a hospital, a solo doctor, and a hospital-affiliated doctor never see one another's data unless explicitly linked.
       </p>
 
-      <label className="text-xs text-[#8A958E]">This account is for</label>
+      <label className="text-xs text-[#16241F]">This account is for</label>
       <select
         value={accountType}
         onChange={(e) => { setAccountType(e.target.value); setStep(1); }}
@@ -23895,7 +23895,7 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
           <button
             key={m}
             onClick={() => { setMode(m); setStep(1); setVerified(false); }}
-            className={`flex-1 text-xs py-2 rounded-sm ${mode === m ? "bg-white shadow-sm text-[#0F5C56] font-medium" : "text-[#5B6B63]"}`}
+            className={`flex-1 text-xs py-2 rounded-sm ${mode === m ? "bg-white shadow-sm text-[#0F5C56] font-medium" : "text-[#16241F]"}`}
             style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
           >
             {m === "signup" ? "Create account" : "Log in"}
@@ -23906,56 +23906,56 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
       {mode === "signup" && step === 1 && (
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-[#8A958E]">{typeMeta.nameLabel}</label>
+            <label className="text-xs text-[#16241F]">{typeMeta.nameLabel}</label>
             <input value={form.hospitalName} onChange={update("hospitalName")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder={typeMeta.namePlaceholder} />
           </div>
           {accountType === "affiliatedDoctor" && (
             <div>
-              <label className="text-xs text-[#8A958E]">Hospital you're affiliated with</label>
+              <label className="text-xs text-[#16241F]">Hospital you're affiliated with</label>
               <input value={form.affiliatedHospital} onChange={update("affiliatedHospital")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="e.g. ClairMD Clinic" />
               {/* Display-only — typing a name here doesn't create a real link (this
                   step runs before signup even completes). The real, doctor-
                   initiated request flow (clairmd-backend's POST /api/
                   hospital-affiliations/requests) lives in HospitalAffiliationPanel,
                   reachable from Doctor profile once signed up — see that panel. */}
-              <p className="text-[11px] text-[#8A958E] mt-1">This doesn't create the link by itself — once you're signed up, request a real affiliation from Doctor profile → Hospital affiliations, and the hospital approves it from their own account.</p>
+              <p className="text-[11px] text-[#16241F] mt-1">This doesn't create the link by itself — once you're signed up, request a real affiliation from Doctor profile → Hospital affiliations, and the hospital approves it from their own account.</p>
             </div>
           )}
           <div>
-            <label className="text-xs text-[#8A958E]">Registered email</label>
+            <label className="text-xs text-[#16241F]">Registered email</label>
             <input value={form.email} onChange={update("email")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="admin@yourclinic.in" />
           </div>
           <div>
-            <label className="text-xs text-[#8A958E]">Phone number</label>
+            <label className="text-xs text-[#16241F]">Phone number</label>
             <input value={form.phone} onChange={update("phone")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="+91" />
           </div>
           <div>
-            <label className="text-xs text-[#8A958E]">Password</label>
+            <label className="text-xs text-[#16241F]">Password</label>
             <input type="password" value={form.password} onChange={update("password")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="At least 10 characters" />
           </div>
           {isDoctorAccount && (
             <div>
-              <label className="text-xs text-[#8A958E]">Your speciality</label>
+              <label className="text-xs text-[#16241F]">Your speciality</label>
               <select value={form.specialty} onChange={update("specialty")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 <option value="">Select...</option>
                 {Object.keys(SPECIALTY_THEMES).map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
-              <p className="text-[11px] text-[#8A958E] mt-1">Your dashboard is themed to your speciality once set.</p>
+              <p className="text-[11px] text-[#16241F] mt-1">Your dashboard is themed to your speciality once set.</p>
             </div>
           )}
           {isDoctorAccount && (
             <div>
-              <label className="text-xs text-[#8A958E]">Medical registration / license number</label>
+              <label className="text-xs text-[#16241F]">Medical registration / license number</label>
               <input value={form.licenseNumber} onChange={update("licenseNumber")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="Required for doctor accounts" />
             </div>
           )}
           {accountType !== "hospital" && (
             <div>
-              <label className="text-xs text-[#8A958E]">Aadhaar number (optional)</label>
+              <label className="text-xs text-[#16241F]">Aadhaar number (optional)</label>
               <input value={form.aadhaar} onChange={update("aadhaar")} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="Not required — can be added later" />
             </div>
           )}
-          <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-sm p-3 text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-sm p-3 text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Plan: ₹— /month (billing mocked in this prototype)
           </div>
           <button onClick={() => setStep(2)} className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -24015,7 +24015,7 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
                       <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{plan.name}</span>
                       <span className="text-xs text-[#0F5C56] font-medium">{plan.price}</span>
                     </div>
-                    <ul className="text-[11px] text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <ul className="text-[11px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                       {plan.features.map((f, i) => <li key={i}>• {f}</li>)}
                     </ul>
                   </button>
@@ -24032,8 +24032,8 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
 
       {mode === "login" && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm"><Mail size={14} className="text-[#5B6B63]" /><input value={form.email} onChange={update("email")} placeholder="Registered email" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
-          <div className="flex items-center gap-2 text-sm"><Lock size={14} className="text-[#5B6B63]" /><input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Password" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
+          <div className="flex items-center gap-2 text-sm"><Mail size={14} className="text-[#16241F]" /><input value={form.email} onChange={update("email")} placeholder="Registered email" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
+          <div className="flex items-center gap-2 text-sm"><Lock size={14} className="text-[#16241F]" /><input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Password" className="flex-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} /></div>
           <button onClick={loginToRealAccount} disabled={authBusy} className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium disabled:opacity-60" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             {authBusy ? "Logging in…" : "Log in"}
           </button>
@@ -24107,7 +24107,7 @@ function MyRecordsAndConsent() {
         <SectionLabel>Your linked records</SectionLabel>
         {getAuthToken() && <button onClick={refresh} className="text-[11px] text-[#0F5C56] underline decoration-dotted">Refresh</button>}
       </div>
-      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Which doctors hold a pointer to one of your records on the real backend — never the record's actual content, which stays encrypted in that doctor's own Drive.
       </p>
       <BackendSyncPanel accountType="patient" notConnectedLabel="Backend: not connected — showing this device's local records only" />
@@ -24116,15 +24116,15 @@ function MyRecordsAndConsent() {
         <>
           <div className="mt-4">
             {records === null ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
             ) : records.length === 0 ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No records linked to this account yet.</p>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No records linked to this account yet.</p>
             ) : (
               <div className="space-y-1.5">
                 {records.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-xs px-3 py-2 border border-[#D8DED9] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     <span>{r.primary_doctor_name}</span>
-                    <span className="text-[#8A958E]">Updated {new Date(r.updated_at).toLocaleDateString()}</span>
+                    <span className="text-[#16241F]">Updated {new Date(r.updated_at).toLocaleDateString()}</span>
                   </div>
                 ))}
               </div>
@@ -24133,7 +24133,7 @@ function MyRecordsAndConsent() {
 
           {consentRequests.length > 0 && (
             <div className="mt-4 pt-4 border-t border-[#EEF1EE]">
-              <span className="text-[11px] uppercase tracking-wide text-[#8A958E]">Co-admin access awaiting your decision</span>
+              <span className="text-[11px] uppercase tracking-wide text-[#16241F]">Co-admin access awaiting your decision</span>
               <div className="space-y-2 mt-2">
                 {consentRequests.map((req) => (
                   <div key={req.id} className="flex items-center justify-between gap-3 p-3 border border-[#F0DDB0] bg-[#FBF6EC] rounded-md">
@@ -24191,11 +24191,11 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-full bg-[#F2F7F5] border border-[#D8DED9] flex items-center justify-center shrink-0">
-            <UserCircle2 size={18} className="text-[#8A958E]" />
+            <UserCircle2 size={18} className="text-[#16241F]" />
           </div>
           <div>
             <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{doc.name}</div>
-            <div className="text-[11px] text-[#8A958E]">{doc.specialty} · {doc.tagline}</div>
+            <div className="text-[11px] text-[#16241F]">{doc.specialty} · {doc.tagline}</div>
           </div>
         </div>
         <button
@@ -24206,7 +24206,7 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
           Follow
         </button>
       </div>
-      <p className="text-xs text-[#5B6B63] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{doc.samplePost}</p>
+      <p className="text-xs text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{doc.samplePost}</p>
     </div>
   );
 
@@ -24214,7 +24214,7 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
     <div className="min-h-screen w-full" style={{ backgroundColor: "#EFF3F0" }}>
       <link href={FONT_LINK} rel="stylesheet" />
       <div className="max-w-xl mx-auto py-8 px-6">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to dashboard</button>
+        <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to dashboard</button>
         <div className="flex items-center gap-2 mb-1">
           <Rss size={20} className="text-[#0F5C56]" />
           <h1 className="text-2xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Doctor updates</h1>
@@ -24225,7 +24225,7 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
             <p className="text-[11px] mt-1.5 text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{reactSyncMessage.text}</p>
           )}
         </div>
-        <p className="text-xs text-[#8A958E] mb-6" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-xs text-[#16241F] mb-6" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           {followingSomeone ? `From doctors you follow: ${followedNames.join(" · ")}` : "You're not following any doctors yet"}
         </p>
 
@@ -24252,11 +24252,11 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
                 <div className="p-4 pb-2">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-8 h-8 rounded-full bg-[#F2F7F5] border border-[#D8DED9] flex items-center justify-center shrink-0">
-                      <UserCircle2 size={16} className="text-[#8A958E]" />
+                      <UserCircle2 size={16} className="text-[#16241F]" />
                     </div>
                     <div>
                       <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{post.doctor}</div>
-                      <div className="text-[11px] text-[#8A958E]">
+                      <div className="text-[11px] text-[#16241F]">
                         {post.specialty} · {post.kind === "achievement" ? "Achievement" : post.kind === "video" ? "Video" : post.kind === "caseHighlight" ? "Case highlight — patient approved" : "Update"}
                       </div>
                     </div>
@@ -24277,14 +24277,14 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
 
                 <div className="px-4 py-3 flex items-center justify-between border-t border-[#EEF1EE]">
                   <div className="flex items-center gap-3">
-                    <button onClick={() => react(post.id, "like", post.backendId)} className={`flex items-center gap-1 text-xs ${reaction === "like" ? "text-[#0F5C56] font-medium" : "text-[#8A958E]"}`}>
+                    <button onClick={() => react(post.id, "like", post.backendId)} className={`flex items-center gap-1 text-xs ${reaction === "like" ? "text-[#0F5C56] font-medium" : "text-[#16241F]"}`}>
                       👍 {likeCount}
                     </button>
-                    <button onClick={() => react(post.id, "dislike", post.backendId)} className={`flex items-center gap-1 text-xs ${reaction === "dislike" ? "text-[#B34A3C] font-medium" : "text-[#8A958E]"}`}>
+                    <button onClick={() => react(post.id, "dislike", post.backendId)} className={`flex items-center gap-1 text-xs ${reaction === "dislike" ? "text-[#B34A3C] font-medium" : "text-[#16241F]"}`}>
                       👎 {dislikeCount}
                     </button>
                     {onAskQuestion && (
-                      <button onClick={onAskQuestion} title="Message the doctor privately — not a public comment" className="flex items-center gap-1 text-xs text-[#8A958E] hover:text-[#0F5C56]">
+                      <button onClick={onAskQuestion} title="Message the doctor privately — not a public comment" className="flex items-center gap-1 text-xs text-[#16241F] hover:text-[#0F5C56]">
                         <MessagesSquare size={13} /> Ask a question
                       </button>
                     )}
@@ -24295,7 +24295,7 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
                         key={platform}
                         onClick={() => shareTo(platform, post)}
                         title={`Share to ${platform}`}
-                        className="text-[10px] px-2 py-1 border border-[#D8DED9] rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]"
+                        className="text-[10px] px-2 py-1 border border-[#D8DED9] rounded-sm text-[#16241F] hover:bg-[#F7F9F7]"
                         style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
                       >
                         {platform}
@@ -24311,7 +24311,7 @@ function DoctorFeedPanel({ onBack, feedPosts, postExpiryMonths, onAskQuestion })
 
         {followingSomeone && discoverList.length > 0 && (
           <div className="mt-6">
-            <div className="text-[11px] uppercase tracking-wider text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Doctors you might like</div>
+            <div className="text-[11px] uppercase tracking-wider text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Doctors you might like</div>
             <div className="space-y-3">
               {discoverList.slice(0, 3).map((doc, i) => <DiscoverCard key={i} doc={doc} />)}
             </div>
@@ -24382,10 +24382,10 @@ function PatientInboxTab({ patient, followups, setFollowups, pendingPostRequests
   return (
     <div>
       <div className="flex gap-1 mb-4 bg-white border border-[#D8DED9] rounded-sm p-1 w-fit">
-        <button onClick={() => setSection("chat")} className={`text-sm px-4 py-2 rounded-sm font-medium ${section === "chat" ? "bg-[#F2F7F5] text-[#0F5C56]" : "text-[#5B6B63]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <button onClick={() => setSection("chat")} className={`text-sm px-4 py-2 rounded-sm font-medium ${section === "chat" ? "bg-[#F2F7F5] text-[#0F5C56]" : "text-[#16241F]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Chat with your doctor
         </button>
-        <button onClick={() => setSection("approvals")} className={`text-sm px-4 py-2 rounded-sm font-medium relative ${section === "approvals" ? "bg-[#F2F7F5] text-[#0F5C56]" : "text-[#5B6B63]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <button onClick={() => setSection("approvals")} className={`text-sm px-4 py-2 rounded-sm font-medium relative ${section === "approvals" ? "bg-[#F2F7F5] text-[#0F5C56]" : "text-[#16241F]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Post approvals
             {myRequests.length > 0 && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 bg-[#B34A3C] text-white rounded-full">{myRequests.length}</span>}
         </button>
@@ -24406,7 +24406,7 @@ function PatientInboxTab({ patient, followups, setFollowups, pendingPostRequests
               </div>
             </>
           ) : (
-            <p className="text-sm text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No active conversation with a treating doctor yet.</p>
+            <p className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No active conversation with a treating doctor yet.</p>
           )}
         </div>
       )}
@@ -24420,22 +24420,22 @@ function PatientInboxTab({ patient, followups, setFollowups, pendingPostRequests
           <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-md p-3 text-xs text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Your doctor needs your approval before posting anything about your case publicly. Nothing posts without a yes from you here.
           </div>
-          {myRequests.length === 0 && <p className="text-sm text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No pending requests.</p>}
+          {myRequests.length === 0 && <p className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No pending requests.</p>}
           {myRequests.map((req) => (
             <div key={req.id} className="bg-white border border-[#D8DED9] rounded-md p-4">
-              <div className="text-xs text-[#8A958E] mb-2">{req.doctor} · {req.specialty}</div>
+              <div className="text-xs text-[#16241F] mb-2">{req.doctor} · {req.specialty}</div>
               <div className="space-y-1.5 text-xs mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                {req.findings && <div><span className="text-[#8A958E]">Notable clinical considerations — </span>{req.findings}</div>}
-                {req.course && <div><span className="text-[#8A958E]">Disease course — </span>{req.course}</div>}
-                {req.workup && <div><span className="text-[#8A958E]">Workup — </span>{req.workup}</div>}
+                {req.findings && <div><span className="text-[#16241F]">Notable clinical considerations — </span>{req.findings}</div>}
+                {req.course && <div><span className="text-[#16241F]">Disease course — </span>{req.course}</div>}
+                {req.workup && <div><span className="text-[#16241F]">Workup — </span>{req.workup}</div>}
               </div>
               <div className="mb-3">
-                <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1">This is what will actually post, if you approve</div>
+                <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1">This is what will actually post, if you approve</div>
                 <p className="text-sm bg-[#F7F9F7] border border-[#EEF1EE] rounded-sm p-2.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{formatCaseHighlight(req)}</p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => approve(req)} className="text-xs px-3 py-1.5 bg-[#0F5C56] text-white rounded-sm font-medium">Approve & post</button>
-                <button onClick={() => decline(req)} className="text-xs px-3 py-1.5 border border-[#D8DED9] rounded-sm text-[#5B6B63]">Decline</button>
+                <button onClick={() => decline(req)} className="text-xs px-3 py-1.5 border border-[#D8DED9] rounded-sm text-[#16241F]">Decline</button>
               </div>
             </div>
           ))}
@@ -24456,7 +24456,7 @@ function PatientSearchBar({ onGoToTab }) {
   return (
     <div className="mb-6 relative">
       <div className="relative">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A958E]" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#16241F]" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -24467,20 +24467,20 @@ function PatientSearchBar({ onGoToTab }) {
       </div>
       {q && (
         <div className="absolute z-10 mt-1 w-full bg-white border border-[#D8DED9] rounded-md shadow-lg p-3 max-h-80 overflow-y-auto">
-          {!hasResults && <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches.</p>}
+          {!hasResults && <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches.</p>}
           {doctorResults.length > 0 && (
             <div className="mb-3">
-              <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1.5">Doctors</div>
+              <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1.5">Doctors</div>
               {doctorResults.map((d, i) => (
                 <button key={i} onClick={() => { setQuery(""); onGoToTab && onGoToTab("summary"); }} className="w-full text-left text-sm py-1.5 hover:bg-[#F7F9F7] px-1 rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  {d.name} <span className="text-[#8A958E] text-xs">— {d.specialty}</span>
+                  {d.name} <span className="text-[#16241F] text-xs">— {d.specialty}</span>
                 </button>
               ))}
             </div>
           )}
           {schemeResults.length > 0 && (
             <div className="mb-3">
-              <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-1.5">Schemes & charities</div>
+              <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-1.5">Schemes & charities</div>
               {schemeResults.map((n, i) => (
                 <button key={i} onClick={() => { setQuery(""); onGoToTab && onGoToTab("schemes"); }} className="w-full text-left text-sm py-1.5 hover:bg-[#F7F9F7] px-1 rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   {n.name}
@@ -24581,10 +24581,10 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
             <div className="text-center">
               <Lock size={24} className="mx-auto text-[#B34A3C] mb-2" />
               <h2 className="text-lg mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Emergency access</h2>
-              <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 Confirming with the patient's own fingerprint tells us this is genuinely them — not a false alarm — and opens a small emergency info screen to help whoever's with them right now.
               </p>
-              <label className="text-xs text-[#8A958E] block text-left mb-1">What's happening? (included in the access log)</label>
+              <label className="text-xs text-[#16241F] block text-left mb-1">What's happening? (included in the access log)</label>
               <select value={emergencyReason} onChange={(e) => setEmergencyReason(e.target.value)} className="w-full mb-4 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 <option value="">Select a reason...</option>
                 <option value="Found unresponsive">Found unresponsive</option>
@@ -24599,18 +24599,18 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                   setEmergencySecondsLeft(90);
                   if (getAuthToken()) logEmergencyAccessToBackend(emergencyReason).catch(() => {}); // best-effort — never blocks the unlock itself, matching the offline-first design this logging already accepts as a real limitation
                 }}
-                className={`w-full text-sm py-2.5 rounded-sm font-medium mb-2 ${emergencyReason ? "bg-[#B34A3C] text-white" : "bg-[#EEF1EE] text-[#8A958E] cursor-not-allowed"}`}
+                className={`w-full text-sm py-2.5 rounded-sm font-medium mb-2 ${emergencyReason ? "bg-[#B34A3C] text-white" : "bg-[#EEF1EE] text-[#16241F] cursor-not-allowed"}`}
                 style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
               >
                 Unlock with fingerprint
               </button>
-              <button onClick={() => setEmergencyGateStep(null)} className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
+              <button onClick={() => setEmergencyGateStep(null)} className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
             </div>
           ) : (
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[10px] uppercase tracking-wide px-2 py-1 bg-[#FBEFEC] text-[#B34A3C] rounded-sm font-medium">Emergency view — limited access</span>
-                <span className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Auto-locks in {emergencySecondsLeft}s</span>
+                <span className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Auto-locks in {emergencySecondsLeft}s</span>
               </div>
               <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-sm p-3 mb-3 text-xs text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 ✓ This access has been logged — "{emergencyReason}" — with the time and location, and a button below to report it if this wasn't legitimate.
@@ -24620,24 +24620,24 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
               <h3 className="text-xl mb-3" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{patient.name}</h3>
 
               <div className="grid grid-cols-2 gap-2 mb-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                <div className="bg-[#FBEFEC] rounded-sm p-2"><div className="text-[10px] text-[#8A958E] uppercase">Blood group</div><div className="font-semibold">{emergencyProfile.bloodGroup || "Not filled in"}</div></div>
-                <div className="bg-[#FBEFEC] rounded-sm p-2"><div className="text-[10px] text-[#8A958E] uppercase">Allergies</div><div className="font-semibold">{patient.allergies.join(", ") || "None on record"}</div></div>
+                <div className="bg-[#FBEFEC] rounded-sm p-2"><div className="text-[10px] text-[#16241F] uppercase">Blood group</div><div className="font-semibold">{emergencyProfile.bloodGroup || "Not filled in"}</div></div>
+                <div className="bg-[#FBEFEC] rounded-sm p-2"><div className="text-[10px] text-[#16241F] uppercase">Allergies</div><div className="font-semibold">{patient.allergies.join(", ") || "None on record"}</div></div>
               </div>
 
               <div className="text-xs mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                <div className="text-[#8A958E] uppercase text-[10px] mb-1">Current medications</div>
+                <div className="text-[#16241F] uppercase text-[10px] mb-1">Current medications</div>
                 {emergencyProfile.currentMedications || "Not filled in"}
               </div>
 
               <div className="text-xs mb-3 bg-[#F7F9F7] border border-[#EEF1EE] rounded-sm p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                <div className="text-[#8A958E] uppercase text-[10px] mb-1">Written note from patient</div>
+                <div className="text-[#16241F] uppercase text-[10px] mb-1">Written note from patient</div>
                 {emergencyProfile.emergencyNote || "No note on file."}
               </div>
 
               <div className="text-xs mb-4 space-y-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                <div className="text-[#8A958E] uppercase text-[10px] mb-1">Insurance — for hospital admission (policy numbers partially masked)</div>
-                <div><span className="text-[#8A958E]">Health: </span>{insurance.healthProvider ? `${insurance.healthProvider} — ${redactPolicy(insurance.healthPolicy)}` : "None on record"}</div>
-                <div><span className="text-[#8A958E]">Life: </span>{insurance.lifeProvider ? `${insurance.lifeProvider} — ${redactPolicy(insurance.lifePolicy)}` : "None on record"}</div>
+                <div className="text-[#16241F] uppercase text-[10px] mb-1">Insurance — for hospital admission (policy numbers partially masked)</div>
+                <div><span className="text-[#16241F]">Health: </span>{insurance.healthProvider ? `${insurance.healthProvider} — ${redactPolicy(insurance.healthPolicy)}` : "None on record"}</div>
+                <div><span className="text-[#16241F]">Life: </span>{insurance.lifeProvider ? `${insurance.lifeProvider} — ${redactPolicy(insurance.lifePolicy)}` : "None on record"}</div>
               </div>
 
               <div className="space-y-2">
@@ -24651,7 +24651,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                     <Phone size={14} /> Call {emergencyProfile.preferredHospital || "preferred hospital"}
                   </a>
                 )}
-                <button onClick={() => { setEmergencyGateStep(null); setEmergencyMode(false); }} className="w-full text-xs text-[#8A958E] py-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <button onClick={() => { setEmergencyGateStep(null); setEmergencyMode(false); }} className="w-full text-xs text-[#16241F] py-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   Exit emergency view
                 </button>
               </div>
@@ -24667,14 +24667,14 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#EFF3F0" }}>
         <link href={FONT_LINK} rel="stylesheet" />
         <div className="bg-white border border-[#D8DED9] rounded-md p-8 w-full max-w-sm">
-          <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
+          <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
 
           <div className="flex gap-1 mb-5 bg-[#EFF3F0] rounded-sm p-1">
             {["signup", "login"].map((m) => (
               <button
                 key={m}
                 onClick={() => setPortalMode(m)}
-                className={`flex-1 text-sm py-2.5 rounded-sm font-medium ${portalMode === m ? "bg-white shadow-sm text-[#0F5C56]" : "text-[#5B6B63]"}`}
+                className={`flex-1 text-sm py-2.5 rounded-sm font-medium ${portalMode === m ? "bg-white shadow-sm text-[#0F5C56]" : "text-[#16241F]"}`}
                 style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
               >
                 {m === "signup" ? "Create account" : "Log in"}
@@ -24685,24 +24685,24 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
           {portalMode === "login" ? (
             <div className="space-y-3">
               <h2 className="text-xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Log in</h2>
-              <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free for patients — always.</p>
+              <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free for patients — always.</p>
               <input placeholder="Username" value={loginForm.username} onChange={(e) => setLoginForm((f) => ({ ...f, username: e.target.value }))} className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
               <input type="password" placeholder="Password" value={loginForm.password} onChange={(e) => setLoginForm((f) => ({ ...f, password: e.target.value }))} className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
               <button onClick={() => setAccount({ name: loginForm.username, phone: "", email: "", aadhaar: "", forWhom: "self" })} className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium">
                 Submit
               </button>
               <ForgotCredentials />
-              <p className="text-[11px] text-[#8A958E] text-center" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Two-step verification happens once, at account creation — logging in just needs your username and password.</p>
+              <p className="text-[11px] text-[#16241F] text-center" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Two-step verification happens once, at account creation — logging in just needs your username and password.</p>
             </div>
           ) : (
           <>
           <h2 className="text-xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Create your free patient account</h2>
-          <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free for patients — always. No charge now, no charge later.</p>
+          <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free for patients — always. No charge now, no charge later.</p>
 
-          <label className="text-xs text-[#8A958E]">Who are you setting this up for?</label>
+          <label className="text-xs text-[#16241F]">Who are you setting this up for?</label>
           <div className="flex gap-1 mt-1 mb-3 bg-[#EFF3F0] rounded-sm p-1">
             {["self", "other"].map((w) => (
-              <button key={w} onClick={() => setForm((f) => ({ ...f, forWhom: w }))} className={`flex-1 text-xs py-2 rounded-sm ${form.forWhom === w ? "bg-white shadow-sm text-[#0F5C56] font-medium" : "text-[#5B6B63]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <button key={w} onClick={() => setForm((f) => ({ ...f, forWhom: w }))} className={`flex-1 text-xs py-2 rounded-sm ${form.forWhom === w ? "bg-white shadow-sm text-[#0F5C56] font-medium" : "text-[#16241F]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 {w === "self" ? "Myself" : "Someone else"}
               </button>
             ))}
@@ -24721,18 +24721,18 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                   <img src={photoPreview} alt="Profile" className="w-12 h-12 rounded-full object-cover border border-[#D8DED9]" />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-[#F7F9F7] border border-[#D8DED9] flex items-center justify-center">
-                    <UserCircle2 size={22} className="text-[#8A958E]" />
+                    <UserCircle2 size={22} className="text-[#16241F]" />
                   </div>
                 )}
                 <input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) setPhotoPreview(URL.createObjectURL(f)); }} className="hidden" />
                 <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-[#0F5C56] flex items-center justify-center text-white text-[9px]">+</div>
               </label>
-              <span className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Add a profile photo (optional)</span>
+              <span className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Add a profile photo (optional)</span>
             </div>
 
             {form.forWhom === "other" && (
               <div className="border border-[#EEF1EE] rounded-sm p-3 space-y-2 bg-[#F7F9F7]">
-                <div className="text-[11px] uppercase tracking-wide text-[#8A958E]">Basic details of the person you're helping</div>
+                <div className="text-[11px] uppercase tracking-wide text-[#16241F]">Basic details of the person you're helping</div>
                 <input placeholder="Their full name" value={form.otherName} onChange={(e) => setForm((f) => ({ ...f, otherName: e.target.value }))} className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
                 <input placeholder="Their age" value={form.otherAge} onChange={(e) => setForm((f) => ({ ...f, otherAge: e.target.value }))} className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
                 <input placeholder="Your relation to them (e.g. parent, spouse)" value={form.otherRelation} onChange={(e) => setForm((f) => ({ ...f, otherRelation: e.target.value }))} className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
@@ -24740,17 +24740,17 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
             )}
 
             <button onClick={() => setSignupStep(2)} className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Continue to verification</button>
-            <p className="text-[11px] text-[#8A958E] text-center" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Account creation requires two-step verification — phone OTP + email — before it's active.</p>
+            <p className="text-[11px] text-[#16241F] text-center" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Account creation requires two-step verification — phone OTP + email — before it's active.</p>
           </div>
           ) : (
           <div className="space-y-3">
-            <div className="bg-[#F7F9F7] border border-[#EEF1EE] rounded-sm p-3 text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <div className="bg-[#F7F9F7] border border-[#EEF1EE] rounded-sm p-3 text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               (Demo) OTP sent to {form.phone || "your phone"}, verification code sent to {form.email || "your email"}.
             </div>
             <input placeholder="Enter phone OTP" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
             <input placeholder="Enter email verification code" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
             <button onClick={() => setAccount(form)} className="w-full bg-[#0F5C56] text-white text-sm py-2.5 rounded-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Verify & create account</button>
-            <button onClick={() => setSignupStep(1)} className="w-full text-xs text-[#8A958E] py-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back</button>
+            <button onClick={() => setSignupStep(1)} className="w-full text-xs text-[#16241F] py-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back</button>
           </div>
           )}
           </>
@@ -24795,14 +24795,14 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
               <AlertTriangle size={18} />
               <h3 className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Before you share this</h3>
             </div>
-            <p className="text-sm text-[#5B6B63] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <p className="text-sm text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               This is your choice to make. If your account or device is ever compromised, your next-of-kin's name, phone number, and relationship to you could be exposed along with the rest of your emergency profile. Only turn this on if you're comfortable with that risk — you can turn it back off at any time.
             </p>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setShowNokRiskWarning(false)}
-                className="flex-1 text-sm py-2 rounded-sm border border-[#D8DED9] font-medium text-[#5B6B63] hover:bg-[#F7F9F7]"
+                className="flex-1 text-sm py-2 rounded-sm border border-[#D8DED9] font-medium text-[#16241F] hover:bg-[#F7F9F7]"
                 style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
               >
                 Cancel
@@ -24820,7 +24820,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
         </div>
       )}
       <div className="max-w-5xl mx-auto py-8 px-6">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
+        <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
 
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-2xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Hi, {account.name || patient.name.split(" ")[0]}</h1>
@@ -24828,7 +24828,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
             {patients.map((p) => <option key={p.id} value={p.id}>{p.name} (demo)</option>)}
           </select>
         </div>
-        <p className="text-sm text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-sm text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           {account.forWhom === "other" ? `Managing care for ${account.otherName || "a family member"} (${account.otherRelation})` : "Your records at ClairMD Clinic"}
         </p>
         <p className="text-[11px] text-[#0F5C56] mb-4 font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free for patients — always.</p>
@@ -24850,7 +24850,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                 key={t.key}
                 onClick={() => setTab(t.key)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors ${
-                  tab === t.key ? "bg-[#F2F7F5] text-[#0F5C56] font-medium" : "text-[#5B6B63] hover:bg-[#F7F9F7]"
+                  tab === t.key ? "bg-[#F2F7F5] text-[#0F5C56] font-medium" : "text-[#16241F] hover:bg-[#F7F9F7]"
                 }`}
                 style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
               >
@@ -24878,13 +24878,13 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
             <div className="flex items-center justify-between bg-white border border-[#D8DED9] rounded-md p-4">
               <div>
                 <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your treatment summary</div>
-                <div className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Illness history, tests, treatment, and follow-up advice — save or print for your records</div>
+                <div className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Illness history, tests, treatment, and follow-up advice — save or print for your records</div>
               </div>
               <TreatmentSummaryButtons patient={patient} />
             </div>
             {patient.encounters.map((e, i) => (
               <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-5">
-                <div className="text-xs text-[#8A958E] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{e.date}</div>
+                <div className="text-xs text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{e.date}</div>
                 <h4 className="text-lg mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 600 }}>{e.diagnosis}</h4>
                 <p className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{e.notes}</p>
               </div>
@@ -24896,7 +24896,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
               return (
                 <div className="bg-white border border-[#D8DED9] rounded-md p-5">
                   <SectionLabel>Messages from your doctor</SectionLabel>
-                  <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                  <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     Follow-up check-ins: {myFollowup.interval}
                   </p>
                   <div className="border border-[#EEF1EE] rounded-sm p-3 space-y-2 mb-2 max-h-56 overflow-y-auto">
@@ -24916,7 +24916,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
 
             <MyRecordsAndConsent />
 
-            <div className="bg-[#F7F9F7] border border-[#EEF1EE] rounded-md p-4 text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <div className="bg-[#F7F9F7] border border-[#EEF1EE] rounded-md p-4 text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               <span className="font-medium">Note:</span> medicine-stock reminders are on the Billing tab. Wearable heart-rate monitoring, automatic emergency calling, and automatic medicine reordering are not part of this app — those would need real hardware integration, emergency-response partnerships, and payment-wallet licensing that go well beyond what a clinic EHR can safely claim to do.
             </div>
           </div>
@@ -24933,7 +24933,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                   <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>₹{rx.cost}</span>
                 </div>
               ))}
-              {patient.prescriptions.length === 0 && <p className="text-sm text-[#8A958E] py-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No billed items yet.</p>}
+              {patient.prescriptions.length === 0 && <p className="text-sm text-[#16241F] py-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No billed items yet.</p>}
             </div>
             {patient.prescriptions.length > 0 && (
               <div className="flex justify-between pt-3 mt-2 border-t border-[#D8DED9] text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -24945,7 +24945,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
           {patient.prescriptions.length > 0 && (
             <div className="bg-white border border-[#D8DED9] rounded-md p-5">
               <SectionLabel>Medicine stock reminders</SectionLabel>
-              <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 A reminder only — nothing is ordered automatically. Ordering pays directly through PhonePe at the time you tap — the app never holds or stores a balance of its own.
               </p>
               <div className="space-y-2">
@@ -24962,7 +24962,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-[#8A958E]">Stock OK</span>
+                        <span className="text-xs text-[#16241F]">Stock OK</span>
                       )}
                     </div>
                   );
@@ -24975,15 +24975,15 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
 
         {tab === "schemes" && (
           <div className="space-y-3">
-            {matches.length === 0 && <p className="text-sm text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No schemes matched to your profile yet.</p>}
+            {matches.length === 0 && <p className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No schemes matched to your profile yet.</p>}
             {matches.map((n, i) => (
               <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{n.name}</span>
-                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 bg-[#EEF1EE] text-[#5B6B63] rounded-sm">{n.type}</span>
+                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 bg-[#EEF1EE] text-[#16241F] rounded-sm">{n.type}</span>
                 </div>
-                <p className="text-sm text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{n.covers}</p>
-                <p className="text-xs text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n.contact}</p>
+                <p className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{n.covers}</p>
+                <p className="text-xs text-[#16241F] mt-1" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n.contact}</p>
               </div>
             ))}
           </div>
@@ -25011,7 +25011,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                   <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-4 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{h.name}</div>
-                      <div className="text-xs text-[#8A958E] mt-0.5">{h.distanceKm} km away</div>
+                      <div className="text-xs text-[#16241F] mt-0.5">{h.distanceKm} km away</div>
                     </div>
                     <div className="text-right">
                       <div className={`text-sm font-semibold ${h.availableBeds === 0 ? "text-[#B34A3C]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
@@ -25035,7 +25035,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                 <button onClick={() => setFingerprintVerified(true)} className="px-4 py-2 bg-[#0F5C56] text-white text-sm rounded-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   Verify with fingerprint
                 </button>
-                <p className="text-[11px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>(Demo — a real build uses your device's WebAuthn/biometric API, not a fake button)</p>
+                <p className="text-[11px] text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>(Demo — a real build uses your device's WebAuthn/biometric API, not a fake button)</p>
               </div>
             ) : (
               <>
@@ -25060,7 +25060,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                       <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${nokSharingEnabled ? "translate-x-5" : "translate-x-0.5"}`} />
                     </button>
                   </div>
-                  <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                  <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     Off by default. You decide whether to share this at all — nothing is collected or shown to anyone unless you turn this on.
                   </p>
                   {nokSharingEnabled && (
@@ -25080,7 +25080,7 @@ function PatientPortalView({ patients, onBack, backLabel = "Back to clinic view"
                     <AlertTriangle size={16} className="text-[#B34A3C]" />
                     <SectionLabel>Emergency profile — visible to a bystander in an emergency</SectionLabel>
                   </div>
-                  <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                  <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     If you're ever found unresponsive, whoever helps you can unlock a scoped emergency view using your fingerprint — showing only what's below, nothing else in your account.
                   </p>
                   <div className="mb-3">
@@ -25118,7 +25118,7 @@ function CmeFeedPanel({ onBack }) {
   const items = CME_FEED[specialty] || [];
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <Rss size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Your specialty feed</h2>
@@ -25130,11 +25130,11 @@ function CmeFeedPanel({ onBack }) {
         {items.map((item, i) => (
           <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
             <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-sm ${item.type === "Conference" ? "bg-[#FBF6EC] text-[#7A5A19]" : item.type === "CME" ? "bg-[#F2F7F5] text-[#0F5C56]" : "bg-[#EEF1EE] text-[#5B6B63]"}`}>{item.type}</span>
-              {item.type === "Conference" && <CalendarDays size={12} className="text-[#8A958E]" />}
+              <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-sm ${item.type === "Conference" ? "bg-[#FBF6EC] text-[#7A5A19]" : item.type === "CME" ? "bg-[#F2F7F5] text-[#0F5C56]" : "bg-[#EEF1EE] text-[#16241F]"}`}>{item.type}</span>
+              {item.type === "Conference" && <CalendarDays size={12} className="text-[#16241F]" />}
             </div>
             <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.title}</div>
-            <div className="text-xs text-[#8A958E] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.source} · {item.date}</div>
+            <div className="text-xs text-[#16241F] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.source} · {item.date}</div>
           </div>
         ))}
       </div>
@@ -25145,12 +25145,12 @@ function CmeFeedPanel({ onBack }) {
 function StatisticsPanel({ onBack }) {
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <BarChart3 size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Statistics calculator</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free for every doctor account. Enter any set of values to get quick descriptive statistics.</p>
+      <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free for every doctor account. Enter any set of values to get quick descriptive statistics.</p>
 
       <QuickStatsCalculator />
     </div>
@@ -25176,10 +25176,10 @@ function QuickStatsCalculator() {
         style={{ fontFamily: "'IBM Plex Mono', monospace" }}
       />
       <div className="grid grid-cols-4 gap-2 text-center">
-        <div><div className="text-[10px] text-[#8A958E] uppercase">n</div><div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n}</div></div>
-        <div><div className="text-[10px] text-[#8A958E] uppercase">Mean</div><div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n ? mean.toFixed(2) : "—"}</div></div>
-        <div><div className="text-[10px] text-[#8A958E] uppercase">Median</div><div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n ? median.toFixed(2) : "—"}</div></div>
-        <div><div className="text-[10px] text-[#8A958E] uppercase">SD</div><div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n > 1 ? sd.toFixed(2) : "—"}</div></div>
+        <div><div className="text-[10px] text-[#16241F] uppercase">n</div><div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n}</div></div>
+        <div><div className="text-[10px] text-[#16241F] uppercase">Mean</div><div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n ? mean.toFixed(2) : "—"}</div></div>
+        <div><div className="text-[10px] text-[#16241F] uppercase">Median</div><div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n ? median.toFixed(2) : "—"}</div></div>
+        <div><div className="text-[10px] text-[#16241F] uppercase">SD</div><div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{n > 1 ? sd.toFixed(2) : "—"}</div></div>
       </div>
     </div>
   );
@@ -25213,19 +25213,19 @@ function BedAvailabilityPanel({ onBack }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <BedDouble size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Bed availability</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Keep this current — patients see this number before deciding where to go for urgent care.</p>
+      <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Keep this current — patients see this number before deciding where to go for urgent care.</p>
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div>
-          <label className="text-xs text-[#8A958E]">Total beds</label>
+          <label className="text-xs text-[#16241F]">Total beds</label>
           <input type="number" value={beds.total} onChange={updateField("total")} onBlur={() => pushToBackend(beds)} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
         </div>
         <div>
-          <label className="text-xs text-[#8A958E]">Available right now</label>
+          <label className="text-xs text-[#16241F]">Available right now</label>
           <input type="number" value={beds.available} onChange={updateField("available")} onBlur={() => pushToBackend(beds)} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
         </div>
       </div>
@@ -25233,7 +25233,7 @@ function BedAvailabilityPanel({ onBack }) {
         Showing to patients as: <span className="font-semibold">{beds.available} of {beds.total} beds available</span>
       </div>
       {syncMessage && (
-        <p className={`text-[11px] mb-3 ${syncMessage.type === "error" ? "text-[#B34A3C]" : syncMessage.type === "pending" ? "text-[#8A958E]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className={`text-[11px] mb-3 ${syncMessage.type === "error" ? "text-[#B34A3C]" : syncMessage.type === "pending" ? "text-[#16241F]" : "text-[#0F5C56]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           {syncMessage.text}
         </p>
       )}
@@ -25335,12 +25335,12 @@ function InventoryManagerPanel({ onBack, theme }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <Package size={18} style={{ color: theme.color }} />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Inventory manager</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Track stock levels, reorder thresholds, and expiry dates for medications, consumables, and equipment.
       </p>
       <div className="mb-4">
@@ -25354,7 +25354,7 @@ function InventoryManagerPanel({ onBack, theme }) {
 
       <div className="flex gap-3 mb-4">
         <div className="flex-1 bg-white border border-[#D8DED9] rounded-md p-3">
-          <div className="text-[10px] text-[#8A958E] uppercase tracking-wide">Total items</div>
+          <div className="text-[10px] text-[#16241F] uppercase tracking-wide">Total items</div>
           <div className="text-xl font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{items.length}</div>
         </div>
         <div className={`flex-1 border rounded-md p-3 ${lowStockCount > 0 ? "bg-[#FBEFEC] border-[#EFC9C1]" : "bg-white border-[#D8DED9]"}`}>
@@ -25369,7 +25369,7 @@ function InventoryManagerPanel({ onBack, theme }) {
 
       <div className="flex items-center gap-2 mb-3">
         <div className="relative flex-1">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8A958E]" />
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#16241F]" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -25401,7 +25401,7 @@ function InventoryManagerPanel({ onBack, theme }) {
             <input value={newItem.supplier} onChange={(e) => setNewItem((v) => ({ ...v, supplier: e.target.value }))} placeholder="Supplier (optional)" className="col-span-2 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
           </div>
           <div className="flex gap-2 justify-end pt-1">
-            <button onClick={() => setShowAddForm(false)} className="text-sm px-3 py-1.5 text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
+            <button onClick={() => setShowAddForm(false)} className="text-sm px-3 py-1.5 text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
             <button onClick={addItem} className="text-sm px-3 py-1.5 rounded-sm text-white font-medium" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>Save item</button>
           </div>
         </div>
@@ -25409,7 +25409,7 @@ function InventoryManagerPanel({ onBack, theme }) {
 
       <div className="bg-white border border-[#D8DED9] rounded-md divide-y divide-[#EEF1EE]">
         {filtered.length === 0 && (
-          <p className="text-sm text-[#8A958E] p-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No items match your search.</p>
+          <p className="text-sm text-[#16241F] p-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No items match your search.</p>
         )}
         {filtered.map((item) => {
           const low = item.quantity <= item.reorderAt;
@@ -25420,11 +25420,11 @@ function InventoryManagerPanel({ onBack, theme }) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.name}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-[#F7F9F7] text-[#5B6B63] rounded-sm">{item.category}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-[#F7F9F7] text-[#16241F] rounded-sm">{item.category}</span>
                   {low && <span className="text-[10px] px-1.5 py-0.5 bg-[#FBEFEC] text-[#B34A3C] rounded-sm font-medium">Low stock</span>}
                   {expiringSoon && <span className="text-[10px] px-1.5 py-0.5 bg-[#FBF6EC] text-[#7A5A19] rounded-sm font-medium">{daysLeft <= 0 ? "Expired" : `Expires in ${daysLeft}d`}</span>}
                 </div>
-                <div className="text-xs text-[#8A958E] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <div className="text-xs text-[#16241F] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   {item.quantity} {item.unit} on hand · reorder below {item.reorderAt}{item.supplier ? ` · ${item.supplier}` : ""}
                 </div>
               </div>
@@ -25441,11 +25441,11 @@ function InventoryManagerPanel({ onBack, theme }) {
                       autoFocus
                     />
                     <button onClick={() => applyAdjustment(item.id, Number(adjustAmount) || 0)} className="text-xs px-2 py-1 rounded-sm text-white" style={{ backgroundColor: theme.color }}>Apply</button>
-                    <button onClick={() => { setAdjusting(null); setAdjustAmount(""); }} className="text-xs text-[#8A958E] px-1">Cancel</button>
+                    <button onClick={() => { setAdjusting(null); setAdjustAmount(""); }} className="text-xs text-[#16241F] px-1">Cancel</button>
                   </>
                 ) : (
                   <>
-                    <button onClick={() => setAdjusting(item.id)} className="text-xs px-2.5 py-1.5 border border-[#D8DED9] rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Adjust stock</button>
+                    <button onClick={() => setAdjusting(item.id)} className="text-xs px-2.5 py-1.5 border border-[#D8DED9] rounded-sm text-[#16241F] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Adjust stock</button>
                     <button onClick={() => removeItem(item.id)} className="text-xs text-[#B34A3C] px-1.5 py-1.5 hover:bg-[#FBEFEC] rounded-sm">Remove</button>
                   </>
                 )}
@@ -25500,12 +25500,12 @@ function HospitalBillingPanel({ onBack, theme }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <CreditCard size={18} style={{ color: theme.color }} />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Billing & payment</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-4 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Real Razorpay integration (clairmd-backend's routes/hospitalBilling.js). ICU/Ward notes past your included quota are tracked as overage automatically — this is where you link a payment method so the nightly billing job can actually collect it, instead of just tracking what's owed.
       </p>
       <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — connect to manage real billing" onConnected={onBackendConnected} />
@@ -25515,12 +25515,12 @@ function HospitalBillingPanel({ onBack, theme }) {
           <div className="mt-4 bg-white border border-[#D8DED9] rounded-md p-4">
             <div className="text-sm font-medium mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Payment method</div>
             {hasMethod === null ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
             ) : hasMethod ? (
               <p className="text-xs text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>A payment method is on file — overage entries will be charged automatically overnight.</p>
             ) : (
               <>
-                <p className="text-xs text-[#8A958E] mb-2 max-w-md" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <p className="text-xs text-[#16241F] mb-2 max-w-md" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   No payment method on file yet. Adding one opens Razorpay's real checkout — a small ₹1 verification charge links your card/UPI for future automatic billing (that amount is a placeholder pending a real product decision, not something to assume is final).
                 </p>
                 <button
@@ -25549,14 +25549,14 @@ function HospitalBillingPanel({ onBack, theme }) {
               </div>
             )}
             {!overage ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
             ) : overage.byStatus.length === 0 ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No overage entries on record.</p>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No overage entries on record.</p>
             ) : (
               <div className="space-y-1">
                 {overage.byStatus.map((row) => (
                   <div key={row.charge_status} className="flex justify-between text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                    <span className="text-[#5B6B63] capitalize">{row.charge_status.replace(/_/g, " ")}</span>
+                    <span className="text-[#16241F] capitalize">{row.charge_status.replace(/_/g, " ")}</span>
                     <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
                   </div>
                 ))}
@@ -25614,12 +25614,12 @@ function HospitalAffiliatedDoctorsPanel({ onBack, theme }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <Users2 size={18} style={{ color: theme.color }} />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Affiliated doctors</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-4 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Real affiliation requests and links (clairmd-backend's routes/hospitalAffiliations.js). A doctor requests from their own account; approving here is what actually lets their ICU/Ward notes bill against your hospital's plan instead of the doctor's own.
       </p>
       <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — connect to manage affiliations" onConnected={refresh} />
@@ -25633,7 +25633,7 @@ function HospitalAffiliatedDoctorsPanel({ onBack, theme }) {
             </div>
             {actionError && <p className="text-xs text-[#B34A3C] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{actionError}</p>}
             {pendingRequests.length === 0 ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No pending requests.</p>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No pending requests.</p>
             ) : (
               <div className="space-y-1.5">
                 {pendingRequests.map((r) => (
@@ -25652,13 +25652,13 @@ function HospitalAffiliatedDoctorsPanel({ onBack, theme }) {
           <div className="mt-4 bg-white border border-[#D8DED9] rounded-md p-4">
             <div className="text-sm font-medium mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Currently affiliated</div>
             {doctors.length === 0 ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No affiliated doctors yet.</p>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No affiliated doctors yet.</p>
             ) : (
               <div className="space-y-1">
                 {doctors.map((d) => (
                   <div key={d.id} className="flex items-center justify-between text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     <span>{d.display_name}{d.specialty ? ` — ${d.specialty}` : ""}</span>
-                    <span className="text-[#8A958E]">since {new Date(d.joined_at).toLocaleDateString()}</span>
+                    <span className="text-[#16241F]">since {new Date(d.joined_at).toLocaleDateString()}</span>
                   </div>
                 ))}
               </div>
@@ -25987,12 +25987,12 @@ function CampModePanel({ onBack, theme }) {
   if (!camp) {
     return (
       <div className="p-5">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+        <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
         <div className="flex items-center gap-2 mb-1">
           <Tent size={18} style={{ color: theme.color }} />
           <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Camp / medical aid mode</h2>
         </div>
-        <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           Set up a medical camp or aid event — a station-based patient flow (Reception → Treatment → Disposal) built for high volume, not the everyday ICU/Ward wizard.
         </p>
         <div className="bg-[#EAF3F1] border border-[#BFDAD5] rounded-sm p-3 mb-4 text-xs text-[#0F5C56]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -26027,17 +26027,17 @@ function CampModePanel({ onBack, theme }) {
   // --- Camp created: station board + patient flow ---
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <Tent size={18} style={{ color: theme.color }} />
           <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{camp.name}</h2>
         </div>
-        <button onClick={() => setShowRegister((v) => !v)} className="text-xs px-3 py-1.5 border border-[#D8DED9] rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <button onClick={() => setShowRegister((v) => !v)} className="text-xs px-3 py-1.5 border border-[#D8DED9] rounded-sm text-[#16241F] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           {showRegister ? "← Back to station board" : "View camp register"}
         </button>
       </div>
-      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         {camp.location || "No location set"} · {camp.startDate || "?"} to {camp.endDate || "?"} · Referral: {camp.referralFacility || "not set"}
       </p>
       <div className="flex items-center justify-between mb-4 bg-white border border-[#D8DED9] rounded-md p-3">
@@ -26051,7 +26051,7 @@ function CampModePanel({ onBack, theme }) {
         <div className="bg-white border border-[#D8DED9] rounded-md overflow-hidden">
           <table className="w-full text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             <thead>
-              <tr className="bg-[#F7F9F7] text-[#5B6B63] text-left">
+              <tr className="bg-[#F7F9F7] text-[#16241F] text-left">
                 <th className="p-2">Name</th><th className="p-2">Age/Gender</th><th className="p-2">Programme</th>
                 <th className="p-2">Arrival</th><th className="p-2">Disposal</th><th className="p-2">Discharge</th>
               </tr>
@@ -26068,7 +26068,7 @@ function CampModePanel({ onBack, theme }) {
                 </tr>
               ))}
               {patients.length === 0 && (
-                <tr><td colSpan={6} className="p-4 text-center text-[#8A958E]">No encounters yet.</td></tr>
+                <tr><td colSpan={6} className="p-4 text-center text-[#16241F]">No encounters yet.</td></tr>
               )}
             </tbody>
           </table>
@@ -26078,7 +26078,7 @@ function CampModePanel({ onBack, theme }) {
           <div className="grid gap-2 mb-4" style={{ gridTemplateColumns: `repeat(${activeStations.length}, 1fr)` }}>
             {activeStations.map((s) => (
               <div key={s} className="bg-white border border-[#D8DED9] rounded-md p-3 text-center">
-                <div className="text-[10px] text-[#8A958E] uppercase tracking-wide">{s}</div>
+                <div className="text-[10px] text-[#16241F] uppercase tracking-wide">{s}</div>
                 <div className="text-xl font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: theme.color }}>{stationCounts[s] || 0}</div>
               </div>
             ))}
@@ -26104,7 +26104,7 @@ function CampModePanel({ onBack, theme }) {
               </div>
               <input value={newPatient.incidentId} onChange={(e) => setNewPatient((v) => ({ ...v, incidentId: e.target.value }))} placeholder="Incident ID (optional — links related casualties)" className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
               <div className="flex gap-2 justify-end pt-1">
-                <button onClick={() => setShowAddForm(false)} className="text-sm px-3 py-1.5 text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
+                <button onClick={() => setShowAddForm(false)} className="text-sm px-3 py-1.5 text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
                 <button onClick={addPatient} className="text-sm px-3 py-1.5 rounded-sm text-white font-medium" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>Add to Reception</button>
               </div>
             </div>
@@ -26118,7 +26118,7 @@ function CampModePanel({ onBack, theme }) {
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div>
                       <span className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{p.name}</span>
-                      <span className="text-xs text-[#8A958E] ml-2">{p.age || "—"}/{p.gender} · {p.programmeTag}{p.incidentId ? ` · Incident ${p.incidentId}` : ""}</span>
+                      <span className="text-xs text-[#16241F] ml-2">{p.age || "—"}/{p.gender} · {p.programmeTag}{p.incidentId ? ` · Incident ${p.incidentId}` : ""}</span>
                     </div>
                     {pm && (
                       <span className="text-[10px] px-2 py-0.5 rounded-sm font-medium text-white" style={{ backgroundColor: pm.color }}>
@@ -26137,10 +26137,10 @@ function CampModePanel({ onBack, theme }) {
                             {t.key}
                           </button>
                         ))}
-                        <button onClick={() => setTriageEditingId(null)} className="text-[10px] px-2 py-1 text-[#8A958E]">Cancel</button>
+                        <button onClick={() => setTriageEditingId(null)} className="text-[10px] px-2 py-1 text-[#16241F]">Cancel</button>
                       </div>
                     ) : (
-                      <button onClick={() => setTriageEditingId(p.id)} className="flex items-center gap-1 text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                      <button onClick={() => setTriageEditingId(p.id)} className="flex items-center gap-1 text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#16241F] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                         <Repeat size={11} /> {p.triagePriority ? "Re-triage" : "Set triage"}
                       </button>
                     )}
@@ -26154,22 +26154,22 @@ function CampModePanel({ onBack, theme }) {
                           <input value={disposalDraft.facility} onChange={(e) => setDisposalDraft((v) => ({ ...v, facility: e.target.value }))} placeholder="Facility name" className="text-xs px-2 py-1 border border-[#D8DED9] rounded-sm" />
                         )}
                         <button onClick={() => applyDisposal(p.id)} className="text-[10px] px-2 py-1 rounded-sm text-white" style={{ backgroundColor: theme.color }}>Confirm</button>
-                        <button onClick={() => setDisposalEditingId(null)} className="text-[10px] px-2 py-1 text-[#8A958E]">Cancel</button>
+                        <button onClick={() => setDisposalEditingId(null)} className="text-[10px] px-2 py-1 text-[#16241F]">Cancel</button>
                       </div>
                     ) : (
-                      <button onClick={() => setDisposalEditingId(p.id)} className="text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                      <button onClick={() => setDisposalEditingId(p.id)} className="text-xs px-2 py-1 border border-[#D8DED9] rounded-sm text-[#16241F] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                         Close / disposal
                       </button>
                     )}
                   </div>
                   {p.triageHistory.length > 1 && (
-                    <p className="text-[10px] text-[#8A958E] mt-1.5">Re-triaged {p.triageHistory.length - 1}×; history retained for the record.</p>
+                    <p className="text-[10px] text-[#16241F] mt-1.5">Re-triaged {p.triageHistory.length - 1}×; history retained for the record.</p>
                   )}
                 </div>
               );
             })}
             {patients.filter((p) => !p.disposal).length === 0 && (
-              <p className="text-sm text-[#8A958E] text-center py-6" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No patients currently in flow.</p>
+              <p className="text-sm text-[#16241F] text-center py-6" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No patients currently in flow.</p>
             )}
           </div>
         </>
@@ -26193,12 +26193,12 @@ function BuildHospitalPanel({ onBack, theme }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <Hammer size={18} style={{ color: theme.color }} />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Build a hospital</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         A step-by-step guide from a bare plot of land to a fully compliant, operating facility — including CSSD setup and medico-legal preparedness.
       </p>
 
@@ -26207,7 +26207,7 @@ function BuildHospitalPanel({ onBack, theme }) {
       </div>
 
       <div className="mb-4">
-        <label className="text-xs text-[#8A958E] flex items-center gap-1 mb-1"><MapPin size={12} /> Which state or UT are you setting up in?</label>
+        <label className="text-xs text-[#16241F] flex items-center gap-1 mb-1"><MapPin size={12} /> Which state or UT are you setting up in?</label>
         <select
           value={selectedState}
           onChange={(e) => setSelectedState(e.target.value)}
@@ -26244,8 +26244,8 @@ function BuildHospitalPanel({ onBack, theme }) {
                       {checked[itemKey] && <CheckCircle2 size={12} />}
                     </button>
                     <div className="min-w-0">
-                      <div className={`text-sm ${checked[itemKey] ? "line-through text-[#8A958E]" : ""}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.title}</div>
-                      {description && <p className="text-xs text-[#8A958E] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{description}</p>}
+                      <div className={`text-sm ${checked[itemKey] ? "line-through text-[#16241F]" : ""}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.title}</div>
+                      {description && <p className="text-xs text-[#16241F] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{description}</p>}
                       {item.why && <p className="text-[11px] mt-1 px-2 py-1 bg-[#F2F7F5] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: theme.color }}><span className="font-medium">Why this matters: </span>{item.why}</p>}
                     </div>
                   </div>
@@ -26267,13 +26267,13 @@ function VirtualOpdPanel({ onBack, theme }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <GraduationCap size={18} style={{ color: theme.color }} />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Virtual OPD</h2>
         <span className="text-[10px] px-1.5 py-0.5 bg-[#F2F7F5] rounded-sm" style={{ color: theme.color }}>Premium</span>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         A personal scheduling assistant for the doctor — not a medical advisor. It only checks availability, takes the chief complaint, and books the appointment. It never diagnoses, recommends treatment, or answers clinical questions.
       </p>
 
@@ -26289,7 +26289,7 @@ function VirtualOpdPanel({ onBack, theme }) {
 
       <div className="bg-white border border-[#D8DED9] rounded-md p-4">
         <div className="text-sm font-semibold mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>AI scheduling assistant</div>
-        <p className="text-[11px] text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>What patients see when requesting an appointment.</p>
+        <p className="text-[11px] text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>What patients see when requesting an appointment.</p>
 
         {booked ? (
           <div className="flex items-center gap-2 text-sm text-[#0F5C56] bg-[#F2F7F5] border border-[#D8DED9] rounded-sm p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -26297,17 +26297,17 @@ function VirtualOpdPanel({ onBack, theme }) {
           </div>
         ) : (
           <>
-            <label className="text-xs text-[#8A958E]">What's the main reason for the visit?</label>
+            <label className="text-xs text-[#16241F]">What's the main reason for the visit?</label>
             <input value={chiefComplaint} onChange={(e) => setChiefComplaint(e.target.value)} placeholder="e.g. Follow-up for blood pressure" className="w-full mt-1 mb-3 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
             {chiefComplaint && (
               <>
-                <label className="text-xs text-[#8A958E]">Available slots</label>
+                <label className="text-xs text-[#16241F]">Available slots</label>
                 <div className="grid grid-cols-2 gap-2 mt-1 mb-3">
                   {availableSlots.map((slot) => (
                     <button
                       key={slot}
                       onClick={() => setSelectedSlot(slot)}
-                      className={`text-xs px-3 py-2 rounded-sm border ${selectedSlot === slot ? "text-white border-transparent" : "border-[#D8DED9] text-[#5B6B63]"}`}
+                      className={`text-xs px-3 py-2 rounded-sm border ${selectedSlot === slot ? "text-white border-transparent" : "border-[#D8DED9] text-[#16241F]"}`}
                       style={selectedSlot === slot ? { backgroundColor: theme.color } : {}}
                     >
                       {slot}
@@ -26350,7 +26350,7 @@ function CounsellingTemplateTool({ theme }) {
   return (
     <div className="bg-white border border-[#D8DED9] rounded-md p-4 mt-4">
       <div className="text-sm font-semibold mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Counselling template (separate tool — doctor tool, not patient-facing)</div>
-      <p className="text-[11px] text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Drafts a starting point for you to edit — never sent as-is, never generated or approved by the app itself.</p>
+      <p className="text-[11px] text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Drafts a starting point for you to edit — never sent as-is, never generated or approved by the app itself.</p>
       <select value={selectedPatient} onChange={(e) => setSelectedPatient(e.target.value)} className="w-full mb-2 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         {PATIENTS.map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
       </select>
@@ -26374,9 +26374,9 @@ function CounsellingTemplateTool({ theme }) {
 function CitationLink({ title, org, url }) {
   return (
     <div className="mt-4 pt-4 border-t border-[#EEF1EE]">
-      <div className="flex items-center gap-1.5 mb-1.5 text-[#5B6B63]"><ExternalLink size={13} /><span className="text-[11px] uppercase tracking-wide font-medium">Full source</span></div>
+      <div className="flex items-center gap-1.5 mb-1.5 text-[#16241F]"><ExternalLink size={13} /><span className="text-[11px] uppercase tracking-wide font-medium">Full source</span></div>
       <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-[#0F5C56] underline decoration-dotted break-words">{title}</a>
-      <div className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{org}</div>
+      <div className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{org}</div>
       <div className="text-[11px] text-[#B8C0BC] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Leave this page and open the source directly if you'd like to read further yourself.</div>
     </div>
   );
@@ -26387,7 +26387,7 @@ function ListRow({ name, subtitle, onClick }) {
     <button type="button" onClick={onClick} className="w-full flex items-center justify-between gap-3 bg-white border border-[#D8DED9] rounded-md px-3 py-2.5 text-left hover:border-[#B8C0BC] hover:bg-[#F7F9F7] transition-colors">
       <div className="min-w-0">
         <div className="text-sm font-semibold truncate" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{name}</div>
-        {subtitle && <div className="text-xs text-[#8A958E] truncate" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{subtitle}</div>}
+        {subtitle && <div className="text-xs text-[#16241F] truncate" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{subtitle}</div>}
       </div>
       <ChevronRight size={16} className="text-[#B8C0BC] shrink-0" />
     </button>
@@ -26407,7 +26407,7 @@ function MedicalConditionDetailBody({ item }) {
     <div>
       {item.meta.complications.length > 0 && (
         <div className="mb-4">
-          <div className="flex items-center gap-1.5 mb-2 text-[#5B6B63]"><ListChecks size={14} /><span className="text-xs uppercase tracking-wide font-medium">Possible complications</span></div>
+          <div className="flex items-center gap-1.5 mb-2 text-[#16241F]"><ListChecks size={14} /><span className="text-xs uppercase tracking-wide font-medium">Possible complications</span></div>
           <ul className="text-sm space-y-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             {item.meta.complications.map((c, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-[#B34A3C] mt-1">•</span>{c}</li>)}
           </ul>
@@ -26415,12 +26415,12 @@ function MedicalConditionDetailBody({ item }) {
       )}
       {testGroups.length > 0 && (
         <div className="mb-4">
-          <div className="flex items-center gap-1.5 mb-2 text-[#5B6B63]"><FlaskConical size={14} /><span className="text-xs uppercase tracking-wide font-medium">Suggested tests</span></div>
+          <div className="flex items-center gap-1.5 mb-2 text-[#16241F]"><FlaskConical size={14} /><span className="text-xs uppercase tracking-wide font-medium">Suggested tests</span></div>
           <div className="space-y-1.5">
             {testGroups.map(([label, list]) => (
               <div key={label} className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 <span className="font-semibold text-[#3C4A42]">{label}: </span>
-                <span className="text-[#5B6B63]">{list.join(", ")}</span>
+                <span className="text-[#16241F]">{list.join(", ")}</span>
               </div>
             ))}
           </div>
@@ -26428,7 +26428,7 @@ function MedicalConditionDetailBody({ item }) {
       )}
       {item.meta.advances && (
         <div className="mb-2">
-          <div className="flex items-center gap-1.5 mb-2 text-[#5B6B63]"><Sparkles size={14} /><span className="text-xs uppercase tracking-wide font-medium">Recent advances</span></div>
+          <div className="flex items-center gap-1.5 mb-2 text-[#16241F]"><Sparkles size={14} /><span className="text-xs uppercase tracking-wide font-medium">Recent advances</span></div>
           <p className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.meta.advances}</p>
         </div>
       )}
@@ -26508,7 +26508,7 @@ function AetiologyCategoryDetail({ category, conditions }) {
       <div className="space-y-2">
         {filtered.map((c) => <ListRow key={c.key} name={c.name} onClick={() => setSelected(c)} />)}
         {filtered.length === 0 && (
-          <p className="text-sm text-[#8A958E] text-center py-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <p className="text-sm text-[#16241F] text-center py-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             {conditions.length === 0 ? "No conditions currently categorized here yet." : `No matches for "${query}".`}
           </p>
         )}
@@ -26549,7 +26549,7 @@ const LIBRARY_MODAL_CONFIG = {
     ),
     renderDetail: (item) => item.kind !== "diagnosisMeta" ? (
       <div>
-        <div className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.workflow.dasChapter || item.workflow.chapterRef}</div>
+        <div className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.workflow.dasChapter || item.workflow.chapterRef}</div>
         <WorkflowDetailBody workflow={item.workflow} idPrefix={`lib-node-${item.key}`} />
       </div>
     ) : (
@@ -26568,17 +26568,17 @@ const LIBRARY_MODAL_CONFIG = {
     renderListItem: (item, theme, onClick) => <ListRow key={item.key} name={item.name} subtitle={item.template.chapterRef} onClick={onClick} />,
     renderDetail: (item) => (
       <div>
-        <div className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.template.chapterRef}</div>
-        <div className="flex items-center gap-1.5 mb-2 text-[#5B6B63]"><ListChecks size={14} /><span className="text-xs uppercase tracking-wide font-medium">Conditions to consider</span></div>
+        <div className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.template.chapterRef}</div>
+        <div className="flex items-center gap-1.5 mb-2 text-[#16241F]"><ListChecks size={14} /><span className="text-xs uppercase tracking-wide font-medium">Conditions to consider</span></div>
         <ul className="space-y-2 mb-2">
           {item.template.differentials.map((d, i) => (
             <li key={i} className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               <span className="font-semibold text-[#3C4A42]">{d.condition}</span>
-              <div className="text-[#5B6B63] text-xs mt-0.5">{d.note}</div>
+              <div className="text-[#16241F] text-xs mt-0.5">{d.note}</div>
             </li>
           ))}
         </ul>
-        <p className="text-[11px] text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-[11px] text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           If you suspect one of these, look it up under Aetiology → Other Medical Conditions for tests and complications.
         </p>
         <CitationLink title={item.template.source.title} org={item.template.source.org} url={item.template.source.url} />
@@ -26601,7 +26601,7 @@ const LIBRARY_MODAL_CONFIG = {
     renderListItem: (item, theme, onClick) => <ListRow key={item.key} name={item.name} subtitle={`${item.conditions.length} condition${item.conditions.length !== 1 ? "s" : ""}`} onClick={onClick} />,
     renderDetail: (item) => (
       <div>
-        <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           Conditions on file categorized as caused by {item.name.toLowerCase()}. Pick one to see its tests and complications.
         </p>
         <AetiologyCategoryDetail category={item.name} conditions={item.conditions} />
@@ -26620,7 +26620,7 @@ const LIBRARY_MODAL_CONFIG = {
       const d = item.drug;
       return (
         <div>
-          <div className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{d.classification}</div>
+          <div className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{d.classification}</div>
           {d.regulatoryFlag && (
             <div className="flex items-start gap-1.5 bg-[#FBEFEC] border border-[#EFC9C1] rounded-sm px-3 py-2 mb-4">
               <AlertTriangle size={13} className="text-[#B34A3C] mt-0.5 shrink-0" />
@@ -26629,33 +26629,33 @@ const LIBRARY_MODAL_CONFIG = {
           )}
           {d.indications?.length > 0 && (
             <div className="mb-4">
-              <div className="text-xs uppercase tracking-wide font-medium text-[#5B6B63] mb-2">Indications</div>
+              <div className="text-xs uppercase tracking-wide font-medium text-[#16241F] mb-2">Indications</div>
               <ul className="text-sm space-y-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{d.indications.map((x, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-[#0F5C56] mt-1">•</span>{x}</li>)}</ul>
             </div>
           )}
           {d.contraindications?.length > 0 && (
             <div className="mb-4">
-              <div className="text-xs uppercase tracking-wide font-medium text-[#5B6B63] mb-2">Contraindications</div>
+              <div className="text-xs uppercase tracking-wide font-medium text-[#16241F] mb-2">Contraindications</div>
               <ul className="text-sm space-y-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{d.contraindications.map((x, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-[#B34A3C] mt-1">•</span>{x}</li>)}</ul>
             </div>
           )}
           {d.adverseEffects?.length > 0 && (
             <div className="mb-4">
-              <div className="text-xs uppercase tracking-wide font-medium text-[#5B6B63] mb-2">Adverse effects</div>
+              <div className="text-xs uppercase tracking-wide font-medium text-[#16241F] mb-2">Adverse effects</div>
               <ul className="text-sm space-y-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{d.adverseEffects.map((x, i) => <li key={i} className="flex items-start gap-1.5"><span className="text-[#B3773C] mt-1">•</span>{x}</li>)}</ul>
             </div>
           )}
           {d.interactions?.length > 0 && (
             <div className="mb-4">
-              <div className="text-xs uppercase tracking-wide font-medium text-[#5B6B63] mb-2">Interactions</div>
+              <div className="text-xs uppercase tracking-wide font-medium text-[#16241F] mb-2">Interactions</div>
               <ul className="text-sm space-y-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                {d.interactions.map((x, i) => <li key={i}><span className="font-semibold text-[#3C4A42]">{x.withClass}</span><div className="text-xs text-[#5B6B63]">{x.effect}</div></li>)}
+                {d.interactions.map((x, i) => <li key={i}><span className="font-semibold text-[#3C4A42]">{x.withClass}</span><div className="text-xs text-[#16241F]">{x.effect}</div></li>)}
               </ul>
             </div>
           )}
           {d.enzymeEffect && (
             <div className="mb-2">
-              <div className="text-xs uppercase tracking-wide font-medium text-[#5B6B63] mb-2">Enzyme effect</div>
+              <div className="text-xs uppercase tracking-wide font-medium text-[#16241F] mb-2">Enzyme effect</div>
               <p className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{d.enzymeEffect.role === "substrate" ? "Metabolised via" : d.enzymeEffect.role === "inhibitor" ? "Inhibits" : "Induces"} {d.enzymeEffect.enzyme}</p>
             </div>
           )}
@@ -26774,7 +26774,7 @@ function ChromeButton({ onClick, title, children }) {
       onClick={onClick}
       onMouseDown={(e) => e.stopPropagation()}
       title={title}
-      className="w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] bg-white hover:bg-[#F2F7F5] border border-[#D8DED9]"
+      className="w-8 h-8 flex items-center justify-center rounded-sm text-[#16241F] bg-white hover:bg-[#F2F7F5] border border-[#D8DED9]"
     >
       {children}
     </button>
@@ -26866,7 +26866,7 @@ function DiagnosticWorkflowModal({ workflowId, onClose }) {
             <Stethoscope size={18} style={{ color: DX_ACCENT }} className="shrink-0" />
             <div className="min-w-0">
               <h2 className="text-lg truncate" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{workflow.condition}</h2>
-              <div className="text-[11px] text-[#8A958E] truncate" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{workflow.dasChapter || workflow.chapterRef}</div>
+              <div className="text-[11px] text-[#16241F] truncate" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{workflow.dasChapter || workflow.chapterRef}</div>
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
@@ -26889,7 +26889,7 @@ function DiagnosticWorkflowModal({ workflowId, onClose }) {
                 <ChevronLeft size={14} /> Back
               </button>
             )}
-            <p className="text-[11px] text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <p className="text-[11px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               Reference material only — supports diagnostic reasoning, not a substitute for clinical judgement or a computed decision.
             </p>
           </div>
@@ -26928,10 +26928,10 @@ function WorkflowDetailBody({ workflow, idPrefix, onBranchClick }) {
       <div className="space-y-3 mb-5">
         {(workflow.algorithm || []).map((node) => (
           <div key={node.id} id={`${idPrefix}-${node.id}`} className="border border-[#D8DED9] rounded-sm p-3">
-            <div className="text-[10px] uppercase tracking-wide text-[#8A958E] mb-0.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{node.stage}</div>
+            <div className="text-[10px] uppercase tracking-wide text-[#16241F] mb-0.5" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{node.stage}</div>
             <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{node.title}</div>
             {node.detail && (
-              <p className="text-xs text-[#5B6B63] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{node.detail}</p>
+              <p className="text-xs text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{node.detail}</p>
             )}
             {node.branches && node.branches.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -26962,14 +26962,14 @@ function WorkflowDetailBody({ workflow, idPrefix, onBranchClick }) {
 
       {workflow.citations && workflow.citations.length > 0 && (
         <div className="pt-3 border-t border-[#D8DED9]">
-          <div className="text-[11px] uppercase tracking-wide text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Sources</div>
+          <div className="text-[11px] uppercase tracking-wide text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>Sources</div>
           <ul className="space-y-1.5">
             {workflow.citations.map((c, i) => (
               <li key={i} className="text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 <a href={c.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:underline" style={{ color: DX_ACCENT }}>
                   {c.title} <ExternalLink size={11} />
                 </a>
-                <span className="text-[#8A958E]"> — {c.publisher}{c.licence ? ` (${c.licence})` : ""}</span>
+                <span className="text-[#16241F]"> — {c.publisher}{c.licence ? ` (${c.licence})` : ""}</span>
               </li>
             ))}
           </ul>
@@ -26991,7 +26991,7 @@ function DiagnosticLookupMenu({ x, y, matches, onPick }) {
       style={{ top: y, left: x, minWidth: 220, zIndex: 70 }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <div className="px-3 py-1 text-[10px] uppercase tracking-wide text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+      <div className="px-3 py-1 text-[10px] uppercase tracking-wide text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
         Diagnostic workflow
       </div>
       {matches.map((w) => (
@@ -27155,13 +27155,13 @@ function LibraryModal({ configKey, onClose, onMinimize, theme }) {
             </div>
           ) : (
             <>
-              <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 {filtered.length} of {items.length} shown, alphabetical. Reference only — not a diagnostic tool.
               </p>
               <div className="space-y-2">
                 {filtered.map((item) => config.renderListItem(item, theme, () => setSelectedItem(item)))}
                 {filtered.length === 0 && (
-                  <p className="text-sm text-[#8A958E] text-center py-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches for "{query}".</p>
+                  <p className="text-sm text-[#16241F] text-center py-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches for "{query}".</p>
                 )}
               </div>
             </>
@@ -27182,12 +27182,12 @@ function MailingsPanel({ onBack }) {
   const [connectedEmail, setConnectedEmail] = useState(null);
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <Mail size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Mailings</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         When a company, vendor, or member of the public wants to reach you for something other than a patient's care, it arrives here — kept separate from your specialty feed and patient records.
       </p>
       {!connectedEmail ? (
@@ -27195,8 +27195,8 @@ function MailingsPanel({ onBack }) {
       ) : (
         <div className="bg-white border border-[#D8DED9] rounded-md p-6 flex flex-col items-center text-center">
           <Inbox size={28} className="text-[#B8C0BC] mb-2" />
-          <p className="text-sm text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No mailings yet.</p>
-          <p className="text-xs text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connected as {connectedEmail}.</p>
+          <p className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No mailings yet.</p>
+          <p className="text-xs text-[#16241F] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Connected as {connectedEmail}.</p>
         </div>
       )}
     </div>
@@ -27240,19 +27240,19 @@ const TUTORIAL_SECTIONS = [
 function TutorialPanel({ onBack }) {
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <Compass size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Tutorial — about ClairMD</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         A quick tour of what's here and where to find it.
       </p>
       <div className="space-y-3">
         {TUTORIAL_SECTIONS.map((s, i) => (
           <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
             <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.title}</div>
-            <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.body}</div>
+            <div className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.body}</div>
           </div>
         ))}
       </div>
@@ -27290,7 +27290,7 @@ const TROUBLESHOOTING_ITEMS = [
 function TroubleshootingPanel({ onBack }) {
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-4">
         <Wrench size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Troubleshooting</h2>
@@ -27299,7 +27299,7 @@ function TroubleshootingPanel({ onBack }) {
         {TROUBLESHOOTING_ITEMS.map((item, i) => (
           <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
             <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.q}</div>
-            <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.a}</div>
+            <div className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.a}</div>
           </div>
         ))}
       </div>
@@ -27333,7 +27333,7 @@ const FAQ_ITEMS = [
 function FaqsPanel({ onBack }) {
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-4">
         <CircleHelp size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Frequently asked questions</h2>
@@ -27342,7 +27342,7 @@ function FaqsPanel({ onBack }) {
         {FAQ_ITEMS.map((item, i) => (
           <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
             <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.q}</div>
-            <div className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.a}</div>
+            <div className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.a}</div>
           </div>
         ))}
       </div>
@@ -27363,7 +27363,7 @@ function TextSubmitPanel({ icon: Icon, title, description, placeholder, submitLa
         <Icon size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{title}</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{description}</p>
+      <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{description}</p>
       {submitted ? (
         <div className="bg-[#F2F7F5] border border-[#D8DED9] rounded-md p-4 text-sm text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           {submittedText}
@@ -27387,7 +27387,7 @@ function TextSubmitPanel({ icon: Icon, title, description, placeholder, submitLa
           >
             <Send size={14} /> {submitLabel}
           </button>
-          <p className="text-[11px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+          <p className="text-[11px] text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Not yet wired to a backend in this prototype — kept locally for this session only.</p>
         </>
       )}
     </>
@@ -27397,7 +27397,7 @@ function TextSubmitPanel({ icon: Icon, title, description, placeholder, submitLa
 function ReportProblemPanel({ onBack }) {
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <TextSubmitPanel
         icon={Bug}
         title="Report a problem"
@@ -27413,7 +27413,7 @@ function ReportProblemPanel({ onBack }) {
 function FeedbackPanel({ onBack }) {
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <TextSubmitPanel
         icon={MessagesSquare}
         title="Feedback"
@@ -27567,12 +27567,12 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
               <h3 className="text-lg mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{previewPatient.name}</h3>
               <div className="flex items-center gap-2 mb-4">
                 <Badge text={CATEGORY_STYLE[previewPatient.category].label} bg={CATEGORY_STYLE[previewPatient.category].bg} />
-                <span className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{previewPatient.localId}</span>
+                <span className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{previewPatient.localId}</span>
               </div>
-              <div className="text-sm text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Age {previewPatient.age}</div>
-              <div className="text-sm text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Last visit {previewPatient.lastVisit}</div>
+              <div className="text-sm text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Age {previewPatient.age}</div>
+              <div className="text-sm text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Last visit {previewPatient.lastVisit}</div>
               {previewPatient.encounters?.[0]?.diagnosis && (
-                <div className="text-sm text-[#5B6B63] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Most recent diagnosis: {previewPatient.encounters[0].diagnosis}</div>
+                <div className="text-sm text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Most recent diagnosis: {previewPatient.encounters[0].diagnosis}</div>
               )}
               <button
                 type="button"
@@ -27594,7 +27594,7 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
                 <UserPlus size={18} />
                 <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>New patient</span>
               </button>
-              <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{filtered.length} of {patients.length} shown.</p>
+              <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{filtered.length} of {patients.length} shown.</p>
               <div className="space-y-2">
                 {filtered.map((p) => {
                   const cat = CATEGORY_STYLE[p.category];
@@ -27613,14 +27613,14 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
                       </div>
                       <div className="flex items-center gap-2 mt-1.5">
                         <Badge text={cat.label} bg={cat.bg} />
-                        <span className="text-[11px] text-[#8A958E]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{p.localId}</span>
+                        <span className="text-[11px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{p.localId}</span>
                       </div>
-                      <div className="text-[11px] text-[#8A958E] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Last visit {p.lastVisit}</div>
+                      <div className="text-[11px] text-[#16241F] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Last visit {p.lastVisit}</div>
                     </button>
                   );
                 })}
                 {filtered.length === 0 && (
-                  <p className="text-sm text-[#8A958E] text-center py-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches for "{query}".</p>
+                  <p className="text-sm text-[#16241F] text-center py-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No matches for "{query}".</p>
                 )}
               </div>
             </>
@@ -27646,7 +27646,7 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-4">
         <UserCircle2 size={18} style={{ color: theme.color }} />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Doctor profile</h2>
@@ -27658,7 +27658,7 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
             <img src={photo} alt="Profile" className="w-16 h-16 rounded-full object-cover border border-[#D8DED9]" />
           ) : (
             <div className="w-16 h-16 rounded-full bg-[#F2F7F5] border border-[#D8DED9] flex items-center justify-center">
-              <UserCircle2 size={28} className="text-[#8A958E]" />
+              <UserCircle2 size={28} className="text-[#16241F]" />
             </div>
           )}
           <input type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
@@ -27672,17 +27672,17 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
 
       <div className="space-y-3 mb-5">
         <div>
-          <label className="text-xs text-[#8A958E]">License / registration number</label>
+          <label className="text-xs text-[#16241F]">License / registration number</label>
           <input value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} placeholder="e.g. MCI-12345-2015" className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
         </div>
         <div>
-          <label className="text-xs text-[#8A958E]">Last updated / renewed on</label>
+          <label className="text-xs text-[#16241F]">Last updated / renewed on</label>
           <input type="date" value={lastUpdated} onChange={(e) => setLastUpdated(e.target.value)} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
         </div>
       </div>
 
       <div>
-        <label className="text-xs text-[#8A958E]">About you — experience, degrees, publications</label>
+        <label className="text-xs text-[#16241F]">About you — experience, degrees, publications</label>
         <textarea
           value={bio}
           onChange={(e) => e.target.value.length <= 1000 && setBio(e.target.value)}
@@ -27691,14 +27691,14 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
           className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm"
           style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
         />
-        <div className="text-[11px] text-[#8A958E] text-right mt-1">{bio.length}/1000</div>
+        <div className="text-[11px] text-[#16241F] text-right mt-1">{bio.length}/1000</div>
       </div>
 
       <div className="mt-5 pt-5 border-t border-[#D8DED9]">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>In-app billing</div>
-            <p className="text-xs text-[#8A958E] mt-0.5 max-w-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <p className="text-xs text-[#16241F] mt-0.5 max-w-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               Off by default. Turn this on only if you want to enter your own billing/payment details into this app — plenty of solo clinics prefer to keep that outside the app entirely, and this app works fully either way.
             </p>
           </div>
@@ -27767,7 +27767,7 @@ function HospitalAffiliationPanel({ theme }) {
   return (
     <div className="mt-5 pt-5 border-t border-[#D8DED9]">
       <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Hospital affiliations</div>
-      <p className="text-xs text-[#8A958E] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Real, hospital-approved links (clairmd-backend's routes/hospitalAffiliations.js) — request one below; the hospital sees it in their own account and approves or declines it. Once approved, ICU/Ward notes can bill against that hospital's plan instead of your own.
       </p>
       <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — connect to request a real affiliation" onConnected={refresh} />
@@ -27779,7 +27779,7 @@ function HospitalAffiliationPanel({ theme }) {
               {affiliations.map((a) => (
                 <div key={a.id} className="text-xs px-3 py-2 border border-[#D8DED9] rounded-sm flex items-center justify-between" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   <span className="font-medium">{a.hospital_name}</span>
-                  <span className="text-[#8A958E]">since {new Date(a.joined_at).toLocaleDateString()}</span>
+                  <span className="text-[#16241F]">since {new Date(a.joined_at).toLocaleDateString()}</span>
                 </div>
               ))}
             </div>
@@ -27813,7 +27813,7 @@ function HospitalAffiliationPanel({ theme }) {
                 {requests.map((r) => (
                   <div key={r.id} className="flex items-center justify-between text-xs px-3 py-2 border border-[#D8DED9] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     <span>{r.hospital_name}</span>
-                    <span className={r.status === "approved" ? "text-[#0F5C56]" : r.status === "declined" ? "text-[#B34A3C]" : "text-[#8A958E]"}>{r.status}</span>
+                    <span className={r.status === "approved" ? "text-[#0F5C56]" : r.status === "declined" ? "text-[#B34A3C]" : "text-[#16241F]"}>{r.status}</span>
                   </div>
                 ))}
               </div>
@@ -27857,7 +27857,7 @@ function DriveConnectionPanel({ theme }) {
   return (
     <div className="mt-5 pt-5 border-t border-[#D8DED9]">
       <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Google Drive backup</div>
-      <p className="text-xs text-[#8A958E] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Every OPD/ICU-Ward note is encrypted in your browser (AES-GCM) before it ever leaves it, then uploaded — still as ciphertext — into a dedicated, non-descriptive folder in YOUR OWN Google Drive. ClairMD routes the connection but genuinely cannot read what's inside that folder.
       </p>
       <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — connect below to link Google Drive" onConnected={refresh} />
@@ -27865,7 +27865,7 @@ function DriveConnectionPanel({ theme }) {
       {getAuthToken() && (
         <div className="mt-3">
           {!status ? (
-            <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
+            <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
           ) : status.connected ? (
             <div className="text-xs px-3 py-2 border border-[#D8DED9] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               <div className="flex items-center gap-1.5 mb-1">
@@ -27873,9 +27873,9 @@ function DriveConnectionPanel({ theme }) {
                 Connected as {status.driveAccountEmail}
               </div>
               {status.lastBackup ? (
-                <p className="text-[#8A958E]">Last backup: {status.lastBackup.status} · {new Date(status.lastBackup.occurred_at).toLocaleString()}</p>
+                <p className="text-[#16241F]">Last backup: {status.lastBackup.status} · {new Date(status.lastBackup.occurred_at).toLocaleString()}</p>
               ) : (
-                <p className="text-[#8A958E]">No backup uploaded yet — save an OPD or ICU/Ward note to trigger the first one.</p>
+                <p className="text-[#16241F]">No backup uploaded yet — save an OPD or ICU/Ward note to trigger the first one.</p>
               )}
               {status.quotaWarning && (
                 <p className="text-[#B34A3C] mt-1">Your Drive storage is over 90% full — new backups may start failing.</p>
@@ -28043,7 +28043,7 @@ function CoAdminPanel({ theme }) {
   return (
     <div className="mt-5 pt-5 border-t border-[#D8DED9]">
       <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Co-admin access</div>
-      <p className="text-xs text-[#8A958E] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Real end-to-end key-wrap crypto (clairmd-backend's routes/coadmin.js) — a co-admin genuinely cannot read a patient's record until that patient explicitly consents. Opening this panel while connected publishes your own public key so other doctors can assign you as their co-admin.
       </p>
       <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — co-admin access needs a real account" onConnected={onBackendConnected} />
@@ -28063,7 +28063,7 @@ function CoAdminPanel({ theme }) {
                 <div className="flex items-center justify-between gap-2">
                   <span>
                     Currently assigned: <span className="font-medium">{assignment.co_admin_doctor_name}</span>
-                    <span className="text-[#8A958E]"> since {new Date(assignment.assigned_at).toLocaleDateString()}</span>
+                    <span className="text-[#16241F]"> since {new Date(assignment.assigned_at).toLocaleDateString()}</span>
                   </span>
                   <button
                     type="button"
@@ -28076,7 +28076,7 @@ function CoAdminPanel({ theme }) {
                 </div>
                 {revokeError && <p className="text-[#B34A3C] mt-1.5">{revokeError}</p>}
                 {revokeResult && (
-                  <p className="text-[#8A958E] mt-1.5">
+                  <p className="text-[#16241F] mt-1.5">
                     Revoked. {revokeResult.rotatedCount} record key(s) rotated so old access no longer decrypts current content
                     {revokeResult.skipped.length > 0 ? ` (${revokeResult.skipped.length} skipped — no local key in this browser for those).` : "."}
                     {" "}This can't erase anything already fetched before now — see this panel's own note on that limitation.
@@ -28084,7 +28084,7 @@ function CoAdminPanel({ theme }) {
                 )}
               </div>
             ) : (
-              <p className="text-xs text-[#8A958E] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No co-admin assigned yet.</p>
+              <p className="text-xs text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No co-admin assigned yet.</p>
             )}
             <AccountPicker
               types={["individual_doctor", "hospital_doctor"]}
@@ -28106,10 +28106,10 @@ function CoAdminPanel({ theme }) {
             )}
             {assignError && <p className="text-xs text-[#B34A3C] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{assignError}</p>}
             {assignResults && (
-              <div className="mt-2 text-[11px] text-[#5B6B63] space-y-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <div className="mt-2 text-[11px] text-[#16241F] space-y-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 <p>{assignResults.length - failedResults.length} of {assignResults.length} record(s) wrapped for the new co-admin.</p>
                 {failedResults.length > 0 && (
-                  <p className="text-[#8A958E]">{failedResults.length} skipped — {failedResults[0].reason}</p>
+                  <p className="text-[#16241F]">{failedResults.length} skipped — {failedResults[0].reason}</p>
                 )}
               </div>
             )}
@@ -28118,7 +28118,7 @@ function CoAdminPanel({ theme }) {
           <div className="mt-5">
             <div className="text-xs font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Records shared with you as a co-admin</div>
             {wraps.length === 0 ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No other doctor has assigned you as their co-admin yet.</p>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No other doctor has assigned you as their co-admin yet.</p>
             ) : (
               <div className="space-y-1.5">
                 {wraps.map((w) => (
@@ -28128,13 +28128,13 @@ function CoAdminPanel({ theme }) {
                       {w.consent_granted === true ? (
                         <button type="button" onClick={() => openRecord(w.patient_record_id)} className="text-[#0F5C56] underline decoration-dotted shrink-0">View</button>
                       ) : (
-                        <span className="text-[#8A958E] shrink-0">Awaiting patient consent</span>
+                        <span className="text-[#16241F] shrink-0">Awaiting patient consent</span>
                       )}
                     </div>
                     {openRecordId === w.patient_record_id && (
                       <div className="mt-2 pt-2 border-t border-[#D8DED9]">
                         {openRecordLoading ? (
-                          <p className="text-[#8A958E]">Decrypting…</p>
+                          <p className="text-[#16241F]">Decrypting…</p>
                         ) : openRecordError ? (
                           <p className="text-[#B34A3C]">{openRecordError}</p>
                         ) : (
@@ -28150,7 +28150,7 @@ function CoAdminPanel({ theme }) {
 
           <div className="mt-5">
             <div className="text-xs font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Key backup & recovery</div>
-            <p className="text-[11px] text-[#8A958E] mb-2 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <p className="text-[11px] text-[#16241F] mb-2 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               Your co-admin private key lives only in this browser — there's no copy anywhere else, including on ClairMD's own servers. Download a password-protected backup so a lost or cleared browser doesn't mean losing co-admin access permanently. The file is meaningless without your password; ClairMD never sees either one.
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -28230,7 +28230,7 @@ function MyPlanAndBilling({ theme }) {
         <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your ClairMD subscription</div>
         {getAuthToken() && <button onClick={refresh} className="text-[11px] text-[#0F5C56] underline decoration-dotted">Refresh</button>}
       </div>
-      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your real plan and billing history with ClairMD itself.</p>
+      <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your real plan and billing history with ClairMD itself.</p>
       <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — showing nothing until you are" />
       {getAuthToken() && (
         <div className="mt-3">
@@ -28240,14 +28240,14 @@ function MyPlanAndBilling({ theme }) {
             </div>
           )}
           {history.length === 0 ? (
-            <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No billing events on file yet.</p>
+            <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No billing events on file yet.</p>
           ) : (
             <div className="space-y-1.5">
               {history.map((e) => (
                 <div key={e.id} className="flex items-center justify-between text-xs px-3 py-2 border border-[#D8DED9] rounded-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                   <span>{e.plan_tier}</span>
                   <span>{e.amount_paise != null ? `₹${(e.amount_paise / 100).toFixed(2)}` : "—"}</span>
-                  <span className="text-[#8A958E]">{new Date(e.occurred_at).toLocaleDateString()}</span>
+                  <span className="text-[#16241F]">{new Date(e.occurred_at).toLocaleDateString()}</span>
                 </div>
               ))}
             </div>
@@ -28299,7 +28299,7 @@ function DataRightsPanel({ theme }) {
   return (
     <div className="mt-5 pt-5 border-t border-[#D8DED9]">
       <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your data — DPDP rights</div>
-      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         Covers what this platform's own database holds about your account — not your clinical records, which are encrypted and stay in your own Google Drive.
       </p>
       <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected" />
@@ -28326,7 +28326,7 @@ function DataRightsPanel({ theme }) {
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Confirm your password" className="w-full px-3 py-2 border border-[#EFC9C1] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
                 <div className="flex gap-1.5">
                   <button onClick={doDeactivate} disabled={!password} className="text-[11px] px-2.5 py-1 rounded-sm text-white disabled:opacity-50" style={{ backgroundColor: "#B34A3C" }}>Confirm deactivation</button>
-                  <button onClick={() => { setConfirming(false); setPassword(""); }} className="text-[11px] px-2.5 py-1 rounded-sm border border-[#D8DED9] text-[#5B6B63]">Cancel</button>
+                  <button onClick={() => { setConfirming(false); setPassword(""); }} className="text-[11px] px-2.5 py-1 rounded-sm border border-[#D8DED9] text-[#16241F]">Cancel</button>
                 </div>
                 {deactivateStatus && (
                   <p className="text-xs text-[#B34A3C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{deactivateStatus.text}</p>
@@ -28388,9 +28388,9 @@ function WritePostModal({ onClose, setFeedPosts, setPendingPostRequests, doctorD
       <div className="bg-white rounded-md w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Write something</h2>
-          <button onClick={onClose} className="text-[#8A958E] hover:text-[#16241F]"><X size={18} /></button>
+          <button onClick={onClose} className="text-[#16241F] hover:text-[#16241F]"><X size={18} /></button>
         </div>
-        <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Posted with your name, speciality, and the date/time it goes live — visible to patients who follow you.</p>
+        <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Posted with your name, speciality, and the date/time it goes live — visible to patients who follow you.</p>
         <div className="mb-4">
           <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — post saves locally only" />
         </div>
@@ -28420,37 +28420,37 @@ function WritePostModal({ onClose, setFeedPosts, setPendingPostRequests, doctorD
                   className="w-full px-3 py-2 border border-[#D8DED9] rounded-sm text-sm mb-2"
                   style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
                 />
-                <p className="text-[11px] text-[#5B6B63] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <p className="text-[11px] text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   You're writing and publishing this yourself — nothing here is drafted, suggested, or pulled in by the app.
                 </p>
                 <label className="flex items-start gap-2 text-xs mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   <input type="checkbox" checked={ownRiskAck} onChange={(e) => setOwnRiskAck(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[#0F5C56]" />
-                  <span className="text-[#5B6B63]">I'm posting this on my own judgement and responsibility.</span>
+                  <span className="text-[#16241F]">I'm posting this on my own judgement and responsibility.</span>
                 </label>
               </>
             ) : (
               <div className="mb-4 space-y-3">
                 <div>
-                  <label className="text-xs text-[#8A958E]">Which patient?</label>
+                  <label className="text-xs text-[#16241F]">Which patient?</label>
                   <select value={patientName} onChange={(e) => setPatientName(e.target.value)} className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     {PATIENTS.map((p) => <option key={p.id} value={p.name}>{p.name}</option>)}
                   </select>
                 </div>
 
-                <p className="text-[11px] text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <p className="text-[11px] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   Write these yourself, in your own words — nothing is pulled automatically from the chart. Keep it excluding the patient's name and other identifying details.
                 </p>
 
                 <div>
-                  <label className="text-xs text-[#8A958E]">Notable clinical considerations</label>
+                  <label className="text-xs text-[#16241F]">Notable clinical considerations</label>
                   <textarea value={findings} onChange={(e) => setFindings(e.target.value)} rows={2} placeholder="e.g. a rare presentation, an easy-to-miss finding..." className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
                 </div>
                 <div>
-                  <label className="text-xs text-[#8A958E]">Disease course</label>
+                  <label className="text-xs text-[#16241F]">Disease course</label>
                   <textarea value={course} onChange={(e) => setCourse(e.target.value)} rows={2} placeholder="How it progressed, in a few words..." className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
                 </div>
                 <div>
-                  <label className="text-xs text-[#8A958E]">Workup</label>
+                  <label className="text-xs text-[#16241F]">Workup</label>
                   <textarea value={workup} onChange={(e) => setWorkup(e.target.value)} rows={2} placeholder="Key tests or investigations, in a few words..." className="w-full mt-1 px-3 py-2 border border-[#D8DED9] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
                 </div>
 
@@ -28512,12 +28512,12 @@ function MyPostsPanel({ onBack, feedPosts, setFeedPosts, postExpiryMonths, setPo
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <Rss size={18} style={{ color: theme.color }} />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>My posts</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>What patients see in their Doctor updates feed.</p>
+      <p className="text-xs text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>What patients see in their Doctor updates feed.</p>
       <div className="mb-4">
         <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — pin/delete/expiry save locally only" />
         {syncMessage && (
@@ -28526,7 +28526,7 @@ function MyPostsPanel({ onBack, feedPosts, setFeedPosts, postExpiryMonths, setPo
       </div>
 
       <div className="bg-white border border-[#D8DED9] rounded-md p-4 mb-4">
-        <label className="text-xs text-[#8A958E]">Post lifespan (your subscription tier)</label>
+        <label className="text-xs text-[#16241F]">Post lifespan (your subscription tier)</label>
         <select
           value={postExpiryMonths}
           onChange={(e) => updateExpiryMonths(Number(e.target.value))}
@@ -28535,7 +28535,7 @@ function MyPostsPanel({ onBack, feedPosts, setFeedPosts, postExpiryMonths, setPo
         >
           {POST_EXPIRY_OPTIONS.map((o) => <option key={o.months} value={o.months}>{o.label}</option>)}
         </select>
-        <p className="text-[11px] text-[#8A958E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <p className="text-[11px] text-[#16241F] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           Posts older than this automatically stop showing to patients — unless you've kept them below. Longer lifespans are a higher-tier subscription feature.
         </p>
       </div>
@@ -28549,19 +28549,19 @@ function MyPostsPanel({ onBack, feedPosts, setFeedPosts, postExpiryMonths, setPo
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm truncate" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{post.text}</p>
-                  <div className="text-[11px] text-[#8A958E] mt-1 flex items-center gap-2">
+                  <div className="text-[11px] text-[#16241F] mt-1 flex items-center gap-2">
                     <span>{ageDays} days ago</span>
                     {post.pinned ? (
                       <span className="px-1.5 py-0.5 bg-[#F2F7F5] text-[#0F5C56] rounded-sm">Kept — won't expire</span>
                     ) : expired ? (
                       <span className="px-1.5 py-0.5 bg-[#FBEFEC] text-[#B34A3C] rounded-sm">Expired — hidden from patients</span>
                     ) : (
-                      <span className="px-1.5 py-0.5 bg-[#F7F9F7] text-[#5B6B63] rounded-sm">Live</span>
+                      <span className="px-1.5 py-0.5 bg-[#F7F9F7] text-[#16241F] rounded-sm">Live</span>
                     )}
                   </div>
                 </div>
                 <div className="flex gap-1.5 shrink-0">
-                  <button onClick={() => togglePin(post.id)} className="text-[11px] px-2 py-1 border border-[#D8DED9] rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7]">
+                  <button onClick={() => togglePin(post.id)} className="text-[11px] px-2 py-1 border border-[#D8DED9] rounded-sm text-[#16241F] hover:bg-[#F7F9F7]">
                     {post.pinned ? "Unkeep" : "Keep"}
                   </button>
                   <button onClick={() => deletePost(post.id)} className="text-[11px] px-2 py-1 border border-[#EFC9C1] text-[#B34A3C] rounded-sm hover:bg-[#FBEFEC]">
@@ -28572,7 +28572,7 @@ function MyPostsPanel({ onBack, feedPosts, setFeedPosts, postExpiryMonths, setPo
             </div>
           );
         })}
-        {myPosts.length === 0 && <p className="text-sm text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No posts yet.</p>}
+        {myPosts.length === 0 && <p className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No posts yet.</p>}
       </div>
     </div>
   );
@@ -28581,18 +28581,18 @@ function MyPostsPanel({ onBack, feedPosts, setFeedPosts, postExpiryMonths, setPo
 function PlannerPanel({ onBack }) {
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <CalendarDays size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Planner</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Upcoming surgeries, CMEs, and conferences.</p>
+      <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Upcoming surgeries, CMEs, and conferences.</p>
       <div className="space-y-2">
         {PLANNER_EVENTS.map((ev, i) => (
           <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-3">
             <span className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-sm ${ev.type === "Surgery" ? "bg-[#FBEFEC] text-[#B34A3C]" : "bg-[#F2F7F5] text-[#0F5C56]"}`}>{ev.type}</span>
             <div className="text-sm font-medium mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{ev.title}</div>
-            <div className="text-xs text-[#8A958E] mt-0.5">{ev.date}</div>
+            <div className="text-xs text-[#16241F] mt-0.5">{ev.date}</div>
           </div>
         ))}
       </div>
@@ -28633,12 +28633,12 @@ function FollowUpsPanel({ onBack, followups, setFollowups }) {
   if (current) {
     return (
       <div className="p-5">
-        <button onClick={() => { setOpenId(null); setAdviceSent(false); }} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← All follow-ups</button>
+        <button onClick={() => { setOpenId(null); setAdviceSent(false); }} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← All follow-ups</button>
         <h3 className="text-base font-semibold mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{current.patient}</h3>
-        <div className="text-xs text-[#8A958E] mb-3">{current.phone}</div>
+        <div className="text-xs text-[#16241F] mb-3">{current.phone}</div>
 
         <div className="mb-3">
-          <label className="text-[11px] uppercase tracking-wide text-[#8A958E]">Follow-up frequency — you decide</label>
+          <label className="text-[11px] uppercase tracking-wide text-[#16241F]">Follow-up frequency — you decide</label>
           <select
             value={current.interval}
             onChange={(e) => setFollowups((prev) => prev.map((f) => f.id === openId ? { ...f, interval: e.target.value } : f))}
@@ -28650,11 +28650,11 @@ function FollowUpsPanel({ onBack, followups, setFollowups }) {
         </div>
 
         <div className="space-y-2 text-xs mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          <div><span className="text-[#8A958E]">Takeaways — </span>{current.takeaways}</div>
-          <div><span className="text-[#8A958E]">Expected complications — </span>{current.complications}</div>
-          <div><span className="text-[#8A958E]">Diet & physio — </span>{current.dietPhysio}</div>
-          <div><span className="text-[#8A958E]">Precautions — </span>{current.precautions}</div>
-          <div><span className="text-[#8A958E]">Next visit — </span>{current.nextVisit}</div>
+          <div><span className="text-[#16241F]">Takeaways — </span>{current.takeaways}</div>
+          <div><span className="text-[#16241F]">Expected complications — </span>{current.complications}</div>
+          <div><span className="text-[#16241F]">Diet & physio — </span>{current.dietPhysio}</div>
+          <div><span className="text-[#16241F]">Precautions — </span>{current.precautions}</div>
+          <div><span className="text-[#16241F]">Next visit — </span>{current.nextVisit}</div>
         </div>
 
         {adviceSent ? (
@@ -28666,7 +28666,7 @@ function FollowUpsPanel({ onBack, followups, setFollowups }) {
             <Send size={14} /> Send advice to patient
           </button>
         )}
-        <p className="text-[11px] text-[#8A958E] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Includes a link the patient can tap to ask you a question or give feedback — active for 24 hours, then it expires.</p>
+        <p className="text-[11px] text-[#16241F] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Includes a link the patient can tap to ask you a question or give feedback — active for 24 hours, then it expires.</p>
 
         <button className="w-full mb-3 flex items-center justify-center gap-2 text-sm py-2.5 bg-[#16241F] text-white rounded-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           <Video size={14} /> Start telemedicine consult
@@ -28679,7 +28679,7 @@ function FollowUpsPanel({ onBack, followups, setFollowups }) {
           )}
         </div>
 
-        <div className="text-[11px] uppercase tracking-wider text-[#8A958E] mb-2">Chat</div>
+        <div className="text-[11px] uppercase tracking-wider text-[#16241F] mb-2">Chat</div>
         <div className="border border-[#D8DED9] rounded-sm p-3 space-y-2 mb-2 max-h-48 overflow-y-auto">
           {current.messages.map((m, i) => {
             const expired = m.isAdviceLink && m.linkExpiresAt && Date.now() > m.linkExpiresAt;
@@ -28700,18 +28700,18 @@ function FollowUpsPanel({ onBack, followups, setFollowups }) {
 
   return (
     <div className="p-5">
-      <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
       <div className="flex items-center gap-2 mb-1">
         <ClipboardList size={18} className="text-[#0F5C56]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Follow-ups</h2>
       </div>
-      <p className="text-xs text-[#8A958E] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free — up to 5 active follow-up plans. {followups.length}/5 used.</p>
-      <p className="text-xs text-[#8A958E] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Default template fields are pre-filled from company defaults — edit any of them per patient.</p>
+      <p className="text-xs text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Free — up to 5 active follow-up plans. {followups.length}/5 used.</p>
+      <p className="text-xs text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Default template fields are pre-filled from company defaults — edit any of them per patient.</p>
       <div className="space-y-2">
         {followups.map((f) => (
           <button key={f.id} onClick={() => setOpenId(f.id)} className="w-full text-left bg-white border border-[#D8DED9] rounded-md p-3 hover:bg-[#F7F9F7]">
             <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{f.patient}</div>
-            <div className="text-xs text-[#8A958E] mt-0.5">{f.interval} · Next: {f.nextVisit}</div>
+            <div className="text-xs text-[#16241F] mt-0.5">{f.interval} · Next: {f.nextVisit}</div>
           </button>
         ))}
       </div>
@@ -28726,12 +28726,12 @@ function FreeTierBanner() {
   const overLimit = used >= limit;
   return (
     <div className={`px-8 py-2.5 border-b border-[#D8DED9] flex items-center justify-between text-xs ${overLimit ? "bg-[#FBEFEC]" : "bg-[#F7F9F7]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-      <span className={overLimit ? "text-[#7A2F25]" : "text-[#5B6B63]"}>
+      <span className={overLimit ? "text-[#7A2F25]" : "text-[#16241F]"}>
         Individual doctor plan: {overLimit ? "5/5 full-service entries used this month — showing basic info only for new patients" : `${used}/${limit} full-service entries used this month`}
       </span>
       <button onClick={() => setExpanded((e) => !e)} className="text-[#0F5C56] underline decoration-dotted">{expanded ? "Hide" : "Why only 5?"}</button>
       {expanded && (
-        <div className="absolute mt-8 max-w-md bg-white border border-[#D8DED9] rounded-md p-3 shadow-lg text-[#5B6B63]">
+        <div className="absolute mt-8 max-w-md bg-white border border-[#D8DED9] rounded-md p-3 shadow-lg text-[#16241F]">
           Full-service entries (decision support, medication safety checks, lab ordering, storage) cost us real money per patient — server, encryption, and compliance overhead scale with every record, for every user, whether they're paying or not. Five free full entries a month covers genuine occasional use; past that, we still show you who you saw and how to reach them, just not the full clinical toolkit, so the free tier stays sustainable for everyone.
         </div>
       )}
@@ -28850,13 +28850,13 @@ function AdminLoginLanding({ onBack, backLabel, connectedAccount, loginForm, set
   return (
     <div className="min-h-screen flex flex-col items-center px-6 py-16" style={{ background: "#EFF3F0", fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="w-full max-w-sm">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-8 hover:text-[#16241F]">← {backLabel}</button>
+        <button onClick={onBack} className="text-xs text-[#16241F] mb-8 hover:text-[#16241F]">← {backLabel}</button>
 
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: "#0F5C56", fontFamily: "'Fraunces', serif" }}>C</div>
           <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD</h1>
           <p className="text-sm mb-3" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", color: "#E8A33D" }}>Founder &amp; staff access</p>
-          <p className="text-xs text-[#5B6B63] max-w-xs">
+          <p className="text-xs text-[#16241F] max-w-xs">
             Platform-wide monitoring for the people who run ClairMD — not a clinic or patient account. After logging in you'll see account growth and revenue, hospitals restricted for unresolved overage billing, backup reliability, notification delivery, and ICD-10 terminology harvest progress — read-only, and never patient clinical content. Admin accounts are provisioned directly against the database, never through public signup.
           </p>
         </div>
@@ -28906,21 +28906,21 @@ function AdminDashboardScreen({ onBack, backLabel, connectedAccount, data, loadi
   return (
     <div className="min-h-screen p-8" style={{ background: "#F7F9F7", fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="max-w-6xl mx-auto">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]">← {backLabel}</button>
+        <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]">← {backLabel}</button>
 
         <div className="flex items-start justify-between gap-4 mb-1">
           <div className="flex items-center gap-2">
             <ShieldCheck size={18} className="text-[#0F5C56]" />
             <h1 className="text-xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD — Founder admin</h1>
           </div>
-          <div className="flex items-center gap-2 text-xs text-[#5B6B63] whitespace-nowrap pt-1">
+          <div className="flex items-center gap-2 text-xs text-[#16241F] whitespace-nowrap pt-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#0F5C56]" />
             {connectedAccount.email}
             <button onClick={onRefresh} disabled={loading} className="text-[#0F5C56] underline decoration-dotted">{loading ? "Refreshing…" : "Refresh"}</button>
-            <button onClick={onDisconnect} className="text-[#8A958E] underline decoration-dotted hover:text-[#B34A3C]">Log out</button>
+            <button onClick={onDisconnect} className="text-[#16241F] underline decoration-dotted hover:text-[#B34A3C]">Log out</button>
           </div>
         </div>
-        <p className="text-xs text-[#8A958E] mb-5 max-w-2xl">
+        <p className="text-xs text-[#16241F] mb-5 max-w-2xl">
           Platform-wide, read-only aggregates from clairmd-backend's /api/admin routes — account counts, plan tiers, hospitals restricted for overage billing, backup reliability, notification delivery, and ICD-10 terminology harvest progress.
         </p>
 
@@ -28938,10 +28938,10 @@ function AdminDashboardScreen({ onBack, backLabel, connectedAccount, data, loadi
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={`w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-sm mb-0.5 last:mb-0 transition-colors ${
-                    active ? "bg-[#0F5C56] text-white" : "text-[#5B6B63] hover:bg-[#EFF3F0]"
+                    active ? "bg-[#0F5C56] text-white" : "text-[#16241F] hover:bg-[#EFF3F0]"
                   }`}
                 >
-                  <Icon size={14} className={active ? "text-white" : "text-[#8A958E]"} />
+                  <Icon size={14} className={active ? "text-white" : "text-[#16241F]"} />
                   {section.label}
                 </button>
               );
@@ -28949,16 +28949,16 @@ function AdminDashboardScreen({ onBack, backLabel, connectedAccount, data, loadi
             <div className="border-t border-[#D8DED9] my-1.5" />
             <button
               onClick={() => setShowRevenue(true)}
-              className="w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-sm text-[#5B6B63] hover:bg-[#EFF3F0]"
+              className="w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-sm text-[#16241F] hover:bg-[#EFF3F0]"
             >
-              <CreditCard size={14} className="text-[#8A958E]" />
+              <CreditCard size={14} className="text-[#16241F]" />
               Revenue
             </button>
             <button
               onClick={() => setShowAccounting(true)}
-              className="w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-sm mt-0.5 text-[#5B6B63] hover:bg-[#EFF3F0]"
+              className="w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-sm mt-0.5 text-[#16241F] hover:bg-[#EFF3F0]"
             >
-              <FileText size={14} className="text-[#8A958E]" />
+              <FileText size={14} className="text-[#16241F]" />
               Accounting
             </button>
           </nav>
@@ -28997,30 +28997,30 @@ function RevenueDetailsPopup({ overview, risk, onClose }) {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col items-center px-6 py-16" style={{ background: "#EFF3F0", fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="w-full max-w-2xl">
-        <button type="button" onClick={onClose} className="text-xs text-[#5B6B63] mb-8 hover:text-[#16241F]">← Back to dashboard</button>
+        <button type="button" onClick={onClose} className="text-xs text-[#16241F] mb-8 hover:text-[#16241F]">← Back to dashboard</button>
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: "#0F5C56", fontFamily: "'Fraunces', serif" }}>C</div>
           <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>Billing &amp; revenue</h1>
-          <p className="text-xs text-[#8A958E] max-w-md">Platform-wide billing detail — this month's revenue, signups, plan-tier mix, and uncollected hospital overage.</p>
+          <p className="text-xs text-[#16241F] max-w-md">Platform-wide billing detail — this month's revenue, signups, plan-tier mix, and uncollected hospital overage.</p>
         </div>
 
         {!overview ? (
-          <div className="bg-white border border-[#D8DED9] rounded-md p-5 text-center text-xs text-[#8A958E]">Loading…</div>
+          <div className="bg-white border border-[#D8DED9] rounded-md p-5 text-center text-xs text-[#16241F]">Loading…</div>
         ) : (
           <div className="space-y-4">
             <div className="bg-white border border-[#D8DED9] rounded-md p-5">
               <h2 className="text-sm font-medium mb-3">This month</h2>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <div className="text-[10px] text-[#8A958E] uppercase">Revenue</div>
+                  <div className="text-[10px] text-[#16241F] uppercase">Revenue</div>
                   <div className="text-lg font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>₹{(overview.revenueThisMonthPaise / 100).toFixed(2)}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-[#8A958E] uppercase">Signups</div>
+                  <div className="text-[10px] text-[#16241F] uppercase">Signups</div>
                   <div className="text-lg font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>{overview.signupsThisMonth}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] text-[#8A958E] uppercase">Signups last mo.</div>
+                  <div className="text-[10px] text-[#16241F] uppercase">Signups last mo.</div>
                   <div className="text-lg font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>{overview.signupsLastMonth}</div>
                 </div>
               </div>
@@ -29029,12 +29029,12 @@ function RevenueDetailsPopup({ overview, risk, onClose }) {
             <div className="bg-white border border-[#D8DED9] rounded-md p-5">
               <h2 className="text-sm font-medium mb-3">Doctor plan tiers</h2>
               {overview.doctorPlanTiers.length === 0 ? (
-                <p className="text-xs text-[#8A958E]">No doctor accounts yet.</p>
+                <p className="text-xs text-[#16241F]">No doctor accounts yet.</p>
               ) : (
                 <div className="space-y-1">
                   {overview.doctorPlanTiers.map((row) => (
                     <div key={row.plan_tier} className="flex justify-between text-xs">
-                      <span className="text-[#5B6B63] capitalize">{row.plan_tier || "unset"}</span>
+                      <span className="text-[#16241F] capitalize">{row.plan_tier || "unset"}</span>
                       <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
                     </div>
                   ))}
@@ -29045,12 +29045,12 @@ function RevenueDetailsPopup({ overview, risk, onClose }) {
             <div className="bg-white border border-[#D8DED9] rounded-md p-5">
               <h2 className="text-sm font-medium mb-3">Hospital plan tiers</h2>
               {overview.hospitalPlanTiers.length === 0 ? (
-                <p className="text-xs text-[#8A958E]">No hospital accounts yet.</p>
+                <p className="text-xs text-[#16241F]">No hospital accounts yet.</p>
               ) : (
                 <div className="space-y-1">
                   {overview.hospitalPlanTiers.map((row) => (
                     <div key={row.hospital_plan_tier} className="flex justify-between text-xs">
-                      <span className="text-[#5B6B63] capitalize">{row.hospital_plan_tier || "unset"}</span>
+                      <span className="text-[#16241F] capitalize">{row.hospital_plan_tier || "unset"}</span>
                       <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
                     </div>
                   ))}
@@ -29061,20 +29061,20 @@ function RevenueDetailsPopup({ overview, risk, onClose }) {
             <div className="bg-white border border-[#D8DED9] rounded-md p-5">
               <h2 className="text-sm font-medium mb-3">Uncollected hospital overage</h2>
               {!risk ? (
-                <p className="text-xs text-[#8A958E]">Loading…</p>
+                <p className="text-xs text-[#16241F]">Loading…</p>
               ) : risk.pendingOverageByHospital.length === 0 ? (
-                <p className="text-xs text-[#8A958E]">Nothing outstanding right now.</p>
+                <p className="text-xs text-[#16241F]">Nothing outstanding right now.</p>
               ) : (
                 <>
                   <div className="space-y-1 mb-2">
                     {risk.pendingOverageByHospital.map((row, i) => (
                       <div key={i} className="flex justify-between text-xs">
-                        <span className="text-[#5B6B63] capitalize">{row.hospital_account_id} · {row.charge_status}</span>
+                        <span className="text-[#16241F] capitalize">{row.hospital_account_id} · {row.charge_status}</span>
                         <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
                       </div>
                     ))}
                   </div>
-                  <p className="text-[10px] text-[#8A958E]">{risk.restrictedHospitals.length} hospital(s) currently restricted for overage billing — see the Hospitals at Risk section for detail.</p>
+                  <p className="text-[10px] text-[#16241F]">{risk.restrictedHospitals.length} hospital(s) currently restricted for overage billing — see the Hospitals at Risk section for detail.</p>
                 </>
               )}
             </div>
@@ -29108,33 +29108,33 @@ function AccountingSummaryPopup({ accounting, onClose }) {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col items-center px-6 py-16" style={{ background: "#EFF3F0", fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="w-full max-w-2xl">
-        <button type="button" onClick={onClose} className="text-xs text-[#5B6B63] mb-8 hover:text-[#16241F]">← Back to dashboard</button>
+        <button type="button" onClick={onClose} className="text-xs text-[#16241F] mb-8 hover:text-[#16241F]">← Back to dashboard</button>
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: "#0F5C56", fontFamily: "'Fraunces', serif" }}>C</div>
           <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>Accounting</h1>
-          <p className="text-xs text-[#8A958E] max-w-md">
+          <p className="text-xs text-[#16241F] max-w-md">
             {fyLabel ? `${fyLabel} revenue, month by month — a record-keeping aid for ITR filing.` : "Revenue by month for the current financial year — a record-keeping aid for ITR filing."}
           </p>
         </div>
 
         {!accounting ? (
-          <div className="bg-white border border-[#D8DED9] rounded-md p-5 text-center text-xs text-[#8A958E]">Loading…</div>
+          <div className="bg-white border border-[#D8DED9] rounded-md p-5 text-center text-xs text-[#16241F]">Loading…</div>
         ) : (
           <div className="space-y-4">
             <div className="bg-white border border-[#D8DED9] rounded-md p-5 text-center">
-              <div className="text-[10px] text-[#8A958E] uppercase">{fyLabel} total revenue</div>
+              <div className="text-[10px] text-[#16241F] uppercase">{fyLabel} total revenue</div>
               <div className="text-2xl font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>₹{(accounting.totalPaise / 100).toFixed(2)}</div>
             </div>
 
             <div className="bg-white border border-[#D8DED9] rounded-md p-5">
               <h2 className="text-sm font-medium mb-3">Month by month</h2>
               {accounting.monthly.length === 0 ? (
-                <p className="text-xs text-[#8A958E]">No billing events recorded yet this financial year.</p>
+                <p className="text-xs text-[#16241F]">No billing events recorded yet this financial year.</p>
               ) : (
                 <div className="space-y-1">
                   {accounting.monthly.map((row) => (
                     <div key={row.yearMonth} className="flex justify-between text-xs">
-                      <span className="text-[#5B6B63]">{ACCOUNTING_MONTH_LABEL(row.yearMonth)}</span>
+                      <span className="text-[#16241F]">{ACCOUNTING_MONTH_LABEL(row.yearMonth)}</span>
                       <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>₹{(row.totalPaise / 100).toFixed(2)}</span>
                     </div>
                   ))}
@@ -29142,7 +29142,7 @@ function AccountingSummaryPopup({ accounting, onClose }) {
               )}
             </div>
 
-            <p className="text-[10px] text-[#8A958E] px-1">
+            <p className="text-[10px] text-[#16241F] px-1">
               Raw revenue figures from ClairMD's own billing records — not a filed return. Confirm GST treatment, deductions, and final figures with a chartered accountant before filing.
             </p>
           </div>
@@ -29155,7 +29155,7 @@ function AccountingSummaryPopup({ accounting, onClose }) {
 function AdminStatTile({ label, value }) {
   return (
     <div className="bg-white border border-[#D8DED9] rounded-md p-3 text-center">
-      <div className="text-[10px] text-[#8A958E] uppercase">{label}</div>
+      <div className="text-[10px] text-[#16241F] uppercase">{label}</div>
       <div className="text-lg font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#16241F" }}>{value === null ? "—" : value}</div>
     </div>
   );
@@ -29169,7 +29169,7 @@ function AdminIcd10HarvestCard({ icd10 }) {
         <h2 className="text-sm font-medium">ICD-10 terminology harvest</h2>
       </div>
       {!icd10 ? (
-        <p className="text-xs text-[#8A958E]">Loading…</p>
+        <p className="text-xs text-[#16241F]">Loading…</p>
       ) : (
         <>
           <div className="flex items-center gap-2 mb-2 text-xs">
@@ -29178,16 +29178,16 @@ function AdminIcd10HarvestCard({ icd10 }) {
           </div>
           <div className="grid grid-cols-2 gap-2 text-center">
             <div>
-              <div className="text-[10px] text-[#8A958E] uppercase">Codes stored</div>
+              <div className="text-[10px] text-[#16241F] uppercase">Codes stored</div>
               <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{icd10.codesStored.toLocaleString()}</div>
             </div>
             <div>
-              <div className="text-[10px] text-[#8A958E] uppercase">Subtrees complete</div>
+              <div className="text-[10px] text-[#16241F] uppercase">Subtrees complete</div>
               <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{icd10.subtreesComplete}</div>
             </div>
           </div>
           {!icd10.running && (
-            <p className="text-[10px] text-[#8A958E] mt-2">On Render's free tier the harvest stops when the service spins down and needs re-triggering — see routes/admin.js's POST /admin/harvest-icd10.</p>
+            <p className="text-[10px] text-[#16241F] mt-2">On Render's free tier the harvest stops when the service spins down and needs re-triggering — see routes/admin.js's POST /admin/harvest-icd10.</p>
           )}
         </>
       )}
@@ -29203,28 +29203,28 @@ function AdminOverviewCard({ overview }) {
         <h2 className="text-sm font-medium">Platform overview</h2>
       </div>
       {!overview ? (
-        <p className="text-xs text-[#8A958E]">Loading…</p>
+        <p className="text-xs text-[#16241F]">Loading…</p>
       ) : (
         <>
           <div className="space-y-1 mb-3">
             {overview.accountsByType.map((row) => (
               <div key={row.account_type} className="flex justify-between text-xs">
-                <span className="text-[#5B6B63]">{row.account_type}</span>
+                <span className="text-[#16241F]">{row.account_type}</span>
                 <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
               </div>
             ))}
           </div>
           <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#D8DED9] text-center">
             <div>
-              <div className="text-[10px] text-[#8A958E] uppercase">Signups (mo)</div>
+              <div className="text-[10px] text-[#16241F] uppercase">Signups (mo)</div>
               <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{overview.signupsThisMonth}</div>
             </div>
             <div>
-              <div className="text-[10px] text-[#8A958E] uppercase">Last month</div>
+              <div className="text-[10px] text-[#16241F] uppercase">Last month</div>
               <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{overview.signupsLastMonth}</div>
             </div>
             <div>
-              <div className="text-[10px] text-[#8A958E] uppercase">Revenue (mo)</div>
+              <div className="text-[10px] text-[#16241F] uppercase">Revenue (mo)</div>
               <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>₹{(overview.revenueThisMonthPaise / 100).toFixed(2)}</div>
             </div>
           </div>
@@ -29242,21 +29242,21 @@ function AdminHospitalsAtRiskCard({ risk }) {
         <h2 className="text-sm font-medium">Hospitals at risk</h2>
       </div>
       {!risk ? (
-        <p className="text-xs text-[#8A958E]">Loading…</p>
+        <p className="text-xs text-[#16241F]">Loading…</p>
       ) : risk.restrictedHospitals.length === 0 ? (
-        <p className="text-xs text-[#8A958E]">No hospitals currently restricted for overage billing.</p>
+        <p className="text-xs text-[#16241F]">No hospitals currently restricted for overage billing.</p>
       ) : (
         <div className="space-y-1.5">
           {risk.restrictedHospitals.map((h) => (
             <div key={h.id} className="text-xs border border-[#D8DED9] rounded-sm px-2.5 py-1.5">
               <div className="font-medium">{h.display_name}</div>
-              <div className="text-[#8A958E]">{h.bed_count} beds · {h.hospital_plan_tier} · restricted {new Date(h.admin_restricted_at).toLocaleDateString()}</div>
+              <div className="text-[#16241F]">{h.bed_count} beds · {h.hospital_plan_tier} · restricted {new Date(h.admin_restricted_at).toLocaleDateString()}</div>
             </div>
           ))}
         </div>
       )}
       {risk && risk.pendingOverageByHospital.length > 0 && (
-        <p className="text-[10px] text-[#8A958E] mt-2">{risk.pendingOverageByHospital.length} hospital/status combination(s) with uncollected overage entries.</p>
+        <p className="text-[10px] text-[#16241F] mt-2">{risk.pendingOverageByHospital.length} hospital/status combination(s) with uncollected overage entries.</p>
       )}
     </div>
   );
@@ -29270,20 +29270,20 @@ function AdminBackupHealthCard({ backup }) {
         <h2 className="text-sm font-medium">Backup health (7d)</h2>
       </div>
       {!backup ? (
-        <p className="text-xs text-[#8A958E]">Loading…</p>
+        <p className="text-xs text-[#16241F]">Loading…</p>
       ) : backup.last7Days.length === 0 ? (
-        <p className="text-xs text-[#8A958E]">No backup events recorded in the last 7 days.</p>
+        <p className="text-xs text-[#16241F]">No backup events recorded in the last 7 days.</p>
       ) : (
         <>
           <div className="space-y-1 mb-2">
             {backup.last7Days.map((row) => (
               <div key={row.status} className="flex justify-between text-xs">
-                <span className="text-[#5B6B63] capitalize">{row.status}</span>
+                <span className="text-[#16241F] capitalize">{row.status}</span>
                 <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
               </div>
             ))}
           </div>
-          <p className="text-[10px] text-[#8A958E]">{backup.accountsWithRecentFailureCount} account(s) with a failure in the last 7 days.</p>
+          <p className="text-[10px] text-[#16241F]">{backup.accountsWithRecentFailureCount} account(s) with a failure in the last 7 days.</p>
         </>
       )}
     </div>
@@ -29298,25 +29298,25 @@ function AdminNotificationHealthCard({ notif }) {
         <h2 className="text-sm font-medium">Notification delivery (7d)</h2>
       </div>
       {!notif ? (
-        <p className="text-xs text-[#8A958E]">Loading…</p>
+        <p className="text-xs text-[#16241F]">Loading…</p>
       ) : (
         <>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <div className="text-[10px] text-[#8A958E] uppercase">Total</div>
+              <div className="text-[10px] text-[#16241F] uppercase">Total</div>
               <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{notif.last7Days.total}</div>
             </div>
             <div>
-              <div className="text-[10px] text-[#8A958E] uppercase">Delivered</div>
+              <div className="text-[10px] text-[#16241F] uppercase">Delivered</div>
               <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{notif.last7Days.delivered}</div>
             </div>
             <div>
-              <div className="text-[10px] text-[#8A958E] uppercase">Undelivered</div>
+              <div className="text-[10px] text-[#16241F] uppercase">Undelivered</div>
               <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{notif.last7Days.undelivered}</div>
             </div>
           </div>
           {notif.last7Days.total > 0 && notif.last7Days.delivered === 0 && (
-            <p className="text-[10px] text-[#8A958E] mt-2">Zero delivered is expected until real FCM/SMTP credentials are configured — see clairmd-backend's services/notifications.js.</p>
+            <p className="text-[10px] text-[#16241F] mt-2">Zero delivered is expected until real FCM/SMTP credentials are configured — see clairmd-backend's services/notifications.js.</p>
           )}
         </>
       )}
@@ -29369,12 +29369,12 @@ function CareTeamPortalView({ onBack, backLabel = "Back to clinic view" }) {
   return (
     <div className="min-h-screen bg-[#F7F9F7] p-8" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="text-xs text-[#5B6B63] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
+        <button onClick={onBack} className="text-xs text-[#16241F] mb-4 hover:text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← {backLabel}</button>
         <div className="flex items-center gap-2 mb-1">
           <LogIn size={18} className="text-[#0F5C56]" />
           <h1 className="text-xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>ClairMD — Care team</h1>
         </div>
-        <p className="text-xs text-[#8A958E] mb-5 max-w-lg">
+        <p className="text-xs text-[#16241F] mb-5 max-w-lg">
           Your instruction queue — task-scoped notes from a doctor, never chart or key access. Tap Acknowledge once a task is done; the doctor who sent it is notified.
         </p>
 
@@ -29388,18 +29388,18 @@ function CareTeamPortalView({ onBack, backLabel = "Back to clinic view" }) {
             </div>
             {error && <p className="text-xs text-[#B34A3C] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{error}</p>}
             {pending.length === 0 && !loading ? (
-              <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No pending instructions right now.</p>
+              <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No pending instructions right now.</p>
             ) : (
               <div className="space-y-2">
                 {pending.map((i) => (
                   <div key={i.id} className="bg-white border border-[#D8DED9] rounded-md p-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-medium">{i.patient_display_name}</span>
-                      {i.bed_number && <span className="text-[11px] text-[#8A958E]">Bed {i.bed_number}</span>}
+                      {i.bed_number && <span className="text-[11px] text-[#16241F]">Bed {i.bed_number}</span>}
                     </div>
-                    {i.diagnosis_summary && <p className="text-xs text-[#5B6B63] mb-1">{i.diagnosis_summary}</p>}
+                    {i.diagnosis_summary && <p className="text-xs text-[#16241F] mb-1">{i.diagnosis_summary}</p>}
                     <p className="text-xs mb-2">{i.instruction_text}</p>
-                    <div className="flex items-center justify-between text-[11px] text-[#8A958E]">
+                    <div className="flex items-center justify-between text-[11px] text-[#16241F]">
                       <span>From {i.from_doctor_name}{i.from_doctor_specialty ? ` — ${i.from_doctor_specialty}` : ""} · {new Date(i.created_at).toLocaleString()}</span>
                       <button
                         type="button"
@@ -29587,9 +29587,9 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               <AlertTriangle size={18} />
               <h3 className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Field left blank</h3>
             </div>
-            <p className="text-sm text-[#5B6B63] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{pageCaution.message}</p>
+            <p className="text-sm text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{pageCaution.message}</p>
             <div className="flex gap-2">
-              <button type="button" onClick={handleCancelCaution} className="flex-1 text-sm py-2 rounded-sm border border-[#D8DED9] font-medium text-[#5B6B63] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
+              <button type="button" onClick={handleCancelCaution} className="flex-1 text-sm py-2 rounded-sm border border-[#D8DED9] font-medium text-[#16241F] hover:bg-[#F7F9F7]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
               <button type="button" onClick={handleProceedAnyway} className="flex-1 text-sm py-2 rounded-sm text-white font-medium" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>Proceed anyway</button>
             </div>
           </div>
@@ -29602,7 +29602,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               <AlertTriangle size={18} />
               <h3 className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Leave this note?</h3>
             </div>
-            <p className="text-sm text-[#5B6B63] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <p className="text-sm text-[#16241F] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               Do you want to save your changes before going back?
               {backConfirm === "icuward" && " (Trauma and Orthopedic Injuries are reference-template-only sections with no individual fields — everything else is now included in this save.)"}
             </p>
@@ -29674,7 +29674,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               <button
                 type="button"
                 onClick={() => setBackConfirm(null)}
-                className="text-sm py-2 rounded-sm border border-[#D8DED9] font-medium text-[#5B6B63] hover:bg-[#F7F9F7]"
+                className="text-sm py-2 rounded-sm border border-[#D8DED9] font-medium text-[#16241F] hover:bg-[#F7F9F7]"
                 style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
               >
                 Cancel
@@ -29740,7 +29740,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               type="button"
               onClick={() => setSidebarCollapsed((v) => !v)}
               title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className="w-8 h-8 flex items-center justify-center rounded-sm text-[#5B6B63] hover:bg-[#F7F9F7] hover:text-[#16241F]"
+              className="w-8 h-8 flex items-center justify-center rounded-sm text-[#16241F] hover:bg-[#F7F9F7] hover:text-[#16241F]"
             >
               {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
             </button>
@@ -29750,7 +29750,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           <div className="px-5 py-5 border-b border-[#D8DED9]">
             <div className="flex items-start justify-between">
               <div>
-                <div className="text-xs tracking-widest text-[#8A958E] uppercase" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Prototype</div>
+                <div className="text-xs tracking-widest text-[#16241F] uppercase" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Prototype</div>
                 <div className="text-2xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: theme.color }}>ClairMD Clinic</div>
               </div>
               <NotificationsBell />
@@ -29762,7 +29762,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               type="button"
               onClick={() => setAppMode("admin")}
               title="Founder-admin platform dashboard — requires an admin account, not a doctor login"
-              className="text-[10px] text-[#8A958E] hover:text-[#5B6B63] underline decoration-dotted mt-1.5"
+              className="text-[10px] text-[#16241F] hover:text-[#16241F] underline decoration-dotted mt-1.5"
               style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
             >
               Founder admin →
@@ -29771,7 +29771,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               type="button"
               onClick={() => setAppMode("careTeam")}
               title="Care team member login — for nurses/assistants receiving task-scoped instructions, not doctor accounts"
-              className="text-[10px] text-[#8A958E] hover:text-[#5B6B63] underline decoration-dotted mt-1 block"
+              className="text-[10px] text-[#16241F] hover:text-[#16241F] underline decoration-dotted mt-1 block"
               style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
             >
               Care team login →
@@ -29834,7 +29834,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               type="button"
               onClick={() => { setSidebarView("patients"); setPatientsModalOpen(true); setPatientsModalMinimized(false); }}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors ${
-                sidebarView === "patients" ? "font-medium" : "text-[#5B6B63] hover:bg-[#F7F9F7]"
+                sidebarView === "patients" ? "font-medium" : "text-[#16241F] hover:bg-[#F7F9F7]"
               }`}
               style={sidebarView === "patients" ? { backgroundColor: `${theme.color}14`, color: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" } : { fontFamily: "'IBM Plex Sans', sans-serif" }}
             >
@@ -29843,7 +29843,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           </nav>
 
           <div
-            className="shrink-0 px-5 py-4 border-t border-[#D8DED9] flex items-center gap-2 text-[11px] text-[#8A958E]"
+            className="shrink-0 px-5 py-4 border-t border-[#D8DED9] flex items-center gap-2 text-[11px] text-[#16241F]"
             style={{ fontFamily: "'IBM Plex Sans', sans-serif", flexShrink: 0 }}
           >
             <ShieldCheck size={14} /> Encrypted · audit-logged
@@ -29975,8 +29975,8 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               {!newEntryMode ? (
                 <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
                   <UserPlus size={32} className="text-[#B8C0BC] mb-3" />
-                  <p className="text-sm text-[#5B6B63] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No patient selected.</p>
-                  <p className="text-xs text-[#8A958E]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Click "OPD Notes" above for a quick, doctor-built note, or "ICU / Ward Notes" for the full multi-page workflow — or open the Patients button in the sidebar.</p>
+                  <p className="text-sm text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No patient selected.</p>
+                  <p className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Click "OPD Notes" above for a quick, doctor-built note, or "ICU / Ward Notes" for the full multi-page workflow — or open the Patients button in the sidebar.</p>
                 </div>
               ) : newEntryMode === "opd" ? (
                 <div className="p-8">
@@ -29999,7 +29999,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       <button
                         type="button"
                         onClick={() => setBackConfirm("icuward")}
-                        className="flex items-center gap-1.5 text-sm font-medium text-[#5B6B63] hover:text-[#16241F] mb-4"
+                        className="flex items-center gap-1.5 text-sm font-medium text-[#16241F] hover:text-[#16241F] mb-4"
                         style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
                       >
                         <ChevronLeft size={16} /> Back
@@ -30070,7 +30070,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h1 className="text-3xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#16241F" }}>{patient.name}</h1>
-                    <p className="text-sm text-[#5B6B63] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{patient.age} yrs · {patient.gender} · {patient.localId}</p>
+                    <p className="text-sm text-[#16241F] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{patient.age} yrs · {patient.gender} · {patient.localId}</p>
                   </div>
                   <Badge text={CATEGORY_STYLE[patient.category].label} bg={CATEGORY_STYLE[patient.category].bg} />
                   <button
@@ -30155,7 +30155,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
         >
           {globalSyncMessage.text}
           {globalSyncMessage.type !== "pending" && (
-            <button type="button" onClick={() => setGlobalSyncMessage(null)} className="ml-2 underline text-[#8A958E]">Dismiss</button>
+            <button type="button" onClick={() => setGlobalSyncMessage(null)} className="ml-2 underline text-[#16241F]">Dismiss</button>
           )}
         </div>
       )}
