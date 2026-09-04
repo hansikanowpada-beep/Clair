@@ -106,7 +106,7 @@ function DoctorAuth({ onEnter }) {
     <form onSubmit={submit} className="space-y-3">
       {mode === "signup" && (
         <div>
-          <label className="text-xs text-[#5B6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>This account is for</label>
+          <label className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>This account is for</label>
           <select
             value={doctorType}
             onChange={(e) => setDoctorType(e.target.value)}
@@ -196,7 +196,7 @@ function MedicalStudentForm() {
       <button type="submit" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white" style={{ background: TEAL }}>
         <ArrowRight size={15} /> Request early access
       </button>
-      <p className="text-[11px] text-[#8A958E]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+      <p className="text-[11px] text-[#16241F]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
     </form>
   );
 }
@@ -225,7 +225,7 @@ function OthersContact() {
       <button type="submit" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white" style={{ background: TEAL }}>
         <Mail size={15} /> Send
       </button>
-      <p className="text-[11px] text-[#8A958E]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+      <p className="text-[11px] text-[#16241F]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
     </form>
   );
 }
@@ -274,7 +274,7 @@ function FooterPageShell({ onBack, children, maxWidth = "max-w-md" }) {
   return (
     <div className="min-h-screen flex flex-col items-center px-6 py-16" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className={`w-full ${maxWidth}`}>
-        <button type="button" onClick={onBack} className="text-xs text-[#5B6B63] mb-8 hover:text-[#16241F]">← Back to ClairMD</button>
+        <button type="button" onClick={onBack} className="text-xs text-[#16241F] mb-8 hover:text-[#16241F]">← Back to ClairMD</button>
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: TEAL, fontFamily: "'Fraunces', serif" }}>C</div>
           <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>ClairMD</h1>
@@ -293,7 +293,7 @@ function FooterInfoPage({ pageKey, onBack }) {
       <div className="bg-white border rounded-md p-5" style={{ borderColor: HAIRLINE }}>
         <h2 className="text-lg mb-3" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>{p.title}</h2>
         <div className="space-y-3">
-          {p.body.map((para, i) => <p key={i} className="text-sm text-[#5B6B63]">{para}</p>)}
+          {p.body.map((para, i) => <p key={i} className="text-sm text-[#16241F]">{para}</p>)}
         </div>
       </div>
     </FooterPageShell>
@@ -367,7 +367,7 @@ function MockDonateCheckout() {
     return (
       <div className="rounded-sm p-4 text-sm space-y-3" style={{ background: "#F2F7F5", border: `1px solid ${HAIRLINE}`, color: INK }}>
         <p className="font-medium">Preview complete — no payment was actually processed. Ref: {refId}</p>
-        <p className="text-[#5B6B63]">Once donations are genuinely live, a real receipt for a real transaction would also be emailed automatically to {email}.</p>
+        <p className="text-[#16241F]">Once donations are genuinely live, a real receipt for a real transaction would also be emailed automatically to {email}.</p>
         <button
           type="button"
           onClick={() => downloadTextFile(`clairmd-sample-receipt-${refId}.txt`, generateSampleReceiptText({ name, email, amount: finalAmount, refId }))}
@@ -402,7 +402,7 @@ function MockDonateCheckout() {
         {stage === "processing" ? <Loader2 size={15} className="animate-spin" /> : <CreditCard size={15} />}
         {stage === "processing" ? "Processing…" : `Pay ₹${finalAmount || 0} via Razorpay`}
       </button>
-      <p className="text-[11px] text-[#8A958E] flex items-start gap-1">
+      <p className="text-[11px] text-[#16241F] flex items-start gap-1">
         <AlertTriangle size={12} className="mt-0.5 shrink-0" />
         Preview only — no real Razorpay integration is connected yet, and no payment is actually processed. This shows what the flow will look like once ClairMD is Section 8 registered and a real Razorpay account is wired up.
       </p>
@@ -430,10 +430,10 @@ function DonatePage({ onBack }) {
           <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>Donate</h2>
         </div>
         <div className="space-y-3">
-          <p className="text-sm text-[#5B6B63]">
+          <p className="text-sm text-[#16241F]">
             ClairMD is working toward Section 8 nonprofit registration to run a patient financial-assistance program alongside the clinical product — a way to help cover care costs (ICU stays, surgeries, ongoing treatment) for patients who can't afford them, funded separately from the clinical software business.
           </p>
-          <p className="text-sm text-[#5B6B63]">
+          <p className="text-sm text-[#16241F]">
             Public donations aren't open yet, and won't be until that registration is complete: without it, there's no legal structure to issue a proper donation receipt, no 80G tax-exemption status to offer donors, and no board oversight of how funds are used. We'd rather build that properly than take money before the structure exists to use it responsibly.
           </p>
         </div>
@@ -442,7 +442,7 @@ function DonatePage({ onBack }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <DonateColumn borderColor={HAIRLINE}>
           <h3 className="text-sm font-medium mb-1" style={{ color: INK }}>Domestic donations (India) — preview</h3>
-          <p className="text-xs text-[#8A958E] mb-3">A walkthrough of what the real flow will look like once it's live. Nothing on this screen is a real transaction.</p>
+          <p className="text-xs text-[#16241F] mb-3">A walkthrough of what the real flow will look like once it's live. Nothing on this screen is a real transaction.</p>
           <MockDonateCheckout />
         </DonateColumn>
 
@@ -451,7 +451,7 @@ function DonatePage({ onBack }) {
             <AlertTriangle size={15} style={{ color: "#B34A3C" }} />
             <h3 className="text-sm font-medium" style={{ color: INK }}>International donations</h3>
           </div>
-          <p className="text-xs text-[#5B6B63]">
+          <p className="text-xs text-[#16241F]">
             Not available, even as a preview. Indian law (the Foreign Contribution Regulation Act, FCRA) requires an Indian entity to hold separate FCRA registration before it can legally accept donations from outside India — an approval that typically can't even be applied for until well after Section 8 registration and a track record of activity. We're not building a foreign-donation flow, mocked or otherwise, until that's genuinely in place.
           </p>
         </DonateColumn>
@@ -510,7 +510,7 @@ export default function LandingPage({ onEnter }) {
         <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: TEAL, fontFamily: "'Fraunces', serif" }}>C</div>
         <h1 className="text-4xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>ClairMD</h1>
         <p className="text-sm mb-3" style={{ fontFamily: "'Fraunces', serif", fontStyle: "italic", color: MARIGOLD }}>Clarity in care</p>
-        <p className="text-sm text-[#5B6B63] mb-10 text-center max-w-md">
+        <p className="text-sm text-[#16241F] mb-10 text-center max-w-md">
           An AI-assisted EHR for small clinics — encrypted on your own device before it ever reaches us.
         </p>
 
@@ -533,7 +533,7 @@ export default function LandingPage({ onEnter }) {
 
           {selectedRole && (
             <div className="bg-white border rounded-md p-5 max-w-md mx-auto" style={{ borderColor: HAIRLINE }}>
-              <p className="text-xs text-[#8A958E] mb-4">{ROLES.find((r) => r.key === selectedRole).blurb}</p>
+              <p className="text-xs text-[#16241F] mb-4">{ROLES.find((r) => r.key === selectedRole).blurb}</p>
               {selectedRole === "doctor" && <DoctorAuth onEnter={onEnter} />}
               {(selectedRole === "hospitalStaff" || selectedRole === "patient") && <HandoffContinue role={selectedRole} onEnter={onEnter} />}
               {selectedRole === "medicalStudent" && <MedicalStudentForm />}
@@ -545,7 +545,7 @@ export default function LandingPage({ onEnter }) {
       </main>
 
       <footer className="border-t px-6 py-6" style={{ borderColor: HAIRLINE }}>
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#5B6B63]">
+        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#16241F]">
           <div className="flex items-center gap-1.5">
             <ShieldCheck size={13} /> © 2026 ClairMD (Ayodhya). All rights reserved.
           </div>
