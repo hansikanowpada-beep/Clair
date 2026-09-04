@@ -18982,7 +18982,7 @@ function AutoExpandingTextarea({ value, onChange, placeholder }) {
   );
 }
 
-function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examNotes: externalExamNotes, setExamNotes: externalSetExamNotes, disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, ssValues: externalSsValues, setSsValues: externalSetSsValues, envValues: externalEnvValues, setEnvValues: externalSetEnvValues, traumaOpen: externalTraumaOpen, setTraumaOpen: externalSetTraumaOpen, disasterOpen: externalDisasterOpen, setDisasterOpen: externalSetDisasterOpen, poisoningOpen: externalPoisoningOpen, setPoisoningOpen: externalSetPoisoningOpen, envOpen: externalEnvOpen, setEnvOpen: externalSetEnvOpen, ssOpen: externalSsOpen, setSsOpen: externalSetSsOpen }) {
+function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examNotes: externalExamNotes, setExamNotes: externalSetExamNotes }) {
   const [internalDraftHpi, setInternalDraftHpi] = useState("");
   const draftHpi = externalDraftHpi !== undefined ? externalDraftHpi : internalDraftHpi;
   const setDraftHpi = externalSetDraftHpi !== undefined ? externalSetDraftHpi : setInternalDraftHpi;
@@ -19023,11 +19023,21 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
             )}
 
             <ExaminationNoteCard examNotes={isDraft ? externalExamNotes : undefined} setExamNotes={isDraft ? externalSetExamNotes : undefined} />
-            <TraumaPicker open={isDraft ? externalTraumaOpen : undefined} setOpen={isDraft ? externalSetTraumaOpen : undefined} />
-            <DisasterManagementPicker disasterValues={isDraft ? externalDisasterValues : undefined} setDisasterValues={isDraft ? externalSetDisasterValues : undefined} open={isDraft ? externalDisasterOpen : undefined} setOpen={isDraft ? externalSetDisasterOpen : undefined} />
-            <PoisoningPicker poisoningValues={isDraft ? externalPoisoningValues : undefined} setPoisoningValues={isDraft ? externalSetPoisoningValues : undefined} open={isDraft ? externalPoisoningOpen : undefined} setOpen={isDraft ? externalSetPoisoningOpen : undefined} />
-            <EnvironmentalInjuriesPicker envValues={isDraft ? externalEnvValues : undefined} setEnvValues={isDraft ? externalSetEnvValues : undefined} open={isDraft ? externalEnvOpen : undefined} setOpen={isDraft ? externalSetEnvOpen : undefined} />
-            <SpecialSituationsPicker ssValues={isDraft ? externalSsValues : undefined} setSsValues={isDraft ? externalSetSsValues : undefined} open={isDraft ? externalSsOpen : undefined} setOpen={isDraft ? externalSetSsOpen : undefined} />
+            {/* On a live draft, these 5 pickers no longer render here at all —
+                the Ribbon's Special Situations tab is now the sole way to open
+                them, each in its own modal (see the SpecialSituationModal
+                block mounted near ExamPopup). Viewing a locked past encounter
+                has no ribbon, so it keeps them inline exactly as before —
+                otherwise historical findings would become unreachable. */}
+            {!isDraft && (
+              <>
+                <TraumaPicker />
+                <DisasterManagementPicker />
+                <PoisoningPicker />
+                <EnvironmentalInjuriesPicker />
+                <SpecialSituationsPicker />
+              </>
+            )}
           </div>
         );
       })}
@@ -21529,19 +21539,45 @@ function OrthopaedicInjuriesToggle() {
   );
 }
 
-function TraumaPicker({ open: externalOpen, setOpen: externalSetOpen } = {}) {
+// Shared modal shell for the 5 Special Situations pickers (Trauma, Disaster
+// Management, Poisoning, Environmental Injuries, Special Situations) when
+// opened from the Ribbon's Special Situations tab on a live ICU/Ward draft —
+// same bottom-sheet chrome as ExamPopup, so opening one of these five feels
+// consistent with the app's other ribbon-launched reference tools. Each
+// picker keeps its own internal content/state exactly as before; only where
+// it renders (inline on the Records page vs. this modal) changes.
+function SpecialSituationModal({ title, icon: Icon, accentColor, onClose, children }) {
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(26,36,31,0.5)" }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full bg-[#F7F9F7] rounded-t-2xl overflow-y-auto" style={{ maxWidth: 640, maxHeight: "88vh", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        <div className="sticky top-0 bg-white border-b border-[#E8EDE9] px-4 py-3.5 z-10 flex items-center justify-between">
+          <div className="flex items-center gap-2" style={{ color: accentColor }}>
+            <Icon size={16} />
+            <span className="text-[15px] font-semibold text-[#16241F]">{title}</span>
+          </div>
+          <button onClick={onClose} className="text-[#16241F] p-1"><X size={18} /></button>
+        </div>
+        <div className="px-4 py-3">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function TraumaPicker({ open: externalOpen, setOpen: externalSetOpen, hideHeader } = {}) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isExternallyControlled = externalOpen !== undefined;
   const collapsibleOpen = isExternallyControlled ? externalOpen : internalOpen;
   const setCollapsibleOpen = isExternallyControlled ? externalSetOpen : setInternalOpen;
   return (
-    <div className="mt-4 pt-4 border-t-2 border-[#B34A3C]">
-      {/* On a live draft, the Ribbon's Special Situations → Trauma button is
-          the only way to open this now (no duplicate click-to-open here) —
-          plain label, not a button. Viewing a locked past encounter has no
-          ribbon equivalent, so it keeps its own clickable toggle — otherwise
-          historical trauma findings would become permanently unreachable. */}
-      {isExternallyControlled ? (
+    <div className={hideHeader ? "" : "mt-4 pt-4 border-t-2 border-[#B34A3C]"}>
+      {/* On a live draft, the Ribbon's Special Situations → Trauma button
+          opens this in its own modal (see SpecialSituationModal above,
+          hideHeader true) — the modal supplies the title, so this inline
+          label/button is skipped entirely rather than shown redundantly.
+          Viewing a locked past encounter has no ribbon equivalent, so it
+          keeps its own clickable toggle here — otherwise historical trauma
+          findings would become permanently unreachable. */}
+      {hideHeader ? null : isExternallyControlled ? (
         <div className="flex items-center gap-1.5 mb-2 text-[#B34A3C]">
           <ShieldAlert size={14} />
           <span className="text-sm uppercase tracking-wide font-semibold">Trauma</span>
@@ -21706,7 +21742,7 @@ function DisasterResponseReference() {
   );
 }
 
-function DisasterManagementPicker({ disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, open: externalOpen, setOpen: externalSetOpen }) {
+function DisasterManagementPicker({ disasterValues: externalDisasterValues, setDisasterValues: externalSetDisasterValues, open: externalOpen, setOpen: externalSetOpen, hideHeader }) {
   const [internalModuleOn, setInternalModuleOn] = useState(false);
   const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
   const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
@@ -21720,34 +21756,36 @@ function DisasterManagementPicker({ disasterValues: externalDisasterValues, setD
     });
   };
   return (
-    <div className="mt-4 pt-4 border-t-2 border-[#B34A3C]">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5 text-[#B34A3C]">
-          <AlertTriangle size={14} />
-          <span className="text-sm uppercase tracking-wide font-semibold">Disaster Management</span>
+    <div className={hideHeader ? "" : "mt-4 pt-4 border-t-2 border-[#B34A3C]"}>
+      {/* On a live draft, the Ribbon's Special Situations → Disaster
+          Management button opens this in its own modal (hideHeader true) —
+          the modal supplies the title, so this inline header/toggle row is
+          skipped entirely. Viewing a locked past encounter keeps its own
+          toggle here, same reasoning as TraumaPicker above. */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[#B34A3C]">
+            <AlertTriangle size={14} />
+            <span className="text-sm uppercase tracking-wide font-semibold">Disaster Management</span>
+          </div>
+          {externalOpen !== undefined ? (
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </span>
+          ) : (
+            <button
+              onClick={() => setModuleOn((v) => !v)}
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </button>
+          )}
         </div>
-        {/* On a live draft, the Ribbon's Special Situations → Disaster
-            Management button is the only way to switch this on now — a
-            plain status label here, not a duplicate clickable toggle.
-            Viewing a locked past encounter keeps its own toggle, same
-            reasoning as TraumaPicker above. */}
-        {externalOpen !== undefined ? (
-          <span
-            className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
-            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-          >
-            {moduleOn ? "On" : "Off"}
-          </span>
-        ) : (
-          <button
-            onClick={() => setModuleOn((v) => !v)}
-            className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
-            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-          >
-            {moduleOn ? "On" : "Off"}
-          </button>
-        )}
-      </div>
+      )}
       {moduleOn && (
         <div className="space-y-2">
           <p className="text-sm text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -21919,7 +21957,7 @@ function PoisoningManagementReference() {
   );
 }
 
-function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, open: externalOpen, setOpen: externalSetOpen }) {
+function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisoningValues: externalSetPoisoningValues, open: externalOpen, setOpen: externalSetOpen, hideHeader }) {
   const [internalModuleOn, setInternalModuleOn] = useState(false);
   const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
   const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
@@ -21933,29 +21971,31 @@ function PoisoningPicker({ poisoningValues: externalPoisoningValues, setPoisonin
     });
   };
   return (
-    <div className="mt-4 pt-4 border-t-2 border-[#B34A3C]">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5 text-[#B34A3C]">
-          <Pill size={14} />
-          <span className="text-sm uppercase tracking-wide font-semibold">Poisoning</span>
+    <div className={hideHeader ? "" : "mt-4 pt-4 border-t-2 border-[#B34A3C]"}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[#B34A3C]">
+            <Pill size={14} />
+            <span className="text-sm uppercase tracking-wide font-semibold">Poisoning</span>
+          </div>
+          {externalOpen !== undefined ? (
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </span>
+          ) : (
+            <button
+              onClick={() => setModuleOn((v) => !v)}
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </button>
+          )}
         </div>
-        {externalOpen !== undefined ? (
-          <span
-            className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
-            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-          >
-            {moduleOn ? "On" : "Off"}
-          </span>
-        ) : (
-          <button
-            onClick={() => setModuleOn((v) => !v)}
-            className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
-            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-          >
-            {moduleOn ? "On" : "Off"}
-          </button>
-        )}
-      </div>
+      )}
       {moduleOn && (
         <div className="space-y-2">
           <p className="text-sm text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -22116,7 +22156,7 @@ function EnvGeneralApproachReference() {
   );
 }
 
-function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValues: externalSetEnvValues, open: externalOpen, setOpen: externalSetOpen }) {
+function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValues: externalSetEnvValues, open: externalOpen, setOpen: externalSetOpen, hideHeader }) {
   const [internalModuleOn, setInternalModuleOn] = useState(false);
   const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
   const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
@@ -22130,29 +22170,31 @@ function EnvironmentalInjuriesPicker({ envValues: externalEnvValues, setEnvValue
     });
   };
   return (
-    <div className="mt-4 pt-4 border-t-2 border-[#B34A3C]">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5 text-[#B34A3C]">
-          <Wind size={14} />
-          <span className="text-sm uppercase tracking-wide font-semibold">Environmental Injuries</span>
+    <div className={hideHeader ? "" : "mt-4 pt-4 border-t-2 border-[#B34A3C]"}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[#B34A3C]">
+            <Wind size={14} />
+            <span className="text-sm uppercase tracking-wide font-semibold">Environmental Injuries</span>
+          </div>
+          {externalOpen !== undefined ? (
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </span>
+          ) : (
+            <button
+              onClick={() => setModuleOn((v) => !v)}
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </button>
+          )}
         </div>
-        {externalOpen !== undefined ? (
-          <span
-            className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
-            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-          >
-            {moduleOn ? "On" : "Off"}
-          </span>
-        ) : (
-          <button
-            onClick={() => setModuleOn((v) => !v)}
-            className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
-            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-          >
-            {moduleOn ? "On" : "Off"}
-          </button>
-        )}
-      </div>
+      )}
       {moduleOn && (
         <div className="space-y-2">
           <p className="text-sm text-[#16241F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -22312,7 +22354,7 @@ function SSAdminOverview() {
   );
 }
 
-function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: externalSetSsValues, open: externalOpen, setOpen: externalSetOpen }) {
+function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: externalSetSsValues, open: externalOpen, setOpen: externalSetOpen, hideHeader }) {
   const [internalModuleOn, setInternalModuleOn] = useState(false);
   const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
   const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
@@ -22326,29 +22368,31 @@ function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: exte
     });
   };
   return (
-    <div className="mt-4 pt-4 border-t-2 border-[#B34A3C]">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5 text-[#B34A3C]">
-          <ShieldAlert size={14} />
-          <span className="text-sm uppercase tracking-wide font-semibold">Special Situations</span>
+    <div className={hideHeader ? "" : "mt-4 pt-4 border-t-2 border-[#B34A3C]"}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[#B34A3C]">
+            <ShieldAlert size={14} />
+            <span className="text-sm uppercase tracking-wide font-semibold">Special Situations</span>
+          </div>
+          {externalOpen !== undefined ? (
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </span>
+          ) : (
+            <button
+              onClick={() => setModuleOn((v) => !v)}
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </button>
+          )}
         </div>
-        {externalOpen !== undefined ? (
-          <span
-            className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
-            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-          >
-            {moduleOn ? "On" : "Off"}
-          </span>
-        ) : (
-          <button
-            onClick={() => setModuleOn((v) => !v)}
-            className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
-            style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
-          >
-            {moduleOn ? "On" : "Off"}
-          </button>
-        )}
-      </div>
+      )}
       {moduleOn && (
         <div className="space-y-2">
           <div className="flex items-start gap-1.5 bg-[#FFF7E8] border border-[#EAD8A8] rounded-sm px-2.5 py-2">
@@ -30016,7 +30060,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       />
                     </div>
                     <div style={{ display: tab === "records" ? "block" : "none" }}>
-                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} examNotes={draftExamNotes} setExamNotes={setDraftExamNotes} disasterValues={draftDisasterValues} setDisasterValues={setDraftDisasterValues} poisoningValues={draftPoisoningValues} setPoisoningValues={setDraftPoisoningValues} ssValues={draftSsValues} setSsValues={setDraftSsValues} envValues={draftEnvValues} setEnvValues={setDraftEnvValues} traumaOpen={draftTraumaOpen} setTraumaOpen={setDraftTraumaOpen} disasterOpen={draftDisasterOpen} setDisasterOpen={setDraftDisasterOpen} poisoningOpen={draftPoisoningOpen} setPoisoningOpen={setDraftPoisoningOpen} envOpen={draftEnvOpen} setEnvOpen={setDraftEnvOpen} ssOpen={draftSsOpen} setSsOpen={setDraftSsOpen} />
+                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} examNotes={draftExamNotes} setExamNotes={setDraftExamNotes} />
                     </div>
                     <div style={{ display: tab === "workup" ? "block" : "none" }}>
                       <DifferentialWorkupTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} ddxSpace={draftDdxSpace} setDdxSpace={setDraftDdxSpace} ddxSpaceNotes={draftDdxSpaceNotes} setDdxSpaceNotes={setDraftDdxSpaceNotes} workupSpace={draftWorkupSpace} setWorkupSpace={setDraftWorkupSpace} workupNotes={draftWorkupNotes} setWorkupNotes={setDraftWorkupNotes} />
@@ -30143,6 +30187,38 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
         />
       )}
       {openExamKey && <ExamPopup examKey={openExamKey} onClose={() => setOpenExamKey(null)} />}
+      {/* The Ribbon's Special Situations tab is now the sole way to open
+          these 5 pickers on a live ICU/Ward draft — each opens in its own
+          modal here rather than inline on the Records page (see RecordsTab's
+          !isDraft-only inline rendering above, kept for locked past
+          encounters that have no ribbon). Mounted once at this level, same
+          as ExamPopup/CalculatorModal above, so they work from any page of
+          the wizard, not just the Records page. */}
+      {draftTraumaOpen && (
+        <SpecialSituationModal title="Trauma" icon={ShieldAlert} accentColor="#B34A3C" onClose={() => setDraftTraumaOpen(false)}>
+          <TraumaPicker open={true} setOpen={setDraftTraumaOpen} hideHeader />
+        </SpecialSituationModal>
+      )}
+      {draftDisasterOpen && (
+        <SpecialSituationModal title="Disaster Management" icon={AlertTriangle} accentColor="#B34A3C" onClose={() => setDraftDisasterOpen(false)}>
+          <DisasterManagementPicker disasterValues={draftDisasterValues} setDisasterValues={setDraftDisasterValues} open={true} setOpen={setDraftDisasterOpen} hideHeader />
+        </SpecialSituationModal>
+      )}
+      {draftPoisoningOpen && (
+        <SpecialSituationModal title="Poisoning" icon={Pill} accentColor="#B34A3C" onClose={() => setDraftPoisoningOpen(false)}>
+          <PoisoningPicker poisoningValues={draftPoisoningValues} setPoisoningValues={setDraftPoisoningValues} open={true} setOpen={setDraftPoisoningOpen} hideHeader />
+        </SpecialSituationModal>
+      )}
+      {draftEnvOpen && (
+        <SpecialSituationModal title="Environmental Injuries" icon={Wind} accentColor="#B34A3C" onClose={() => setDraftEnvOpen(false)}>
+          <EnvironmentalInjuriesPicker envValues={draftEnvValues} setEnvValues={setDraftEnvValues} open={true} setOpen={setDraftEnvOpen} hideHeader />
+        </SpecialSituationModal>
+      )}
+      {draftSsOpen && (
+        <SpecialSituationModal title="Special Situations" icon={ShieldAlert} accentColor="#B34A3C" onClose={() => setDraftSsOpen(false)}>
+          <SpecialSituationsPicker ssValues={draftSsValues} setSsValues={setDraftSsValues} open={true} setOpen={setDraftSsOpen} hideHeader />
+        </SpecialSituationModal>
+      )}
       {globalSyncMessage && (
         <div
           className="fixed bottom-4 right-4 max-w-xs px-3 py-2 rounded-sm shadow-xl text-sm bg-white border"
