@@ -20939,26 +20939,35 @@ function ExamPopup({ examKey, onClose }) {
 // Plain free-text home for whatever the doctor copies out of ExamPopup
 // (Ribbon → Insert → Examination Templates) and pastes in — replaces the
 // old structured examSpace/signs model with a single string per note,
-// matching the copy-paste workflow ExamPopup is built around.
+// matching the copy-paste workflow ExamPopup is built around. No header,
+// instructional text, or bordered box — just a bare editable space (click
+// it, get a blinking caret) so it doesn't compete visually with the rest of
+// the Records page.
 function ExaminationNoteCard({ examNotes: externalExamNotes, setExamNotes: externalSetExamNotes } = {}) {
   const [internalExamNotes, setInternalExamNotes] = useState("");
   const examNotes = externalExamNotes !== undefined ? externalExamNotes : internalExamNotes;
   const setExamNotes = externalSetExamNotes !== undefined ? externalSetExamNotes : setInternalExamNotes;
+  const ref = useRef(null);
+  const { handleContextMenu, portal } = useDiagnosticLookup();
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = "auto";
+      ref.current.style.height = ref.current.scrollHeight + "px";
+    }
+  }, [examNotes]);
 
   return (
-    <div className="mt-4 pt-4 border-t-2 border-[#0F5C56]">
-      <div className="flex items-center gap-1.5 mb-2 text-[#0F5C56]">
-        <Stethoscope size={14} />
-        <span className="text-sm uppercase tracking-wide font-semibold">Examination</span>
-      </div>
-      <p className="text-sm text-[#16241F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        Use Insert → Examination Templates on the ribbon above to open a body system's reference checklist, then paste what you copy from it here.
-      </p>
-      <AutoExpandingTextarea
+    <div className="mt-4">
+      <textarea
+        ref={ref}
         value={examNotes}
         onChange={(e) => setExamNotes(e.target.value)}
-        placeholder="Paste examination findings here…"
+        onContextMenu={handleContextMenu}
+        rows={1}
+        className="w-full text-sm bg-transparent resize-none overflow-hidden border-none outline-none focus:outline-none"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif", lineHeight: 1.5, minHeight: "1.5em" }}
       />
+      {portal}
     </div>
   );
 }
