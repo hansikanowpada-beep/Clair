@@ -13,7 +13,6 @@ import {
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
   LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass, Calculator, Check, RotateCcw,
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { WORKFLOWS, WORKFLOWS_BY_ID } from "./data/surgicalWorkflows.js";
 import { MEDICAL_WORKFLOWS, MEDICAL_WORKFLOWS_BY_ID } from "./data/medicalWorkflows.js";
 import Ribbon, { NoteTypeToolbar, DEFAULT_TABS as RIBBON_DEFAULT_TABS } from "./Ribbon.jsx";
@@ -18830,10 +18829,9 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
   const updateVital = (field, value) => setVitals((prev) => ({ ...prev, [field]: value }));
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <div className="md:col-span-2 space-y-5">
-        <div className="bg-white border border-[#D8DED9] rounded-md p-5">
-          <SectionLabel>Patient details</SectionLabel>
+    <div className="max-w-2xl">
+      <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+        <SectionLabel>Patient details</SectionLabel>
           <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             <div className="col-span-2">
               <div className="text-[#16241F] text-sm mb-1">Name</div>
@@ -18893,36 +18891,13 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
               </span>
             </div>
           )}
-        </div>
 
-        <div className="bg-white border border-[#D8DED9] rounded-md p-5">
-          <SectionLabel>Vitals trend</SectionLabel>
-          <div style={{ width: "100%", height: 160 }}>
-            <ResponsiveContainer>
-              <LineChart data={patient.history} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#8A958E" }} axisLine={{ stroke: "#D8DED9" }} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#8A958E" }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ fontSize: 12, fontFamily: "'IBM Plex Sans', sans-serif" }} />
-                {patient.history[0].sys !== null && (
-                  <>
-                    <Line type="monotone" dataKey="sys" stroke="#0F5C56" strokeWidth={2} dot={{ r: 3 }} name="Systolic" />
-                    <Line type="monotone" dataKey="dia" stroke="#E8A33D" strokeWidth={2} dot={{ r: 3 }} name="Diastolic" />
-                  </>
-                )}
-                {patient.history[0].wt !== undefined && (
-                  <Line type="monotone" dataKey="wt" stroke="#0F5C56" strokeWidth={2} dot={{ r: 3 }} name="Weight (kg)" />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="mt-5 pt-5 border-t border-[#EEF1EE]">
+            <SectionLabel>Current vitals</SectionLabel>
+            <VitalsPanel isDraft={isDraft} patientVitals={patient.vitals} vitals={vitals} updateVital={updateVital} idPrefix="draft" />
           </div>
         </div>
       </div>
-
-      <div className="bg-white border border-[#D8DED9] rounded-md p-5 h-fit">
-        <SectionLabel>Current vitals</SectionLabel>
-        <VitalsPanel isDraft={isDraft} patientVitals={patient.vitals} vitals={vitals} updateVital={updateVital} idPrefix="draft" />
-      </div>
-    </div>
   );
 }
 
@@ -29634,7 +29609,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   }
 
   const tabs = [
-    { key: "overview", label: "Overview", icon: Users },
+    { key: "overview", label: "Vitals", icon: Users },
     { key: "records", label: "Complaints", icon: FileText },
     { key: "workup", label: "Differential Diagnosis & Workup", icon: ListChecks },
     { key: "diagnosisplan", label: "Provisional Diagnosis & Treatment Plan", icon: ClipboardList },
