@@ -20661,6 +20661,7 @@ function EncounterWorkupCard({
   ddxSpace: externalDdxSpace, setDdxSpace: externalSetDdxSpace,
   ddxSpaceNotes, setDdxSpaceNotes, workupSpace, setWorkupSpace, workupNotes, setWorkupNotes,
 }) {
+  const isDraft = patient.id === "DRAFT";
   const [internalDdxSpace, setInternalDdxSpace] = useState([]); // [{ condition }]
   const ddxSpace = externalDdxSpace !== undefined ? externalDdxSpace : internalDdxSpace;
   const setDdxSpace = externalSetDdxSpace !== undefined ? externalSetDdxSpace : setInternalDdxSpace;
@@ -20679,7 +20680,14 @@ function EncounterWorkupCard({
         <h4 className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "#16241F" }}>{e.diagnosis}</h4>
       </div>
 
-      <DifferentialDiagnosisPicker ddxSpace={ddxSpace} pushDiagnosis={pushDiagnosis} removeDiagnosis={removeDiagnosis} ddxSpaceNotes={ddxSpaceNotes} setDdxSpaceNotes={setDdxSpaceNotes} />
+      {/* On a live draft, the Ribbon's Library → Differential Diagnosis
+          button is the sole way to open this now (see the modal mounted
+          near ExamPopup) — no inline button here anymore. Viewing a locked
+          past encounter has no ribbon, so it keeps this inline exactly as
+          before, self-controlled with its own toggle. */}
+      {!isDraft && (
+        <DifferentialDiagnosisPicker ddxSpace={ddxSpace} pushDiagnosis={pushDiagnosis} removeDiagnosis={removeDiagnosis} ddxSpaceNotes={ddxSpaceNotes} setDdxSpaceNotes={setDdxSpaceNotes} />
+      )}
       <WorkupPicker ddxSpace={ddxSpace} patient={patient} workupSpace={workupSpace} setWorkupSpace={setWorkupSpace} workupNotes={workupNotes} setWorkupNotes={setWorkupNotes} />
 
       {meta && (
@@ -20977,8 +20985,11 @@ function ExaminationNoteCard({ examNotes: externalExamNotes, setExamNotes: exter
   );
 }
 
-function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis, ddxSpaceNotes: externalDdxSpaceNotes, setDdxSpaceNotes: externalSetDdxSpaceNotes }) {
-  const [collapsibleOpen, setCollapsibleOpen] = useState(false);
+function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis, ddxSpaceNotes: externalDdxSpaceNotes, setDdxSpaceNotes: externalSetDdxSpaceNotes, open: externalOpen, setOpen: externalSetOpen, hideHeader }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isExternallyControlled = externalOpen !== undefined;
+  const collapsibleOpen = isExternallyControlled ? externalOpen : internalOpen;
+  const setCollapsibleOpen = isExternallyControlled ? externalSetOpen : setInternalOpen;
   const [complaintKey, setComplaintKey] = useState(null);
   const [complaintQuery, setComplaintQuery] = useState("");
   const [internalDdxSpaceNotes, setInternalDdxSpaceNotes] = useState("");
@@ -20989,16 +21000,25 @@ function DifferentialDiagnosisPicker({ ddxSpace, pushDiagnosis, removeDiagnosis,
   const filteredComplaints = Object.entries(DIFFERENTIAL_TEMPLATES).filter(([, t]) => t.name.toLowerCase().includes(q));
 
   return (
-    <div className="mt-4 pt-4 border-t-2 border-[#B3773C]">
-      <button
-        type="button"
-        onClick={() => setCollapsibleOpen((v) => !v)}
-        className="flex items-center gap-1.5 mb-2 text-[#B3773C]"
-      >
-        {collapsibleOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <ListChecks size={14} />
-        <span className="text-sm uppercase tracking-wide font-semibold">Differential diagnosis</span>
-      </button>
+    <div className={hideHeader ? "" : "mt-4 pt-4 border-t-2 border-[#B3773C]"}>
+      {/* On a live draft, the Ribbon's Library → Differential Diagnosis
+          button opens this in its own modal (see the mount block near
+          ExamPopup, hideHeader true) — the modal supplies the title, so
+          this inline label/button is skipped entirely. Viewing a locked
+          past encounter has no ribbon equivalent, so it keeps its own
+          clickable toggle here — otherwise historical differentials would
+          become unreachable. */}
+      {hideHeader ? null : (
+        <button
+          type="button"
+          onClick={() => setCollapsibleOpen((v) => !v)}
+          className="flex items-center gap-1.5 mb-2 text-[#B3773C]"
+        >
+          {collapsibleOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <ListChecks size={14} />
+          <span className="text-sm uppercase tracking-wide font-semibold">Differential diagnosis</span>
+        </button>
+      )}
 
       {collapsibleOpen && (
         <div className="flex gap-4 items-start">
@@ -29566,6 +29586,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [draftSexualAssaultOpen, setDraftSexualAssaultOpen] = useState(false);
   const [draftIpvOpen, setDraftIpvOpen] = useState(false);
   const [draftElderAbuseOpen, setDraftElderAbuseOpen] = useState(false);
+  const [draftDdxOpen, setDraftDdxOpen] = useState(false);
   const [draftDdxSpace, setDraftDdxSpace] = useState([]);
   const [draftDdxSpaceNotes, setDraftDdxSpaceNotes] = useState("");
   const [draftWorkupSpace, setDraftWorkupSpace] = useState([]);
@@ -29641,6 +29662,15 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
     ...(isComplexPatient ? [{ key: "advanced", label: "Advanced care", icon: Globe2 }] : []),
     { key: "assistance", label: "Cost & assistance", icon: HandHeart },
   ];
+
+  // For the Ribbon-opened Differential Diagnosis modal — mirrors
+  // EncounterWorkupCard's own pushDiagnosis/removeDiagnosis, just operating
+  // on draftDdxSpace directly since this modal is mounted once at the top
+  // level rather than per-encounter.
+  const pushDraftDiagnosis = (condition) => {
+    setDraftDdxSpace((prev) => (prev.some((d) => d.condition === condition) ? prev : [...prev, { condition }]));
+  };
+  const removeDraftDiagnosis = (condition) => setDraftDdxSpace((prev) => prev.filter((d) => d.condition !== condition));
 
   const checkOverviewBlanks = () => {
     for (const f of OVERVIEW_REQUIRED_FIELDS) {
@@ -30062,6 +30092,12 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       }[key];
                       opener?.((prev) => !prev);
                     }
+                  } else if (command.id === "ddx-open") {
+                    // Same reasoning as the situ- pickers above: Differential
+                    // Diagnosis only has somewhere real to write on an
+                    // ICU/Ward draft (draftDdxSpace, read by Workup's
+                    // relevance ordering) — a no-op on OPD.
+                    if (newEntryMode === "icuward") setDraftDdxOpen((prev) => !prev);
                   } else if (command.id?.startsWith("calc-")) {
                     setOpenCalcId(command.id.slice(5));
                   }
@@ -30303,6 +30339,26 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
       {draftElderAbuseOpen && (
         <SpecialSituationModal title="Abuse of the Elderly or Impaired Adult" icon={UserCheck} accentColor="#B34A3C" onClose={() => setDraftElderAbuseOpen(false)}>
           <ElderAbusePicker ssValues={draftSsValues} setSsValues={setDraftSsValues} open={true} setOpen={setDraftElderAbuseOpen} hideHeader />
+        </SpecialSituationModal>
+      )}
+      {/* Differential Diagnosis used to be an inline button under the
+          Workup page's own header — removed from there and reached solely
+          from the Ribbon's Library → Differential Diagnosis button now,
+          same modal-shell pattern as the pickers above. Still writes into
+          draftDdxSpace, so Workup's own relevance ordering (which reads
+          that same state) keeps working unchanged. */}
+      {draftDdxOpen && (
+        <SpecialSituationModal title="Differential Diagnosis" icon={ListChecks} accentColor="#B3773C" onClose={() => setDraftDdxOpen(false)}>
+          <DifferentialDiagnosisPicker
+            ddxSpace={draftDdxSpace}
+            pushDiagnosis={pushDraftDiagnosis}
+            removeDiagnosis={removeDraftDiagnosis}
+            ddxSpaceNotes={draftDdxSpaceNotes}
+            setDdxSpaceNotes={setDraftDdxSpaceNotes}
+            open={true}
+            setOpen={setDraftDdxOpen}
+            hideHeader
+          />
         </SpecialSituationModal>
       )}
       {globalSyncMessage && (

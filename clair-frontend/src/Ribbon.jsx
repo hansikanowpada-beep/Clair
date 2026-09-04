@@ -26,7 +26,7 @@ import {
   HelpCircle, Sparkles, Tag, ChevronRight, RemoveFormatting,
   Stethoscope, BookOpen, Activity, Pill,
   Hammer, Tent, BarChart3, BedDouble, Package, CreditCard,
-  Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss,
+  Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss, ListChecks,
   UserPlus, ShieldAlert, AlertTriangle, Wind, Bone, ShieldOff, HandHeart, UserCheck,
   Mail, Wrench, CircleHelp, Bug, MessagesSquare, LifeBuoy, Compass,
   Calculator, Scale, Ruler, Droplet,
@@ -509,6 +509,18 @@ const TAB_DEFINITIONS = [
           icon: sec.icon,
           tooltip: { title: sec.label, description: `Open the ${sec.label} library.` },
         })),
+      },
+      {
+        id: "clinical-tools",
+        label: "Clinical Tools",
+        // Unlike the read-only Reference group above, this opens the real
+        // Differential Diagnosis picker (DifferentialDiagnosisPicker in
+        // ClairMDEHR.jsx) — same live differential-diagnosis space Workup's
+        // relevance ordering reads from, just reached from Library now
+        // instead of an inline button on the Workup page itself.
+        commands: [
+          { id: "ddx-open", label: "Differential Diagnosis", icon: ListChecks, tooltip: { title: "Differential Diagnosis", description: "Search a presenting complaint and add conditions to consider to this note's differential diagnosis space." } },
+        ],
       },
     ],
   },
