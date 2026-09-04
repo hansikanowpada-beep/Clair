@@ -19023,7 +19023,7 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
             )}
 
             <ExaminationNoteCard examNotes={isDraft ? externalExamNotes : undefined} setExamNotes={isDraft ? externalSetExamNotes : undefined} />
-            {/* On a live draft, these 5 pickers no longer render here at all —
+            {/* On a live draft, these 8 pickers no longer render here at all —
                 the Ribbon's Special Situations tab is now the sole way to open
                 them, each in its own modal (see the SpecialSituationModal
                 block mounted near ExamPopup). Viewing a locked past encounter
@@ -19035,7 +19035,10 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
                 <DisasterManagementPicker />
                 <PoisoningPicker />
                 <EnvironmentalInjuriesPicker />
-                <SpecialSituationsPicker />
+                <OrthopaedicInjuriesPicker />
+                <SexualAssaultPicker />
+                <IntimatePartnerViolencePicker />
+                <ElderAbusePicker />
               </>
             )}
           </div>
@@ -21505,27 +21508,45 @@ function OrthoTopicCard({ topic }) {
   );
 }
 
-function OrthopaedicInjuriesToggle() {
-  const [on, setOn] = useState(false);
-
+// Orthopaedic Injuries used to live as an on/off toggle nested at the end of
+// TraumaPicker's topic list — folded into Trauma's own header, with no
+// ribbon entry of its own. It's now a standalone module with the same
+// externally-controlled/self-controlled split as the other 5 pickers, opened
+// from its own "Orthopaedic Injuries" ribbon button (see SpecialSituationModal
+// mount block below) rather than nested inside Trauma.
+function OrthopaedicInjuriesPicker({ open: externalOpen, setOpen: externalSetOpen, hideHeader } = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isExternallyControlled = externalOpen !== undefined;
+  const moduleOn = isExternallyControlled ? externalOpen : internalOpen;
+  const setModuleOn = isExternallyControlled ? externalSetOpen : setInternalOpen;
   return (
-    <div className="border border-[#D8DED9] rounded-md bg-white overflow-hidden">
-      <div className="w-full flex items-center justify-between gap-2 px-3 py-2.5">
-        <span className="flex items-center gap-1.5 text-sm font-semibold text-[#3C4A42]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          <Bone size={14} className="text-[#B34A3C]" />
-          Orthopaedic Injuries
-        </span>
-        <button
-          onClick={() => setOn((v) => !v)}
-          className={`text-xs px-2 py-1 rounded-full font-medium ${on ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
-          style={on ? { backgroundColor: "#B34A3C" } : {}}
-        >
-          {on ? "On" : "Off"}
-        </button>
-      </div>
-
-      {on && (
-        <div className="px-3 pb-3 space-y-2 border-t border-[#EEF1EE] pt-3">
+    <div className={hideHeader ? "" : "mt-4 pt-4 border-t-2 border-[#B34A3C]"}>
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-[#B34A3C]">
+            <Bone size={14} />
+            <span className="text-sm uppercase tracking-wide font-semibold">Orthopaedic Injuries</span>
+          </div>
+          {isExternallyControlled ? (
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </span>
+          ) : (
+            <button
+              onClick={() => setModuleOn((v) => !v)}
+              className={`text-xs px-2 py-1 rounded-full font-medium ${moduleOn ? "text-white" : "border border-[#D8DED9] text-[#16241F]"}`}
+              style={moduleOn ? { backgroundColor: "#B34A3C" } : {}}
+            >
+              {moduleOn ? "On" : "Off"}
+            </button>
+          )}
+        </div>
+      )}
+      {moduleOn && (
+        <div className="space-y-2">
           <div className="flex items-start gap-1.5 bg-[#F7F9F7] border border-[#D8DED9] rounded-sm px-2.5 py-2">
             <ShieldCheck size={13} className="text-[#16241F] mt-0.5 shrink-0" />
             <span className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -21600,7 +21621,6 @@ function TraumaPicker({ open: externalOpen, setOpen: externalSetOpen, hideHeader
           </p>
           <div className="space-y-2">
             {TRAUMA_TOPICS.map((topic) => <TraumaTopicCard key={topic.id} topic={topic} />)}
-            <OrthopaedicInjuriesToggle />
           </div>
         </>
       )}
@@ -22354,12 +22374,21 @@ function SSAdminOverview() {
   );
 }
 
-function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: externalSetSsValues, open: externalOpen, setOpen: externalSetOpen, hideHeader }) {
+// The former "Special Situations" sub-item bundled all three of these
+// topics (Sexual Assault, Intimate Partner Violence and Abuse, Abuse of the
+// Elderly or Impaired Adult) behind one button — which reused the ribbon
+// tab's own name "Special Situations", a confusing naming collision. Each
+// topic is now its own module with its own ribbon button placed alongside
+// Environmental Injuries/Orthopaedic Injuries, sharing this base component
+// so the disclaimer, the Administrative & Referral Overview reference, and
+// the topic-card content/state logic aren't duplicated three times.
+function SSSingleTopicPicker({ topicId, icon: Icon, open: externalOpen, setOpen: externalSetOpen, hideHeader, ssValues: externalSsValues, setSsValues: externalSetSsValues }) {
+  const topic = SS_TOPICS.find((t) => t.id === topicId);
   const [internalModuleOn, setInternalModuleOn] = useState(false);
   const moduleOn = externalOpen !== undefined ? externalOpen : internalModuleOn;
   const setModuleOn = externalSetOpen !== undefined ? externalSetOpen : setInternalModuleOn;
   const isExternallyControlled = externalSsValues !== undefined;
-  const setTopicValues = (topicId, updater) => {
+  const setTopicValues = (updater) => {
     if (!isExternallyControlled) return;
     externalSetSsValues((prev) => {
       const prevTopicValues = (prev && prev[topicId]) || {};
@@ -22372,8 +22401,8 @@ function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: exte
       {!hideHeader && (
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5 text-[#B34A3C]">
-            <ShieldAlert size={14} />
-            <span className="text-sm uppercase tracking-wide font-semibold">Special Situations</span>
+            <Icon size={14} />
+            <span className="text-sm uppercase tracking-wide font-semibold">{topic.title}</span>
           </div>
           {externalOpen !== undefined ? (
             <span
@@ -22398,30 +22427,39 @@ function SpecialSituationsPicker({ ssValues: externalSsValues, setSsValues: exte
           <div className="flex items-start gap-1.5 bg-[#FFF7E8] border border-[#EAD8A8] rounded-sm px-2.5 py-2">
             <AlertTriangle size={13} className="text-[#6B5A2A] mt-0.5 shrink-0" />
             <span className="text-xs text-[#6B5A2A]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-              These templates capture physician-entered, patient-reported information only. The app does not calculate a risk level, lethality score, or diagnosis, and does not decide reporting obligations — apply your own clinical and legal judgement, per this app's CDSCO Class A design.
+              This template captures physician-entered, patient-reported information only. The app does not calculate a risk level, lethality score, or diagnosis, and does not decide reporting obligations — apply your own clinical and legal judgement, per this app's CDSCO Class A design.
             </span>
           </div>
           <SSAdminOverview />
-          {SS_TOPICS.map((topic) => (
-            <SSTopicCard
-              key={topic.id}
-              topic={topic}
-              values={isExternallyControlled ? (externalSsValues[topic.id] || {}) : undefined}
-              setValues={isExternallyControlled ? (updater) => setTopicValues(topic.id, updater) : undefined}
-            />
-          ))}
+          <SSTopicCard
+            topic={topic}
+            values={isExternallyControlled ? (externalSsValues[topicId] || {}) : undefined}
+            setValues={isExternallyControlled ? setTopicValues : undefined}
+          />
           <div className="flex items-center gap-1.5 text-xs text-[#16241F] pt-1" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
             <UserCheck size={11} className="shrink-0" />
-            <span>All three templates above are original content written for this app; no text is reproduced from any copyrighted textbook.</span>
+            <span>This template is original content written for this app; no text is reproduced from any copyrighted textbook.</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
             <HandHeart size={11} className="shrink-0" />
-            <span>Open, free reference sources only — see the citation link under each topic card above.</span>
+            <span>Open, free reference source only — see the citation link above.</span>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function SexualAssaultPicker(props) {
+  return <SSSingleTopicPicker topicId="sexual-assault" icon={ShieldOff} {...props} />;
+}
+
+function IntimatePartnerViolencePicker(props) {
+  return <SSSingleTopicPicker topicId="ipv" icon={HandHeart} {...props} />;
+}
+
+function ElderAbusePicker(props) {
+  return <SSSingleTopicPicker topicId="elder-abuse" icon={UserCheck} {...props} />;
 }
 
 // --- Prescription contraindication/allergy/interaction matching — pure
@@ -27265,7 +27303,7 @@ const TUTORIAL_SECTIONS = [
   },
   {
     title: "4. Special Situations",
-    body: "Trauma, Disaster Management, Poisoning, Environmental Injuries, and Special Situations — five clinical-scenario checklists. These only apply to ICU/Ward Notes; clicking one opens (or closes) that section on the note's Records page.",
+    body: "Trauma, Disaster Management, Poisoning, Environmental Injuries, Orthopaedic Injuries, Sexual Assault, Intimate Partner Violence and Abuse, and Abuse of the Elderly or Impaired Adult — eight clinical-scenario checklists. These only apply to ICU/Ward Notes; clicking one opens that template in its own window.",
   },
   {
     title: "5. Administration",
@@ -29510,7 +29548,10 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [draftDisasterOpen, setDraftDisasterOpen] = useState(false);
   const [draftPoisoningOpen, setDraftPoisoningOpen] = useState(false);
   const [draftEnvOpen, setDraftEnvOpen] = useState(false);
-  const [draftSsOpen, setDraftSsOpen] = useState(false);
+  const [draftOrthoOpen, setDraftOrthoOpen] = useState(false);
+  const [draftSexualAssaultOpen, setDraftSexualAssaultOpen] = useState(false);
+  const [draftIpvOpen, setDraftIpvOpen] = useState(false);
+  const [draftElderAbuseOpen, setDraftElderAbuseOpen] = useState(false);
   const [draftDdxSpace, setDraftDdxSpace] = useState([]);
   const [draftDdxSpaceNotes, setDraftDdxSpaceNotes] = useState("");
   const [draftWorkupSpace, setDraftWorkupSpace] = useState([]);
@@ -29961,15 +30002,16 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                   // whichever note is open, so no OPD/ICU-Ward branching is
                   // needed here the way the rest of this handler needs.
                   // Special Situations (Trauma/Disaster Management/Poisoning/
-                  // Environmental Injuries/Special Situations) route into
-                  // ICU/Ward only, via the same open-toggle lifting pattern
-                  // (draftTraumaOpen etc. above) — OPD's OpdBuilderTab never
-                  // mounted these 5 pickers at all (only Examination), so
-                  // there's nothing to open there; clicking one while an
-                  // OPD note is open is a deliberate no-op, not a bug. Same
-                  // for Home/Review (Bold, Insert Table, etc.) — OpdBuilderTab
-                  // and the ICU/Ward wizard's other fields are structured
-                  // inputs, not a shared rich-text surface.
+                  // Environmental Injuries/Orthopaedic Injuries/Special
+                  // Situations) route into ICU/Ward only, via the same
+                  // open-toggle lifting pattern (draftTraumaOpen etc. above)
+                  // — OPD's OpdBuilderTab never mounted these 6 pickers at
+                  // all (only Examination), so there's nothing to open
+                  // there; clicking one while an OPD note is open is a
+                  // deliberate no-op, not a bug. Same for Home/Review (Bold,
+                  // Insert Table, etc.) — OpdBuilderTab and the ICU/Ward
+                  // wizard's other fields are structured inputs, not a
+                  // shared rich-text surface.
                   if (command.id?.startsWith("lib-")) {
                     setLibraryModalKey(command.id.slice(4));
                     setLibraryModalMinimized(false);
@@ -29978,11 +30020,13 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                   } else if (command.id?.startsWith("exam-")) {
                     setOpenExamKey(command.id.slice(5));
                   } else if (command.id?.startsWith("situ-")) {
-                    // Only ICU/Ward has these 5 pickers mounted at all —
+                    // Only ICU/Ward has these 8 pickers mounted at all —
                     // RecordsTab is where TraumaPicker/DisasterManagementPicker/
                     // PoisoningPicker/EnvironmentalInjuriesPicker/
-                    // SpecialSituationsPicker live; OPD's OpdBuilderTab never
-                    // included them, so there's nothing to open there.
+                    // OrthopaedicInjuriesPicker/SexualAssaultPicker/
+                    // IntimatePartnerViolencePicker/ElderAbusePicker live;
+                    // OPD's OpdBuilderTab never included them, so there's
+                    // nothing to open there.
                     // Toggles (not just forces-open) each picker's own
                     // on/off state (see draftTraumaOpen etc. above) — the
                     // pickers themselves no longer have their own duplicate
@@ -29996,7 +30040,10 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                         disasterManagement: setDraftDisasterOpen,
                         poisoning: setDraftPoisoningOpen,
                         environmentalInjuries: setDraftEnvOpen,
-                        specialSituations: setDraftSsOpen,
+                        orthopaedicInjuries: setDraftOrthoOpen,
+                        sexualAssault: setDraftSexualAssaultOpen,
+                        ipv: setDraftIpvOpen,
+                        elderAbuse: setDraftElderAbuseOpen,
                       }[key];
                       opener?.((prev) => !prev);
                     }
@@ -30188,12 +30235,17 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
       )}
       {openExamKey && <ExamPopup examKey={openExamKey} onClose={() => setOpenExamKey(null)} />}
       {/* The Ribbon's Special Situations tab is now the sole way to open
-          these 5 pickers on a live ICU/Ward draft — each opens in its own
+          these 8 pickers on a live ICU/Ward draft — each opens in its own
           modal here rather than inline on the Records page (see RecordsTab's
           !isDraft-only inline rendering above, kept for locked past
           encounters that have no ribbon). Mounted once at this level, same
           as ExamPopup/CalculatorModal above, so they work from any page of
-          the wizard, not just the Records page. */}
+          the wizard, not just the Records page. Sexual Assault, Intimate
+          Partner Violence and Abuse, and Abuse of the Elderly or Impaired
+          Adult used to be bundled behind one "Special Situations" button —
+          the same name as the ribbon tab itself, a confusing duplicate — so
+          each is now its own button/modal, same as Orthopaedic Injuries was
+          pulled out of Trauma's list below. */}
       {draftTraumaOpen && (
         <SpecialSituationModal title="Trauma" icon={ShieldAlert} accentColor="#B34A3C" onClose={() => setDraftTraumaOpen(false)}>
           <TraumaPicker open={true} setOpen={setDraftTraumaOpen} hideHeader />
@@ -30214,9 +30266,24 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           <EnvironmentalInjuriesPicker envValues={draftEnvValues} setEnvValues={setDraftEnvValues} open={true} setOpen={setDraftEnvOpen} hideHeader />
         </SpecialSituationModal>
       )}
-      {draftSsOpen && (
-        <SpecialSituationModal title="Special Situations" icon={ShieldAlert} accentColor="#B34A3C" onClose={() => setDraftSsOpen(false)}>
-          <SpecialSituationsPicker ssValues={draftSsValues} setSsValues={setDraftSsValues} open={true} setOpen={setDraftSsOpen} hideHeader />
+      {draftOrthoOpen && (
+        <SpecialSituationModal title="Orthopaedic Injuries" icon={Bone} accentColor="#B34A3C" onClose={() => setDraftOrthoOpen(false)}>
+          <OrthopaedicInjuriesPicker open={true} setOpen={setDraftOrthoOpen} hideHeader />
+        </SpecialSituationModal>
+      )}
+      {draftSexualAssaultOpen && (
+        <SpecialSituationModal title="Sexual Assault (Adult / Adolescent)" icon={ShieldOff} accentColor="#B34A3C" onClose={() => setDraftSexualAssaultOpen(false)}>
+          <SexualAssaultPicker ssValues={draftSsValues} setSsValues={setDraftSsValues} open={true} setOpen={setDraftSexualAssaultOpen} hideHeader />
+        </SpecialSituationModal>
+      )}
+      {draftIpvOpen && (
+        <SpecialSituationModal title="Intimate Partner Violence and Abuse" icon={HandHeart} accentColor="#B34A3C" onClose={() => setDraftIpvOpen(false)}>
+          <IntimatePartnerViolencePicker ssValues={draftSsValues} setSsValues={setDraftSsValues} open={true} setOpen={setDraftIpvOpen} hideHeader />
+        </SpecialSituationModal>
+      )}
+      {draftElderAbuseOpen && (
+        <SpecialSituationModal title="Abuse of the Elderly or Impaired Adult" icon={UserCheck} accentColor="#B34A3C" onClose={() => setDraftElderAbuseOpen(false)}>
+          <ElderAbusePicker ssValues={draftSsValues} setSsValues={setDraftSsValues} open={true} setOpen={setDraftElderAbuseOpen} hideHeader />
         </SpecialSituationModal>
       )}
       {globalSyncMessage && (
