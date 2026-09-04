@@ -27317,7 +27317,7 @@ function MailingsPanel({ onBack }) {
 const TUTORIAL_SECTIONS = [
   {
     title: "1. Starting a note",
-    body: "From the sidebar's Patients button, pick a patient (or start a new one). Then choose OPD Notes for a quick single-page outpatient note, or ICU/Ward Notes for the full four-page inpatient workflow (Overview, Records, Differential Diagnosis & Workup, Provisional Diagnosis & Treatment Plan).",
+    body: "From the sidebar's Patients button, pick a patient (or start a new one). Then choose OPD Notes for a quick single-page outpatient note, or ICU/Ward Notes for the full four-page inpatient workflow (Overview, Records, Work Up, Provisional Diagnosis & Treatment Plan).",
   },
   {
     title: "2. The ribbon toolbar",
@@ -27422,7 +27422,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "What's the difference between OPD Notes and ICU/Ward Notes?",
-    a: "OPD Notes are a quick, single-page note for outpatient visits. ICU/Ward Notes are a fuller multi-page workflow (Overview, Records, Differential Diagnosis & Workup, Provisional Diagnosis & Treatment Plan) for inpatient care.",
+    a: "OPD Notes are a quick, single-page note for outpatient visits. ICU/Ward Notes are a fuller multi-page workflow (Overview, Records, Work Up, Provisional Diagnosis & Treatment Plan) for inpatient care.",
   },
   {
     q: "Can I use ClairMD without an internet connection?",
@@ -29646,7 +29646,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
     { key: "overview", label: "Vitals", icon: Users },
     { key: "records", label: "Complaints", icon: FileText },
     { key: "examination", label: "Examination", icon: Stethoscope },
-    { key: "workup", label: "Differential Diagnosis & Workup", icon: ListChecks },
+    { key: "workup", label: "Work Up", icon: ListChecks },
     { key: "diagnosisplan", label: "Provisional Diagnosis & Treatment Plan", icon: ClipboardList },
     { key: "careteam", label: "Care team", icon: Users2 },
     { key: "consent", label: "Consent", icon: FileSignature },
