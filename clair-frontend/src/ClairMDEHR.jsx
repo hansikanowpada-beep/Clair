@@ -30158,18 +30158,6 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       </button>
                     </div>
                   )}
-                  {tab === "records" && (
-                    <div className="flex justify-end mt-5">
-                      <button
-                        type="button"
-                        onClick={() => setTab("workup")}
-                        className="text-sm px-5 py-2.5 rounded-sm text-white font-medium"
-                        style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}
-                      >
-                        Next: Differential Diagnosis & Workup →
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
             </>
