@@ -18988,15 +18988,18 @@ function AutoExpandingTextarea({ value, onChange, placeholder }) {
 // History of Present Illness and Examination). minHeight is a floor so an
 // empty textarea (scrollHeight not yet reflecting any content) still renders
 // visibly and is clickable, rather than collapsing to 0 height.
-function BareEditableTextarea({ value, onChange }) {
+// Default mode auto-grows line-by-line with content (Examination). Passing
+// `scrollable` instead fixes the box at `rows` lines (HPI defaults to 25 —
+// a standard printed page) and lets the browser's native vertical scrollbar
+// handle anything beyond that, rather than the box growing forever.
+function BareEditableTextarea({ value, onChange, rows = 1, scrollable = false }) {
   const ref = useRef(null);
   const { handleContextMenu, portal } = useDiagnosticLookup();
   useEffect(() => {
-    if (ref.current) {
-      ref.current.style.height = "auto";
-      ref.current.style.height = ref.current.scrollHeight + "px";
-    }
-  }, [value]);
+    if (scrollable || !ref.current) return;
+    ref.current.style.height = "auto";
+    ref.current.style.height = ref.current.scrollHeight + "px";
+  }, [value, scrollable]);
 
   return (
     <>
@@ -19005,8 +19008,8 @@ function BareEditableTextarea({ value, onChange }) {
         value={value}
         onChange={onChange}
         onContextMenu={handleContextMenu}
-        rows={1}
-        className="w-full text-sm bg-transparent resize-none overflow-hidden border-none outline-none focus:outline-none"
+        rows={rows}
+        className={`w-full text-sm bg-transparent resize-none border-none outline-none focus:outline-none ${scrollable ? "overflow-y-auto" : "overflow-hidden"}`}
         style={{ fontFamily: "'IBM Plex Sans', sans-serif", lineHeight: 1.5, minHeight: "1.5em" }}
       />
       {portal}
@@ -19047,7 +19050,7 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
             </p>
             {isDraft ? (
               <div className="mb-4">
-                <BareEditableTextarea value={draftHpi} onChange={(ev) => setDraftHpi(ev.target.value)} />
+                <BareEditableTextarea value={draftHpi} onChange={(ev) => setDraftHpi(ev.target.value)} rows={25} scrollable />
               </div>
             ) : (
               <p className="text-sm mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{e.notes}</p>
