@@ -106,7 +106,7 @@ function DoctorAuth({ onEnter }) {
     <form onSubmit={submit} className="space-y-3">
       {mode === "signup" && (
         <div>
-          <label className="text-xs text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>This account is for</label>
+          <label className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>This account is for</label>
           <select
             value={doctorType}
             onChange={(e) => setDoctorType(e.target.value)}
@@ -147,7 +147,7 @@ function DoctorAuth({ onEnter }) {
         {busy ? <Loader2 size={15} className="animate-spin" /> : <ArrowRight size={15} />}
         {busy ? "Connecting…" : mode === "login" ? "Log in" : "Create account"}
       </button>
-      {error && <p className="text-xs" style={{ color: "#B34A3C" }}>{error}</p>}
+      {error && <p className="text-sm" style={{ color: "#B34A3C" }}>{error}</p>}
     </form>
   );
 }
@@ -274,7 +274,7 @@ function FooterPageShell({ onBack, children, maxWidth = "max-w-md" }) {
   return (
     <div className="min-h-screen flex flex-col items-center px-6 py-16" style={{ background: PAPER, fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className={`w-full ${maxWidth}`}>
-        <button type="button" onClick={onBack} className="text-xs text-[#16241F] mb-8 hover:text-[#16241F]">← Back to ClairMD</button>
+        <button type="button" onClick={onBack} className="text-sm text-[#16241F] mb-8 hover:text-[#16241F]">← Back to ClairMD</button>
         <div className="flex flex-col items-center text-center mb-8">
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg font-bold mb-3" style={{ background: TEAL, fontFamily: "'Fraunces', serif" }}>C</div>
           <h1 className="text-3xl mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: INK }}>ClairMD</h1>
@@ -442,7 +442,7 @@ function DonatePage({ onBack }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <DonateColumn borderColor={HAIRLINE}>
           <h3 className="text-sm font-medium mb-1" style={{ color: INK }}>Domestic donations (India) — preview</h3>
-          <p className="text-xs text-[#16241F] mb-3">A walkthrough of what the real flow will look like once it's live. Nothing on this screen is a real transaction.</p>
+          <p className="text-sm text-[#16241F] mb-3">A walkthrough of what the real flow will look like once it's live. Nothing on this screen is a real transaction.</p>
           <MockDonateCheckout />
         </DonateColumn>
 
@@ -451,7 +451,7 @@ function DonatePage({ onBack }) {
             <AlertTriangle size={15} style={{ color: "#B34A3C" }} />
             <h3 className="text-sm font-medium" style={{ color: INK }}>International donations</h3>
           </div>
-          <p className="text-xs text-[#16241F]">
+          <p className="text-sm text-[#16241F]">
             Not available, even as a preview. Indian law (the Foreign Contribution Regulation Act, FCRA) requires an Indian entity to hold separate FCRA registration before it can legally accept donations from outside India — an approval that typically can't even be applied for until well after Section 8 registration and a track record of activity. We're not building a foreign-donation flow, mocked or otherwise, until that's genuinely in place.
           </p>
         </DonateColumn>
@@ -533,7 +533,7 @@ export default function LandingPage({ onEnter }) {
 
           {selectedRole && (
             <div className="bg-white border rounded-md p-5 max-w-md mx-auto" style={{ borderColor: HAIRLINE }}>
-              <p className="text-xs text-[#16241F] mb-4">{ROLES.find((r) => r.key === selectedRole).blurb}</p>
+              <p className="text-sm text-[#16241F] mb-4">{ROLES.find((r) => r.key === selectedRole).blurb}</p>
               {selectedRole === "doctor" && <DoctorAuth onEnter={onEnter} />}
               {(selectedRole === "hospitalStaff" || selectedRole === "patient") && <HandoffContinue role={selectedRole} onEnter={onEnter} />}
               {selectedRole === "medicalStudent" && <MedicalStudentForm />}
@@ -545,7 +545,7 @@ export default function LandingPage({ onEnter }) {
       </main>
 
       <footer className="border-t px-6 py-6" style={{ borderColor: HAIRLINE }}>
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#16241F]">
+        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-[#16241F]">
           <div className="flex items-center gap-1.5">
             <ShieldCheck size={13} /> © 2026 ClairMD (Ayodhya). All rights reserved.
           </div>

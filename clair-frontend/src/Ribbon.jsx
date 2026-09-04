@@ -52,7 +52,7 @@ function CommandTooltip({ command, anchorRef, visible }) {
       className="absolute z-50 top-full left-0 mt-1.5 w-56 rounded-md border shadow-lg p-2.5 pointer-events-none"
       style={{ background: "#FFFFFF", borderColor: HAIRLINE }}
     >
-      <div className="text-xs font-semibold" style={{ color: INK, fontFamily: "IBM Plex Sans, sans-serif" }}>
+      <div className="text-sm font-semibold" style={{ color: INK, fontFamily: "IBM Plex Sans, sans-serif" }}>
         {command.tooltip.title || command.label}
       </div>
       {command.tooltip.description && (
@@ -167,7 +167,7 @@ function RibbonButton({ command, size = "small", active, onRun }) {
                   key={item.id}
                   type="button"
                   onClick={() => { setMenuOpen(false); onRun?.(item); }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[#EDF4F3]"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[#EDF4F3]"
                   style={{ color: INK, fontFamily: "IBM Plex Sans, sans-serif" }}
                 >
                   <ItemIcon size={14} style={{ color: TEAL }} />
@@ -738,7 +738,7 @@ export default function Ribbon({
                   key={item.id}
                   type="button"
                   onClick={() => { setShowAppMenu(false); onCommand?.(item); }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[#EDF4F3]"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[#EDF4F3]"
                   style={{ color: INK }}
                 >
                   <item.icon size={14} style={{ color: TEAL }} />
@@ -755,7 +755,7 @@ export default function Ribbon({
           ))}
         </div>
 
-        <div className="flex-1 text-center text-xs truncate" style={{ color: "#5B655F" }}>
+        <div className="flex-1 text-center text-sm truncate" style={{ color: "#5B655F" }}>
           {documentLabel}
         </div>
 
@@ -776,7 +776,7 @@ export default function Ribbon({
             key={tab.id}
             type="button"
             onClick={() => setActiveTabId(tab.id)}
-            className="px-3 py-1.5 text-xs -mb-px border-b-2"
+            className="px-3 py-1.5 text-sm -mb-px border-b-2"
             style={{
               color: activeTabId === tab.id ? TEAL : "#5B655F",
               fontWeight: activeTabId === tab.id ? 600 : 400,
@@ -801,7 +801,7 @@ export default function Ribbon({
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTabId(tab.id)}
-                  className="px-3 py-1 text-xs -mb-px border-b-2"
+                  className="px-3 py-1 text-sm -mb-px border-b-2"
                   style={{
                     color: activeTabId === tab.id ? TEAL : "#5B655F",
                     fontWeight: activeTabId === tab.id ? 600 : 400,
@@ -859,7 +859,7 @@ export function NoteTypeToolbar({ activeType = null, onSelect }) {
             key={item.type}
             type="button"
             onClick={() => onSelect?.(item.type)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-sm text-xs"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-sm text-sm"
             style={{
               color: active ? TEAL : "#5B655F",
               fontWeight: active ? 600 : 400,
