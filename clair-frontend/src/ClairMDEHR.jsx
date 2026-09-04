@@ -20793,22 +20793,25 @@ function ExamMeasureField({ value, onChange, unit, placeholder }) {
 }
 
 // Standalone reference popup for one body system's examination checklist.
-// Not tied to any note's state — the doctor marks findings here, then hits
-// "Copy findings as text" and pastes into whichever note is open. See
-// EXAM_TEMPLATES's header comment for why this is a copy-paste tool rather
-// than something that writes into a note directly.
+// The doctor marks findings here, then hits "Add to Examination" — on an
+// ICU/Ward draft (onAddToExamination provided) that appends the generated
+// text straight into the Examination page's field, since that's the only
+// destination this popup is ever meant to land in there; anywhere else
+// (OPD, or no onAddToExamination) it falls back to the original
+// copy-to-clipboard-and-paste-yourself behavior described in
+// EXAM_TEMPLATES's header comment.
 // LEGAL SAFETY RULE — do not weaken this: a row is only ever written to the
 // note if it was actually recorded (status is exactly "normal" or
 // "abnormal", or a measurement field has a non-empty value). An unexamined
 // item must NEVER produce a line — not "Not examined", not a blank value,
 // nothing. Writing a note that implies an item was checked when it wasn't
 // is a documentation integrity problem, not just a UI nicety.
-function ExamPopup({ examKey, onClose }) {
+function ExamPopup({ examKey, onClose, onAddToExamination }) {
   const template = EXAM_TEMPLATES[examKey];
   const [status, setStatus] = useState({});     // "section|item" -> "normal" | "abnormal"
   const [notes, setNotes] = useState({});       // "section|item" -> free text, shown when abnormal
   const [measures, setMeasures] = useState({}); // "section|item" -> raw entered value
-  const [copied, setCopied] = useState(false);
+  const [added, setAdded] = useState(false);
 
   const itemKey = (sec, item) => `${sec}|${typeof item === "string" ? item : item.measure}`;
 
@@ -20854,11 +20857,12 @@ function ExamPopup({ examKey, onClose }) {
     return lines.join("\n");
   }
 
-  function copyNote() {
+  function addNote() {
     const text = buildNote();
-    if (navigator.clipboard) navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
+    if (onAddToExamination) onAddToExamination(text);
+    else if (navigator.clipboard) navigator.clipboard.writeText(text);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1600);
   }
   function resetAll() { setStatus({}); setNotes({}); setMeasures({}); }
 
@@ -20938,13 +20942,15 @@ function ExamPopup({ examKey, onClose }) {
             <RotateCcw size={13} /> Reset
           </button>
           <button
-            onClick={copyNote}
+            onClick={addNote}
             disabled={answeredCount === 0}
             className="flex-1 px-3.5 py-2.5 text-[13px] rounded-sm text-white flex items-center justify-center gap-1.5"
             style={{ background: answeredCount ? "#0F5C56" : "#B4BDB7" }}
           >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            {copied ? "Copied — paste into note" : "Copy findings as text"}
+            {added ? <Check size={14} /> : <Copy size={14} />}
+            {added
+              ? (onAddToExamination ? "Added to Examination" : "Copied — paste into note")
+              : (onAddToExamination ? "Add to Examination" : "Copy findings as text")}
           </button>
         </div>
       </div>
@@ -30236,7 +30242,17 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           prefillSex={newEntryMode === "icuward" ? genderTextToSex(draftDetails.gender) : ""}
         />
       )}
-      {openExamKey && <ExamPopup examKey={openExamKey} onClose={() => setOpenExamKey(null)} />}
+      {openExamKey && (
+        <ExamPopup
+          examKey={openExamKey}
+          onClose={() => setOpenExamKey(null)}
+          onAddToExamination={
+            newEntryMode === "icuward"
+              ? (text) => setDraftExamNotes((prev) => (prev && prev.trim() ? `${prev}\n\n${text}` : text))
+              : undefined
+          }
+        />
+      )}
       {/* The Ribbon's Special Situations tab is now the sole way to open
           these 8 pickers on a live ICU/Ward draft — each opens in its own
           modal here rather than inline on the Records page (see RecordsTab's
