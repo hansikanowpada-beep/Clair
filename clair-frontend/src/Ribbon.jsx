@@ -56,7 +56,7 @@ function CommandTooltip({ command, anchorRef, visible }) {
         {command.tooltip.title || command.label}
       </div>
       {command.tooltip.description && (
-        <div className="text-[11px] mt-0.5 leading-snug" style={{ color: "#5B655F" }}>
+        <div className="text-xs mt-0.5 leading-snug" style={{ color: "#5B655F" }}>
           {command.tooltip.description}
         </div>
       )}
@@ -139,7 +139,7 @@ function RibbonButton({ command, size = "small", active, onRun }) {
             className="flex flex-col items-center gap-1 bg-transparent"
           >
             <Icon size={22} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : TEAL }} />
-            <span className="text-[11px] leading-tight text-center" style={{ color: INK }}>
+            <span className="text-xs leading-tight text-center" style={{ color: INK }}>
               {command.label}
               <ChevronDown size={10} className="inline ml-0.5 -mb-px" />
             </span>
@@ -147,7 +147,7 @@ function RibbonButton({ command, size = "small", active, onRun }) {
         ) : (
           <>
             <Icon size={22} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : TEAL }} />
-            <span className="text-[11px] leading-tight text-center" style={{ color: INK }}>
+            <span className="text-xs leading-tight text-center" style={{ color: INK }}>
               {command.label}
               {command.hasMenu && <ChevronDown size={10} className="inline ml-0.5 -mb-px" />}
             </span>
@@ -231,7 +231,7 @@ function RibbonGroup({ group, onRun }) {
         )}
       </div>
       <div className="flex items-center justify-center gap-1 pb-1">
-        <span className="text-[10px]" style={{ color: "#6C766F", fontFamily: "IBM Plex Sans, sans-serif" }}>
+        <span className="text-xs" style={{ color: "#6C766F", fontFamily: "IBM Plex Sans, sans-serif" }}>
           {group.label}
         </span>
         {group.hasDialogLauncher && (
@@ -265,12 +265,12 @@ function InRibbonGallery({ gallery, onRun }) {
           style={{ borderColor: HAIRLINE, background: "#FFFFFF" }}
         >
           <span
-            className="text-[11px]"
+            className="text-xs"
             style={{ color: INK, fontFamily: item.font || "IBM Plex Sans, sans-serif", fontWeight: item.bold ? 700 : 400 }}
           >
             {item.preview || "Aa"}
           </span>
-          <span className="text-[8px] mt-0.5" style={{ color: "#6C766F" }}>{item.label}</span>
+          <span className="text-xs mt-0.5" style={{ color: "#6C766F" }}>{item.label}</span>
         </button>
       ))}
       <button
@@ -718,7 +718,7 @@ export default function Ribbon({
             type="button"
             onClick={() => setShowAppMenu((v) => !v)}
             title={`${appName} menu`}
-            className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
+            className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
             style={{ background: TEAL, fontFamily: "Fraunces, serif" }}
           >
             C
@@ -790,7 +790,7 @@ export default function Ribbon({
         {activeContextual && (
           <div className="ml-2 flex flex-col">
             <div
-              className="text-[10px] px-2 pt-0.5 rounded-t-sm font-semibold tracking-wide uppercase"
+              className="text-xs px-2 pt-0.5 rounded-t-sm font-semibold tracking-wide uppercase"
               style={{ background: activeContextual.accent || MARIGOLD, color: "#FFFFFF" }}
             >
               {activeContextual.tabSetLabel}
