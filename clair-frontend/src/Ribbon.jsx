@@ -27,7 +27,7 @@ import {
   Stethoscope, BookOpen, Activity, Pill,
   Hammer, Tent, BarChart3, BedDouble, Package, CreditCard,
   Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss,
-  UserPlus, ShieldAlert, AlertTriangle, Wind,
+  UserPlus, ShieldAlert, AlertTriangle, Wind, Bone, ShieldOff, HandHeart, UserCheck,
   Mail, Wrench, CircleHelp, Bug, MessagesSquare, LifeBuoy, Compass,
   Calculator, Scale, Ruler, Droplet,
 } from "lucide-react";
@@ -317,14 +317,22 @@ const LIBRARY_SECTIONS = [
 
 // The app's real "special situation" clinical pickers, stacked together
 // inside RecordsTab in ClairMDEHR.jsx (TraumaPicker, DisasterManagementPicker,
-// PoisoningPicker, EnvironmentalInjuriesPicker, SpecialSituationsPicker) —
-// same 5 categories, same real labels/icons each picker's own header uses.
+// PoisoningPicker, EnvironmentalInjuriesPicker, OrthopaedicInjuriesPicker,
+// SexualAssaultPicker, IntimatePartnerViolencePicker, ElderAbusePicker) —
+// same 8 categories, same real labels/icons each picker's own header uses.
+// Orthopaedic Injuries used to be nested inside Trauma's own topic list, and
+// Sexual Assault/Intimate Partner Violence/Elder Abuse used to be bundled
+// behind a single "Special Situations" button (the same name as this ribbon
+// tab — a confusing duplicate) — all four are now their own buttons here.
 const SPECIAL_SITUATION_SECTIONS = [
   { key: "trauma", label: "Trauma", icon: ShieldAlert },
   { key: "disasterManagement", label: "Disaster Management", icon: AlertTriangle },
   { key: "poisoning", label: "Poisoning", icon: Pill },
   { key: "environmentalInjuries", label: "Environmental Injuries", icon: Wind },
-  { key: "specialSituations", label: "Special Situations", icon: ShieldAlert },
+  { key: "orthopaedicInjuries", label: "Orthopaedic Injuries", icon: Bone },
+  { key: "sexualAssault", label: "Sexual Assault", icon: ShieldOff },
+  { key: "ipv", label: "Intimate Partner Violence and Abuse", icon: HandHeart },
+  { key: "elderAbuse", label: "Abuse of the Elderly or Impaired Adult", icon: UserCheck },
 ];
 
 const MODULE_SECTIONS = {
@@ -515,7 +523,7 @@ const TAB_DEFINITIONS = [
           id: `situ-${s.key}`,
           label: s.label,
           icon: s.icon,
-          tooltip: { title: s.label, description: `Show/hide the ${s.label} section on the note's Records page.` },
+          tooltip: { title: s.label, description: `Open the ${s.label} reference template.` },
         })),
       },
     ],
