@@ -18968,7 +18968,7 @@ function AutoExpandingTextarea({ value, onChange, placeholder }) {
 // `scrollable` instead fixes the box at `rows` lines (HPI defaults to 25 —
 // a standard printed page) and lets the browser's native vertical scrollbar
 // handle anything beyond that, rather than the box growing forever.
-function BareEditableTextarea({ value, onChange, rows = 1, scrollable = false, placeholder }) {
+function BareEditableTextarea({ value, onChange, onKeyDown, rows = 1, scrollable = false, placeholder }) {
   const ref = useRef(null);
   const { handleContextMenu, portal } = useDiagnosticLookup();
   useEffect(() => {
@@ -18983,6 +18983,7 @@ function BareEditableTextarea({ value, onChange, rows = 1, scrollable = false, p
         ref={ref}
         value={value}
         onChange={onChange}
+        onKeyDown={onKeyDown}
         onContextMenu={handleContextMenu}
         rows={rows}
         placeholder={placeholder}
@@ -19065,62 +19066,86 @@ function AddAttachmentMenu({ onFilesSelected }) {
   );
 }
 
-// Small removable chip list for whatever AddAttachmentMenu picked — purely
-// local state (see AddAttachmentMenu's own comment on why), keyed by the
-// object URL so a same-named file added twice still gets its own row/chip.
-function AttachmentChips({ files, onRemove }) {
-  if (files.length === 0) return null;
+// One column of Lab Reports/Radiological Reports: a compose box to type a
+// new investigation (Enter to add, Shift+Enter for a newline within it) plus
+// the AddAttachmentMenu for uploading one, both landing in the same
+// chronological `entries` list — newest first, each stamped with the date
+// and time it was entered/uploaded, per the doctor's explicit ask that the
+// most recent investigation always shows on top. Purely local state, same
+// no-backend-wiring caveat as AddAttachmentMenu.
+function InvestigationColumn({ label, placeholder, entries: externalEntries, setEntries: externalSetEntries }) {
+  const [internalEntries, setInternalEntries] = useState([]);
+  const entries = externalEntries !== undefined ? externalEntries : internalEntries;
+  const setEntries = externalSetEntries !== undefined ? externalSetEntries : setInternalEntries;
+  const [draftText, setDraftText] = useState("");
+
+  const addTextEntry = () => {
+    const text = draftText.trim();
+    if (!text) return;
+    setEntries((prev) => [{ id: `${Date.now()}-${Math.random()}`, type: "text", text, timestamp: Date.now() }, ...prev]);
+    setDraftText("");
+  };
+  const addFiles = (files) => {
+    const newEntries = files.map((f) => ({
+      id: `${Date.now()}-${Math.random()}-${f.name}`, type: "file", url: URL.createObjectURL(f), name: f.name, timestamp: Date.now(),
+    }));
+    setEntries((prev) => [...newEntries.reverse(), ...prev]);
+  };
+  const removeEntry = (id) => setEntries((prev) => prev.filter((e) => e.id !== id));
+  const handleDraftKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      addTextEntry();
+    }
+  };
+
   return (
-    <div className="flex flex-wrap gap-1.5 mb-3">
-      {files.map((f) => (
-        <span key={f.url} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#F2F7F5] border border-[#D8DED9] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          <Paperclip size={11} className="shrink-0" />
-          <span className="max-w-[140px] truncate">{f.name}</span>
-          <button type="button" onClick={() => onRemove(f.url)} className="text-[#16241F] hover:text-[#B34A3C]"><X size={11} /></button>
-        </span>
-      ))}
+    <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-[13px] uppercase tracking-wider text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{label}</h3>
+        <AddAttachmentMenu onFilesSelected={addFiles} />
+      </div>
+      <div className="border border-[#D8DED9] rounded-md px-3 py-2 mb-2">
+        <BareEditableTextarea value={draftText} onChange={(e) => setDraftText(e.target.value)} onKeyDown={handleDraftKeyDown} rows={2} placeholder={placeholder} />
+      </div>
+      {draftText.trim() && (
+        <button type="button" onClick={addTextEntry} className="mb-3 text-xs px-2.5 py-1 rounded-full bg-[#0F5C56] text-white font-medium hover:bg-[#0C4A45]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          + Add entry
+        </button>
+      )}
+      <div className="space-y-2 overflow-y-auto" style={{ maxHeight: "620px" }}>
+        {entries.length === 0 ? (
+          <p className="text-sm text-[#B8C0BC]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No investigations entered yet.</p>
+        ) : (
+          entries.map((entry) => (
+            <div key={entry.id} className="border border-[#D8DED9] rounded-md p-2.5 bg-[#F8FAF9]">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-[11px] text-[#5A6B63]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{new Date(entry.timestamp).toLocaleString()}</span>
+                <button type="button" onClick={() => removeEntry(entry.id)} className="shrink-0 text-[#16241F] hover:text-[#B34A3C]"><X size={12} /></button>
+              </div>
+              {entry.type === "file" ? (
+                <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-white border border-[#D8DED9] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                  <Paperclip size={11} className="shrink-0" />
+                  <span className="max-w-[220px] truncate">{entry.name}</span>
+                </span>
+              ) : (
+                <p className="text-sm whitespace-pre-wrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "#16241F" }}>{entry.text}</p>
+              )}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
 
-// Same bare/scrollable/25-line treatment as Examination, just two of them
-// side by side — lab reports and radiological reports pasted or typed in
-// as free text, not structured data (that's what the Lab order queue
-// elsewhere in Records is for). Each also gets its own Add button for
-// attaching a source file/photo alongside the typed text.
 function LabReportsTab({
-  labReportsText: externalLabReportsText, setLabReportsText: externalSetLabReportsText,
-  radiologicalReportsText: externalRadiologicalReportsText, setRadiologicalReportsText: externalSetRadiologicalReportsText,
+  labEntries, setLabEntries, radiologicalEntries, setRadiologicalEntries,
 } = {}) {
-  const [internalLabReportsText, setInternalLabReportsText] = useState("");
-  const [internalRadiologicalReportsText, setInternalRadiologicalReportsText] = useState("");
-  const labReportsText = externalLabReportsText !== undefined ? externalLabReportsText : internalLabReportsText;
-  const setLabReportsText = externalSetLabReportsText !== undefined ? externalSetLabReportsText : setInternalLabReportsText;
-  const radiologicalReportsText = externalRadiologicalReportsText !== undefined ? externalRadiologicalReportsText : internalRadiologicalReportsText;
-  const setRadiologicalReportsText = externalSetRadiologicalReportsText !== undefined ? externalSetRadiologicalReportsText : setInternalRadiologicalReportsText;
-  const [labFiles, setLabFiles] = useState([]); // [{ url, name }]
-  const [radiologicalFiles, setRadiologicalFiles] = useState([]);
-  const addFiles = (setter) => (files) => setter((prev) => [...prev, ...files.map((f) => ({ url: URL.createObjectURL(f), name: f.name }))]);
-  const removeFile = (setter) => (url) => setter((prev) => prev.filter((f) => f.url !== url));
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <div className="bg-white border border-[#D8DED9] rounded-md p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[13px] uppercase tracking-wider text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Lab reports</h3>
-          <AddAttachmentMenu onFilesSelected={addFiles(setLabFiles)} />
-        </div>
-        <AttachmentChips files={labFiles} onRemove={removeFile(setLabFiles)} />
-        <BareEditableTextarea value={labReportsText} onChange={(e) => setLabReportsText(e.target.value)} rows={25} scrollable placeholder="Click here to start typing lab reports…" />
-      </div>
-      <div className="bg-white border border-[#D8DED9] rounded-md p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-[13px] uppercase tracking-wider text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Radiological reports</h3>
-          <AddAttachmentMenu onFilesSelected={addFiles(setRadiologicalFiles)} />
-        </div>
-        <AttachmentChips files={radiologicalFiles} onRemove={removeFile(setRadiologicalFiles)} />
-        <BareEditableTextarea value={radiologicalReportsText} onChange={(e) => setRadiologicalReportsText(e.target.value)} rows={25} scrollable placeholder="Click here to start typing radiological reports…" />
-      </div>
+      <InvestigationColumn label="Lab reports" placeholder="Click here to start typing a lab report…" entries={labEntries} setEntries={setLabEntries} />
+      <InvestigationColumn label="Radiological reports" placeholder="Click here to start typing a radiological report…" entries={radiologicalEntries} setEntries={setRadiologicalEntries} />
     </div>
   );
 }
@@ -19722,7 +19747,17 @@ function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examNotes
 // (toggles, inserted HPI/exam templates per topic) that was never designed
 // to be lifted, and doing that properly is a separate, larger effort. The
 // slip says so explicitly rather than silently omitting them.
-function buildIcuWardSlipText({ details, vitals, hpi, examNotes, labReportsText, radiologicalReportsText, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, disasterValues, poisoningValues, ssValues, envValues }) {
+// Investigation entries are stored newest-first (matching the on-screen
+// order); the slip lists them the same way, each stamped with when it was
+// entered/uploaded.
+function formatInvestigationEntries(entries) {
+  if (!entries || entries.length === 0) return "(none entered)";
+  return entries
+    .map((e) => `[${new Date(e.timestamp).toLocaleString()}] ${e.type === "file" ? `Attached file: ${e.name}` : e.text}`)
+    .join("\n");
+}
+
+function buildIcuWardSlipText({ details, vitals, hpi, examNotes, labEntries, radiologicalEntries, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, disasterValues, poisoningValues, ssValues, envValues }) {
   const identityLine = [
     details.name || "(name not entered)",
     details.age ? `${details.age} yrs` : null,
@@ -19742,8 +19777,8 @@ function buildIcuWardSlipText({ details, vitals, hpi, examNotes, labReportsText,
 
   lines.push("EXAMINATION", examNotes && examNotes.trim() ? examNotes.trim() : "(no findings recorded)", "");
 
-  lines.push("LAB REPORTS", labReportsText && labReportsText.trim() ? labReportsText.trim() : "(none entered)", "");
-  lines.push("RADIOLOGICAL REPORTS", radiologicalReportsText && radiologicalReportsText.trim() ? radiologicalReportsText.trim() : "(none entered)", "");
+  lines.push("LAB REPORTS", formatInvestigationEntries(labEntries), "");
+  lines.push("RADIOLOGICAL REPORTS", formatInvestigationEntries(radiologicalEntries), "");
 
   lines.push("DIFFERENTIAL DIAGNOSIS");
   if (ddxSpace.length === 0) {
@@ -29681,8 +29716,8 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [draftVitals, setDraftVitals] = useState({ hr: "", bp: "", t: "", spo2: "", spo2On: "", pain: "" });
   const [draftHpi, setDraftHpi] = useState("");
   const [draftExamNotes, setDraftExamNotes] = useState("");
-  const [draftLabReportsText, setDraftLabReportsText] = useState("");
-  const [draftRadiologicalReportsText, setDraftRadiologicalReportsText] = useState("");
+  const [draftLabEntries, setDraftLabEntries] = useState([]);
+  const [draftRadiologicalEntries, setDraftRadiologicalEntries] = useState([]);
   const [draftDisasterValues, setDraftDisasterValues] = useState({});
   const [draftPoisoningValues, setDraftPoisoningValues] = useState({});
   const [draftSsValues, setDraftSsValues] = useState({});
@@ -29878,7 +29913,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                     }
                     const icuWardSlipText = buildIcuWardSlipText({
                       details: draftDetails, vitals: draftVitals, hpi: draftHpi, examNotes: draftExamNotes,
-                      labReportsText: draftLabReportsText, radiologicalReportsText: draftRadiologicalReportsText,
+                      labEntries: draftLabEntries, radiologicalEntries: draftRadiologicalEntries,
                       ddxSpace: draftDdxSpace, ddxSpaceNotes: draftDdxSpaceNotes, workupSpace: draftWorkupSpace,
                       workupNotes: draftWorkupNotes, diagnosisPlanEntries: draftDiagnosisPlanEntries,
                       disasterValues: draftDisasterValues, poisoningValues: draftPoisoningValues, ssValues: draftSsValues, envValues: draftEnvValues,
@@ -30281,10 +30316,10 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                     </div>
                     <div style={{ display: tab === "labReports" ? "block" : "none" }}>
                       <LabReportsTab
-                        labReportsText={draftLabReportsText}
-                        setLabReportsText={setDraftLabReportsText}
-                        radiologicalReportsText={draftRadiologicalReportsText}
-                        setRadiologicalReportsText={setDraftRadiologicalReportsText}
+                        labEntries={draftLabEntries}
+                        setLabEntries={setDraftLabEntries}
+                        radiologicalEntries={draftRadiologicalEntries}
+                        setRadiologicalEntries={setDraftRadiologicalEntries}
                       />
                     </div>
                     <div style={{ display: tab === "workup" ? "block" : "none" }}>
