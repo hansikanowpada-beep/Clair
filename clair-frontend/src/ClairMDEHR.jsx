@@ -18967,7 +18967,7 @@ function AutoExpandingTextarea({ value, onChange, placeholder }) {
 // `scrollable` instead fixes the box at `rows` lines (HPI defaults to 25 —
 // a standard printed page) and lets the browser's native vertical scrollbar
 // handle anything beyond that, rather than the box growing forever.
-function BareEditableTextarea({ value, onChange, rows = 1, scrollable = false }) {
+function BareEditableTextarea({ value, onChange, rows = 1, scrollable = false, placeholder }) {
   const ref = useRef(null);
   const { handleContextMenu, portal } = useDiagnosticLookup();
   useEffect(() => {
@@ -18984,7 +18984,8 @@ function BareEditableTextarea({ value, onChange, rows = 1, scrollable = false })
         onChange={onChange}
         onContextMenu={handleContextMenu}
         rows={rows}
-        className={`w-full text-sm bg-transparent resize-none border-none outline-none focus:outline-none ${scrollable ? "overflow-y-auto" : "overflow-hidden"}`}
+        placeholder={placeholder}
+        className={`w-full text-sm bg-transparent resize-none border-none outline-none focus:outline-none placeholder:text-[#B8C0BC] ${scrollable ? "overflow-y-auto" : "overflow-hidden"}`}
         style={{ fontFamily: "'IBM Plex Sans', sans-serif", lineHeight: 1.5, minHeight: "1.5em" }}
       />
       {portal}
@@ -19002,7 +19003,7 @@ function ExaminationTab({ examNotes: externalExamNotes, setExamNotes: externalSe
   const setExamNotes = externalSetExamNotes !== undefined ? externalSetExamNotes : setInternalExamNotes;
   return (
     <div className="max-w-2xl">
-      <BareEditableTextarea value={examNotes} onChange={(e) => setExamNotes(e.target.value)} rows={25} scrollable />
+      <BareEditableTextarea value={examNotes} onChange={(e) => setExamNotes(e.target.value)} rows={25} scrollable placeholder="Click here to start typing examination findings…" />
     </div>
   );
 }
@@ -19032,7 +19033,7 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
             </p>
             {isDraft ? (
               <div className="mb-4">
-                <BareEditableTextarea value={draftHpi} onChange={(ev) => setDraftHpi(ev.target.value)} rows={25} scrollable />
+                <BareEditableTextarea value={draftHpi} onChange={(ev) => setDraftHpi(ev.target.value)} rows={25} scrollable placeholder="Click here to start typing…" />
               </div>
             ) : (
               <p className="text-sm mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{e.notes}</p>
