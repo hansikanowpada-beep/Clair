@@ -18992,7 +18992,22 @@ function BareEditableTextarea({ value, onChange, rows = 1, scrollable = false })
   );
 }
 
-function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi, examNotes: externalExamNotes, setExamNotes: externalSetExamNotes }) {
+// Examination used to render inline here, right below Chief complaint/HPI —
+// promoted to its own page (between Complaints and Differential Diagnosis &
+// Workup) so it isn't duplicated across two places, matching the rest of
+// this wizard's "each field lives in exactly one spot" convention.
+function ExaminationTab({ examNotes: externalExamNotes, setExamNotes: externalSetExamNotes } = {}) {
+  const [internalExamNotes, setInternalExamNotes] = useState("");
+  const examNotes = externalExamNotes !== undefined ? externalExamNotes : internalExamNotes;
+  const setExamNotes = externalSetExamNotes !== undefined ? externalSetExamNotes : setInternalExamNotes;
+  return (
+    <div className="max-w-2xl">
+      <BareEditableTextarea value={examNotes} onChange={(e) => setExamNotes(e.target.value)} rows={25} scrollable />
+    </div>
+  );
+}
+
+function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi }) {
   const [internalDraftHpi, setInternalDraftHpi] = useState("");
   const draftHpi = externalDraftHpi !== undefined ? externalDraftHpi : internalDraftHpi;
   const setDraftHpi = externalSetDraftHpi !== undefined ? externalSetDraftHpi : setInternalDraftHpi;
@@ -19023,7 +19038,6 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
               <p className="text-sm mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{e.notes}</p>
             )}
 
-            <ExaminationNoteCard examNotes={isDraft ? externalExamNotes : undefined} setExamNotes={isDraft ? externalSetExamNotes : undefined} />
             {/* On a live draft, these 8 pickers no longer render here at all —
                 the Ribbon's Special Situations tab is now the sole way to open
                 them, each in its own modal (see the SpecialSituationModal
@@ -29611,6 +29625,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const tabs = [
     { key: "overview", label: "Vitals", icon: Users },
     { key: "records", label: "Complaints", icon: FileText },
+    { key: "examination", label: "Examination", icon: Stethoscope },
     { key: "workup", label: "Differential Diagnosis & Workup", icon: ListChecks },
     { key: "diagnosisplan", label: "Provisional Diagnosis & Treatment Plan", icon: ClipboardList },
     { key: "careteam", label: "Care team", icon: Users2 },
@@ -30100,7 +30115,10 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       />
                     </div>
                     <div style={{ display: tab === "records" ? "block" : "none" }}>
-                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} examNotes={draftExamNotes} setExamNotes={setDraftExamNotes} />
+                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} />
+                    </div>
+                    <div style={{ display: tab === "examination" ? "block" : "none" }}>
+                      <ExaminationTab examNotes={draftExamNotes} setExamNotes={setDraftExamNotes} />
                     </div>
                     <div style={{ display: tab === "workup" ? "block" : "none" }}>
                       <DifferentialWorkupTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} ddxSpace={draftDdxSpace} setDdxSpace={setDraftDdxSpace} ddxSpaceNotes={draftDdxSpaceNotes} setDdxSpaceNotes={setDraftDdxSpaceNotes} workupSpace={draftWorkupSpace} setWorkupSpace={setDraftWorkupSpace} workupNotes={draftWorkupNotes} setWorkupNotes={setDraftWorkupNotes} />
@@ -30166,6 +30184,9 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                 </div>
                 <div style={{ display: tab === "records" ? "block" : "none" }}>
                   <RecordsTab patient={patient} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} />
+                </div>
+                <div style={{ display: tab === "examination" ? "block" : "none" }}>
+                  <ExaminationTab />
                 </div>
                 <div style={{ display: tab === "workup" ? "block" : "none" }}>
                   <DifferentialWorkupTab patient={patient} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} />
