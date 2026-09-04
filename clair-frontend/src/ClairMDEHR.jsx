@@ -19026,14 +19026,6 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between bg-white border border-[#D8DED9] rounded-md p-4">
-        <div>
-          <div className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Treatment summary</div>
-          <div className="text-sm text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>History of present illness, tests, course, treatment, and follow-up advice</div>
-        </div>
-        <TreatmentSummaryButtons patient={patient} />
-      </div>
-
       {patient.encounters.map((e, i) => {
         return (
           <div key={i} className="bg-white border border-[#D8DED9] rounded-md p-5">
