@@ -12,6 +12,7 @@ import {
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
   LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass, Calculator, Check, RotateCcw,
+  Upload, Camera, Image as ImageIcon, Paperclip,
 } from "lucide-react";
 import { WORKFLOWS, WORKFLOWS_BY_ID } from "./data/surgicalWorkflows.js";
 import { MEDICAL_WORKFLOWS, MEDICAL_WORKFLOWS_BY_ID } from "./data/medicalWorkflows.js";
@@ -19008,10 +19009,85 @@ function ExaminationTab({ examNotes: externalExamNotes, setExamNotes: externalSe
   );
 }
 
+// Local-only attachment picker — no backend/upload wiring exists for this
+// prototype (same honesty-over-appearance discipline as clairmd-backend's
+// stubs: this never claims files are saved anywhere, just lets the doctor
+// pick one and shows it was picked). "Camera" and "Upload photo" both use a
+// standard file input; capture="environment" is what makes a mobile browser
+// open the camera app directly for Camera, while Upload photo/file leave it
+// off so they open the normal file/photo picker instead.
+function AddAttachmentMenu({ onFilesSelected }) {
+  const [open, setOpen] = useState(false);
+  const fileInputRef = useRef(null);
+  const photoInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+
+  const openPicker = (ref) => {
+    setOpen(false);
+    ref.current?.click();
+  };
+  const handleChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length) onFilesSelected(files);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border border-[#D8DED9] text-[#16241F] hover:bg-[#F2F7F5] font-medium"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+      >
+        <Plus size={12} /> Add
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 z-20 bg-white border border-[#D8DED9] rounded-md shadow-lg py-1 min-w-[160px]">
+            <button type="button" onClick={() => openPicker(fileInputRef)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-[#F2F7F5] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <Upload size={14} /> Upload file
+            </button>
+            <button type="button" onClick={() => openPicker(photoInputRef)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-[#F2F7F5] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <ImageIcon size={14} /> Upload photo
+            </button>
+            <button type="button" onClick={() => openPicker(cameraInputRef)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-[#F2F7F5] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <Camera size={14} /> Camera
+            </button>
+          </div>
+        </>
+      )}
+      <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.txt,.csv,image/*" className="hidden" onChange={handleChange} />
+      <input ref={photoInputRef} type="file" multiple accept="image/*" className="hidden" onChange={handleChange} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleChange} />
+    </div>
+  );
+}
+
+// Small removable chip list for whatever AddAttachmentMenu picked — purely
+// local state (see AddAttachmentMenu's own comment on why), keyed by the
+// object URL so a same-named file added twice still gets its own row/chip.
+function AttachmentChips({ files, onRemove }) {
+  if (files.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 mb-3">
+      {files.map((f) => (
+        <span key={f.url} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#F2F7F5] border border-[#D8DED9] text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <Paperclip size={11} className="shrink-0" />
+          <span className="max-w-[140px] truncate">{f.name}</span>
+          <button type="button" onClick={() => onRemove(f.url)} className="text-[#16241F] hover:text-[#B34A3C]"><X size={11} /></button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // Same bare/scrollable/25-line treatment as Examination, just two of them
 // side by side — lab reports and radiological reports pasted or typed in
 // as free text, not structured data (that's what the Lab order queue
-// elsewhere in Records is for).
+// elsewhere in Records is for). Each also gets its own Add button for
+// attaching a source file/photo alongside the typed text.
 function LabReportsTab({
   labReportsText: externalLabReportsText, setLabReportsText: externalSetLabReportsText,
   radiologicalReportsText: externalRadiologicalReportsText, setRadiologicalReportsText: externalSetRadiologicalReportsText,
@@ -19022,14 +19098,27 @@ function LabReportsTab({
   const setLabReportsText = externalSetLabReportsText !== undefined ? externalSetLabReportsText : setInternalLabReportsText;
   const radiologicalReportsText = externalRadiologicalReportsText !== undefined ? externalRadiologicalReportsText : internalRadiologicalReportsText;
   const setRadiologicalReportsText = externalSetRadiologicalReportsText !== undefined ? externalSetRadiologicalReportsText : setInternalRadiologicalReportsText;
+  const [labFiles, setLabFiles] = useState([]); // [{ url, name }]
+  const [radiologicalFiles, setRadiologicalFiles] = useState([]);
+  const addFiles = (setter) => (files) => setter((prev) => [...prev, ...files.map((f) => ({ url: URL.createObjectURL(f), name: f.name }))]);
+  const removeFile = (setter) => (url) => setter((prev) => prev.filter((f) => f.url !== url));
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
       <div className="bg-white border border-[#D8DED9] rounded-md p-5">
-        <SectionLabel>Lab reports</SectionLabel>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-[13px] uppercase tracking-wider text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Lab reports</h3>
+          <AddAttachmentMenu onFilesSelected={addFiles(setLabFiles)} />
+        </div>
+        <AttachmentChips files={labFiles} onRemove={removeFile(setLabFiles)} />
         <BareEditableTextarea value={labReportsText} onChange={(e) => setLabReportsText(e.target.value)} rows={25} scrollable placeholder="Click here to start typing lab reports…" />
       </div>
       <div className="bg-white border border-[#D8DED9] rounded-md p-5">
-        <SectionLabel>Radiological reports</SectionLabel>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-[13px] uppercase tracking-wider text-[#16241F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Radiological reports</h3>
+          <AddAttachmentMenu onFilesSelected={addFiles(setRadiologicalFiles)} />
+        </div>
+        <AttachmentChips files={radiologicalFiles} onRemove={removeFile(setRadiologicalFiles)} />
         <BareEditableTextarea value={radiologicalReportsText} onChange={(e) => setRadiologicalReportsText(e.target.value)} rows={25} scrollable placeholder="Click here to start typing radiological reports…" />
       </div>
     </div>
