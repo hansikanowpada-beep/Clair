@@ -19008,6 +19008,34 @@ function ExaminationTab({ examNotes: externalExamNotes, setExamNotes: externalSe
   );
 }
 
+// Same bare/scrollable/25-line treatment as Examination, just two of them
+// side by side — lab reports and radiological reports pasted or typed in
+// as free text, not structured data (that's what the Lab order queue
+// elsewhere in Records is for).
+function LabReportsTab({
+  labReportsText: externalLabReportsText, setLabReportsText: externalSetLabReportsText,
+  radiologicalReportsText: externalRadiologicalReportsText, setRadiologicalReportsText: externalSetRadiologicalReportsText,
+} = {}) {
+  const [internalLabReportsText, setInternalLabReportsText] = useState("");
+  const [internalRadiologicalReportsText, setInternalRadiologicalReportsText] = useState("");
+  const labReportsText = externalLabReportsText !== undefined ? externalLabReportsText : internalLabReportsText;
+  const setLabReportsText = externalSetLabReportsText !== undefined ? externalSetLabReportsText : setInternalLabReportsText;
+  const radiologicalReportsText = externalRadiologicalReportsText !== undefined ? externalRadiologicalReportsText : internalRadiologicalReportsText;
+  const setRadiologicalReportsText = externalSetRadiologicalReportsText !== undefined ? externalSetRadiologicalReportsText : setInternalRadiologicalReportsText;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+        <SectionLabel>Lab reports</SectionLabel>
+        <BareEditableTextarea value={labReportsText} onChange={(e) => setLabReportsText(e.target.value)} rows={25} scrollable placeholder="Click here to start typing lab reports…" />
+      </div>
+      <div className="bg-white border border-[#D8DED9] rounded-md p-5">
+        <SectionLabel>Radiological reports</SectionLabel>
+        <BareEditableTextarea value={radiologicalReportsText} onChange={(e) => setRadiologicalReportsText(e.target.value)} rows={25} scrollable placeholder="Click here to start typing radiological reports…" />
+      </div>
+    </div>
+  );
+}
+
 function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi }) {
   const [internalDraftHpi, setInternalDraftHpi] = useState("");
   const draftHpi = externalDraftHpi !== undefined ? externalDraftHpi : internalDraftHpi;
@@ -19605,7 +19633,7 @@ function buildOpdSlipText({ patientDetails, freeNoteText, hpi, vitals, examNotes
 // (toggles, inserted HPI/exam templates per topic) that was never designed
 // to be lifted, and doing that properly is a separate, larger effort. The
 // slip says so explicitly rather than silently omitting them.
-function buildIcuWardSlipText({ details, vitals, hpi, examNotes, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, disasterValues, poisoningValues, ssValues, envValues }) {
+function buildIcuWardSlipText({ details, vitals, hpi, examNotes, labReportsText, radiologicalReportsText, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, disasterValues, poisoningValues, ssValues, envValues }) {
   const identityLine = [
     details.name || "(name not entered)",
     details.age ? `${details.age} yrs` : null,
@@ -19624,6 +19652,9 @@ function buildIcuWardSlipText({ details, vitals, hpi, examNotes, ddxSpace, ddxSp
   lines.push("HISTORY OF PRESENT ILLNESS", hpi || "(not filled in)", "");
 
   lines.push("EXAMINATION", examNotes && examNotes.trim() ? examNotes.trim() : "(no findings recorded)", "");
+
+  lines.push("LAB REPORTS", labReportsText && labReportsText.trim() ? labReportsText.trim() : "(none entered)", "");
+  lines.push("RADIOLOGICAL REPORTS", radiologicalReportsText && radiologicalReportsText.trim() ? radiologicalReportsText.trim() : "(none entered)", "");
 
   lines.push("DIFFERENTIAL DIAGNOSIS");
   if (ddxSpace.length === 0) {
@@ -29561,6 +29592,8 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [draftVitals, setDraftVitals] = useState({ hr: "", bp: "", t: "", spo2: "", spo2On: "", pain: "" });
   const [draftHpi, setDraftHpi] = useState("");
   const [draftExamNotes, setDraftExamNotes] = useState("");
+  const [draftLabReportsText, setDraftLabReportsText] = useState("");
+  const [draftRadiologicalReportsText, setDraftRadiologicalReportsText] = useState("");
   const [draftDisasterValues, setDraftDisasterValues] = useState({});
   const [draftPoisoningValues, setDraftPoisoningValues] = useState({});
   const [draftSsValues, setDraftSsValues] = useState({});
@@ -29646,6 +29679,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
     { key: "overview", label: "Vitals", icon: Users },
     { key: "records", label: "Complaints", icon: FileText },
     { key: "examination", label: "Examination", icon: Stethoscope },
+    { key: "labReports", label: "Lab Reports", icon: Beaker },
     { key: "workup", label: "Work Up", icon: ListChecks },
     { key: "diagnosisplan", label: "Provisional Diagnosis & Treatment Plan", icon: ClipboardList },
     { key: "careteam", label: "Care team", icon: Users2 },
@@ -29755,6 +29789,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                     }
                     const icuWardSlipText = buildIcuWardSlipText({
                       details: draftDetails, vitals: draftVitals, hpi: draftHpi, examNotes: draftExamNotes,
+                      labReportsText: draftLabReportsText, radiologicalReportsText: draftRadiologicalReportsText,
                       ddxSpace: draftDdxSpace, ddxSpaceNotes: draftDdxSpaceNotes, workupSpace: draftWorkupSpace,
                       workupNotes: draftWorkupNotes, diagnosisPlanEntries: draftDiagnosisPlanEntries,
                       disasterValues: draftDisasterValues, poisoningValues: draftPoisoningValues, ssValues: draftSsValues, envValues: draftEnvValues,
@@ -30155,6 +30190,14 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                     <div style={{ display: tab === "examination" ? "block" : "none" }}>
                       <ExaminationTab examNotes={draftExamNotes} setExamNotes={setDraftExamNotes} />
                     </div>
+                    <div style={{ display: tab === "labReports" ? "block" : "none" }}>
+                      <LabReportsTab
+                        labReportsText={draftLabReportsText}
+                        setLabReportsText={setDraftLabReportsText}
+                        radiologicalReportsText={draftRadiologicalReportsText}
+                        setRadiologicalReportsText={setDraftRadiologicalReportsText}
+                      />
+                    </div>
                     <div style={{ display: tab === "workup" ? "block" : "none" }}>
                       <DifferentialWorkupTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} ddxSpace={draftDdxSpace} setDdxSpace={setDraftDdxSpace} ddxSpaceNotes={draftDdxSpaceNotes} setDdxSpaceNotes={setDraftDdxSpaceNotes} workupSpace={draftWorkupSpace} setWorkupSpace={setDraftWorkupSpace} workupNotes={draftWorkupNotes} setWorkupNotes={setDraftWorkupNotes} />
                     </div>
@@ -30222,6 +30265,9 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                 </div>
                 <div style={{ display: tab === "examination" ? "block" : "none" }}>
                   <ExaminationTab />
+                </div>
+                <div style={{ display: tab === "labReports" ? "block" : "none" }}>
+                  <LabReportsTab />
                 </div>
                 <div style={{ display: tab === "workup" ? "block" : "none" }}>
                   <DifferentialWorkupTab patient={patient} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} />
