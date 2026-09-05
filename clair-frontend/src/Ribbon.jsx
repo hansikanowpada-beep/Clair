@@ -33,12 +33,12 @@ import {
 } from "lucide-react";
 
 // --- ClairMD brand tokens (see ClairMDEHR.jsx's own design-tokens comment)
-const TEAL = "#0F5C56";
-const TEAL_SOFT = "#E4EEEC";
+const BLUE = "#045C8B";
+const BLUE_SOFT = "#E7F1F5";
 const MARIGOLD = "#E8A33D";
-const INK = "#16241F";
-const PAPER = "#EFF3F0";
-const HAIRLINE = "#D8DED9";
+const INK = "#12212C";
+const PAPER = "#ECF2F6";
+const HAIRLINE = "#D7E0E7";
 
 // ---------------------------------------------------------------------------
 // Tooltip — the reference image's "enhanced tooltip" (bold title + a short
@@ -56,7 +56,7 @@ function CommandTooltip({ command, anchorRef, visible }) {
         {command.tooltip.title || command.label}
       </div>
       {command.tooltip.description && (
-        <div className="text-xs mt-0.5 leading-snug" style={{ color: "#5B655F" }}>
+        <div className="text-xs mt-0.5 leading-snug" style={{ color: "#56636B" }}>
           {command.tooltip.description}
         </div>
       )}
@@ -102,7 +102,7 @@ function RibbonButton({ command, size = "small", active, onRun }) {
 
   const base =
     "relative flex items-center rounded-sm transition-colors focus:outline-none focus-visible:ring-2";
-  const activeStyle = active ? { background: TEAL_SOFT } : {};
+  const activeStyle = active ? { background: BLUE_SOFT } : {};
 
   if (size === "large") {
     // A real dropdown (command.menuItems) can't be a <button> wrapping more
@@ -116,7 +116,7 @@ function RibbonButton({ command, size = "small", active, onRun }) {
         onClick={command.menuItems ? undefined : () => onRun?.(command)}
         onMouseEnter={showTooltipSoon}
         onMouseLeave={hideTooltip}
-        className={`${base} flex-col justify-start gap-1 px-2 py-1.5 min-w-[64px] hover:bg-[#EDF4F3] disabled:opacity-40`}
+        className={`${base} flex-col justify-start gap-1 px-2 py-1.5 min-w-[64px] hover:bg-[#EAF3F6] disabled:opacity-40`}
         style={{ ...activeStyle, fontFamily: "IBM Plex Sans, sans-serif" }}
       >
         {command.menuItems ? (
@@ -138,7 +138,7 @@ function RibbonButton({ command, size = "small", active, onRun }) {
             }}
             className="flex flex-col items-center gap-1 bg-transparent"
           >
-            <Icon size={22} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : TEAL }} />
+            <Icon size={22} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : BLUE }} />
             <span className="text-xs leading-tight text-center" style={{ color: INK }}>
               {command.label}
               <ChevronDown size={10} className="inline ml-0.5 -mb-px" />
@@ -146,7 +146,7 @@ function RibbonButton({ command, size = "small", active, onRun }) {
           </button>
         ) : (
           <>
-            <Icon size={22} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : TEAL }} />
+            <Icon size={22} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : BLUE }} />
             <span className="text-xs leading-tight text-center" style={{ color: INK }}>
               {command.label}
               {command.hasMenu && <ChevronDown size={10} className="inline ml-0.5 -mb-px" />}
@@ -167,10 +167,10 @@ function RibbonButton({ command, size = "small", active, onRun }) {
                   key={item.id}
                   type="button"
                   onClick={() => { setMenuOpen(false); onRun?.(item); }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[#EDF4F3]"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[#EAF3F6]"
                   style={{ color: INK, fontFamily: "IBM Plex Sans, sans-serif" }}
                 >
-                  <ItemIcon size={14} style={{ color: TEAL }} />
+                  <ItemIcon size={14} style={{ color: BLUE }} />
                   {item.label}
                 </button>
               );
@@ -190,11 +190,11 @@ function RibbonButton({ command, size = "small", active, onRun }) {
       onMouseEnter={showTooltipSoon}
       onMouseLeave={hideTooltip}
       title={undefined}
-      className={`${base} gap-1 px-1.5 py-1 hover:bg-[#EDF4F3] disabled:opacity-40`}
+      className={`${base} gap-1 px-1.5 py-1 hover:bg-[#EAF3F6] disabled:opacity-40`}
       style={activeStyle}
     >
-      <Icon size={15} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : "#3A4A44" }} />
-      {command.hasMenu && <ChevronDown size={10} style={{ color: "#3A4A44" }} />}
+      <Icon size={15} strokeWidth={1.75} style={{ color: command.accent ? MARIGOLD : "#22323C" }} />
+      {command.hasMenu && <ChevronDown size={10} style={{ color: "#22323C" }} />}
       <CommandTooltip command={command} visible={hovered} />
     </button>
   );
@@ -231,17 +231,17 @@ function RibbonGroup({ group, onRun }) {
         )}
       </div>
       <div className="flex items-center justify-center gap-1 pb-1">
-        <span className="text-xs" style={{ color: "#6C766F", fontFamily: "IBM Plex Sans, sans-serif" }}>
+        <span className="text-xs" style={{ color: "#64727A", fontFamily: "IBM Plex Sans, sans-serif" }}>
           {group.label}
         </span>
         {group.hasDialogLauncher && (
           <button
             type="button"
             title={`${group.label} options`}
-            className="w-3 h-3 flex items-center justify-center rounded-sm hover:bg-[#EDF4F3]"
+            className="w-3 h-3 flex items-center justify-center rounded-sm hover:bg-[#EAF3F6]"
             onClick={() => onRun?.({ id: `${group.id}-launcher`, launcher: true, groupId: group.id })}
           >
-            <ChevronRight size={9} style={{ color: "#6C766F" }} className="rotate-45" />
+            <ChevronRight size={9} style={{ color: "#64727A" }} className="rotate-45" />
           </button>
         )}
       </div>
@@ -261,7 +261,7 @@ function InRibbonGallery({ gallery, onRun }) {
           key={item.id}
           type="button"
           onClick={() => onRun?.({ ...item, galleryId: gallery.id })}
-          className="flex flex-col items-center justify-center w-16 h-12 rounded-sm border hover:border-[#0F5C56]"
+          className="flex flex-col items-center justify-center w-16 h-12 rounded-sm border hover:border-[#045C8B]"
           style={{ borderColor: HAIRLINE, background: "#FFFFFF" }}
         >
           <span
@@ -270,17 +270,17 @@ function InRibbonGallery({ gallery, onRun }) {
           >
             {item.preview || "Aa"}
           </span>
-          <span className="text-xs mt-0.5" style={{ color: "#6C766F" }}>{item.label}</span>
+          <span className="text-xs mt-0.5" style={{ color: "#64727A" }}>{item.label}</span>
         </button>
       ))}
       <button
         type="button"
         title="More styles"
         onClick={() => onRun?.({ id: `${gallery.id}-more`, galleryMore: true })}
-        className="flex flex-col items-center justify-center w-5 rounded-sm border hover:border-[#0F5C56]"
+        className="flex flex-col items-center justify-center w-5 rounded-sm border hover:border-[#045C8B]"
         style={{ borderColor: HAIRLINE, background: "#FFFFFF" }}
       >
-        <ChevronDown size={12} style={{ color: "#6C766F" }} />
+        <ChevronDown size={12} style={{ color: "#64727A" }} />
       </button>
     </div>
   );
@@ -739,7 +739,7 @@ export default function Ribbon({
             onClick={() => setShowAppMenu((v) => !v)}
             title={`${appName} menu`}
             className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
-            style={{ background: TEAL, fontFamily: "Fraunces, serif" }}
+            style={{ background: BLUE, fontFamily: "Fraunces, serif" }}
           >
             C
           </button>
@@ -758,10 +758,10 @@ export default function Ribbon({
                   key={item.id}
                   type="button"
                   onClick={() => { setShowAppMenu(false); onCommand?.(item); }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[#EDF4F3]"
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-[#EAF3F6]"
                   style={{ color: INK }}
                 >
-                  <item.icon size={14} style={{ color: TEAL }} />
+                  <item.icon size={14} style={{ color: BLUE }} />
                   {item.label}
                 </button>
               ))}
@@ -775,7 +775,7 @@ export default function Ribbon({
           ))}
         </div>
 
-        <div className="flex-1 text-center text-sm truncate" style={{ color: "#5B655F" }}>
+        <div className="flex-1 text-center text-sm truncate" style={{ color: "#56636B" }}>
           {documentLabel}
         </div>
 
@@ -783,9 +783,9 @@ export default function Ribbon({
           type="button"
           title="Help"
           onClick={onHelp}
-          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#EDF4F3]"
+          className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[#EAF3F6]"
         >
-          <HelpCircle size={15} style={{ color: "#5B655F" }} />
+          <HelpCircle size={15} style={{ color: "#56636B" }} />
         </button>
       </div>
 
@@ -798,9 +798,9 @@ export default function Ribbon({
             onClick={() => setActiveTabId(tab.id)}
             className="px-3 py-1.5 text-sm -mb-px border-b-2"
             style={{
-              color: activeTabId === tab.id ? TEAL : "#5B655F",
+              color: activeTabId === tab.id ? BLUE : "#56636B",
               fontWeight: activeTabId === tab.id ? 600 : 400,
-              borderColor: activeTabId === tab.id ? TEAL : "transparent",
+              borderColor: activeTabId === tab.id ? BLUE : "transparent",
             }}
           >
             {tab.label}
@@ -823,10 +823,10 @@ export default function Ribbon({
                   onClick={() => setActiveTabId(tab.id)}
                   className="px-3 py-1 text-sm -mb-px border-b-2"
                   style={{
-                    color: activeTabId === tab.id ? TEAL : "#5B655F",
+                    color: activeTabId === tab.id ? BLUE : "#56636B",
                     fontWeight: activeTabId === tab.id ? 600 : 400,
-                    borderColor: activeTabId === tab.id ? TEAL : "transparent",
-                    background: TEAL_SOFT,
+                    borderColor: activeTabId === tab.id ? BLUE : "transparent",
+                    background: BLUE_SOFT,
                   }}
                 >
                   {tab.label}
@@ -881,12 +881,12 @@ export function NoteTypeToolbar({ activeType = null, onSelect }) {
             onClick={() => onSelect?.(item.type)}
             className="flex items-center gap-1.5 px-3 py-1 rounded-sm text-sm"
             style={{
-              color: active ? TEAL : "#5B655F",
+              color: active ? BLUE : "#56636B",
               fontWeight: active ? 600 : 400,
-              background: active ? TEAL_SOFT : "transparent",
+              background: active ? BLUE_SOFT : "transparent",
             }}
           >
-            <item.icon size={13} style={{ color: active ? TEAL : "#8A958E" }} />
+            <item.icon size={13} style={{ color: active ? BLUE : "#7E8E96" }} />
             {item.label}
           </button>
         );
