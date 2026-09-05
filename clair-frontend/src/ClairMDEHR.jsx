@@ -13,7 +13,12 @@ import {
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
   LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass, Calculator, Check, RotateCcw,
   Upload, Camera, Image as ImageIcon, Paperclip,
+  HeartPulse, Brain, Syringe, ListOrdered, Trash2, DoorOpen,
 } from "lucide-react";
+import {
+  LOINC_COMMON_TESTS, CVS_RESP_EXAM_FINDINGS, ICU_PROCEDURES_CHECKLIST,
+  VENTILATOR_MODES, EXAM_PATTERN_SYSTEMS, PUPIL_REACTIVITY, COMPLICATIONS_TAXONOMY,
+} from "./data/icuReviewReferenceData.js";
 import { WORKFLOWS, WORKFLOWS_BY_ID } from "./data/surgicalWorkflows.js";
 import { MEDICAL_WORKFLOWS, MEDICAL_WORKFLOWS_BY_ID } from "./data/medicalWorkflows.js";
 import Ribbon, { NoteTypeToolbar, DEFAULT_TABS as RIBBON_DEFAULT_TABS } from "./Ribbon.jsx";
@@ -19150,22 +19155,93 @@ function LabReportsTab({
   );
 }
 
-function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi }) {
+function RecordsTab({
+  patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi,
+  admissions = [], onAssignBed, onAddDay, onAddReview, onDischarge,
+}) {
   const [internalDraftHpi, setInternalDraftHpi] = useState("");
   const draftHpi = externalDraftHpi !== undefined ? externalDraftHpi : internalDraftHpi;
   const setDraftHpi = externalSetDraftHpi !== undefined ? externalSetDraftHpi : setInternalDraftHpi;
   const isDraft = patient.id === "DRAFT";
   const patientOrders = labOrders.filter((o) => o.patientId === patient.id);
 
+  // Unify visits and admission days into one Encounters timeline — outpatient
+  // visits keep their existing flat shape (unchanged), admissions are this
+  // patient's admission records each carrying their own day-by-day Review
+  // list. Not shown at all for a draft (bed assignment/admission only makes
+  // sense for a patient who already exists in the system).
+  const patientAdmissions = isDraft ? [] : admissions.filter((a) => a.patientId === patient.id);
+  const activeAdmission = patientAdmissions.find((a) => !a.dischargedAt);
+  const [assignBedOpen, setAssignBedOpen] = useState(false);
+  const [dischargeOpen, setDischargeOpen] = useState(null); // null | admission
+  const [openReviewComposer, setOpenReviewComposer] = useState(null); // null | { admissionId, dayId }
+  const [openReviewDetail, setOpenReviewDetail] = useState(null); // null | review
+
   return (
     <div className="space-y-5">
+      {!isDraft && (
+        <div className="bg-white border border-[#D7E0E7] rounded-md p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <BedDouble size={16} className="text-[#045C8B]" />
+            {activeAdmission
+              ? <span>Admitted — Bed <strong>{activeAdmission.bedNumber}</strong> · Day {activeAdmission.days.length} · since {new Date(activeAdmission.startedAt).toLocaleDateString()}</span>
+              : <span className="text-[#55666F]">Not currently admitted</span>}
+          </div>
+          {activeAdmission ? (
+            <button type="button" onClick={() => setDischargeOpen(activeAdmission)} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-[#D7E0E7] text-[#12212C] hover:bg-[#F1F6F9] font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <DoorOpen size={13} /> Discharge
+            </button>
+          ) : (
+            <button type="button" onClick={() => setAssignBedOpen(true)} className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full text-white font-medium" style={{ backgroundColor: "#045C8B", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <BedDouble size={13} /> Admit patient
+            </button>
+          )}
+        </div>
+      )}
+
+      {assignBedOpen && (
+        <AssignBedModal onClose={() => setAssignBedOpen(false)} onConfirm={(bedNumber) => { onAssignBed?.(bedNumber); setAssignBedOpen(false); }} />
+      )}
+      {dischargeOpen && (
+        <DischargeModal
+          patient={patient}
+          admission={dischargeOpen}
+          onClose={() => setDischargeOpen(null)}
+          onDischarge={(summaryText) => { onDischarge?.(dischargeOpen.id, summaryText); setDischargeOpen(null); }}
+        />
+      )}
+      {openReviewComposer && (
+        <SpecialSituationModal title="New review" icon={ClipboardList} accentColor="#045C8B" onClose={() => setOpenReviewComposer(null)}>
+          <ReviewComposer
+            onCancel={() => setOpenReviewComposer(null)}
+            onSave={(review) => { onAddReview?.(openReviewComposer.admissionId, openReviewComposer.dayId, review); setOpenReviewComposer(null); }}
+          />
+        </SpecialSituationModal>
+      )}
+      {openReviewDetail && (
+        <SpecialSituationModal title="Review detail" icon={ClipboardList} accentColor="#045C8B" onClose={() => setOpenReviewDetail(null)}>
+          <ReviewDetailView review={openReviewDetail} />
+        </SpecialSituationModal>
+      )}
+
+      {!isDraft && patientAdmissions.map((admission) => (
+        <AdmissionCard
+          key={admission.id}
+          admission={admission}
+          onAddDay={() => onAddDay?.(admission.id)}
+          onStartReview={(dayId) => setOpenReviewComposer({ admissionId: admission.id, dayId })}
+          onOpenReview={(review) => setOpenReviewDetail(review)}
+        />
+      ))}
+
       {patient.encounters.map((e, i) => {
         return (
           <div key={i} className="bg-white border border-[#D7E0E7] rounded-md p-5">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2 text-[#12212C] text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                 <Clock size={13} /> {e.date}
-                {!isDraft && <span className="ml-2 px-1.5 py-0.5 bg-[#E7EDF1] rounded-sm">Locked — immutable</span>}
+                {!isDraft && <span className="ml-2 px-1.5 py-0.5 bg-[#E7EDF1] rounded-sm">Outpatient visit</span>}
+                {!isDraft && <span className="px-1.5 py-0.5 bg-[#E7EDF1] rounded-sm">Locked — immutable</span>}
               </div>
               <span className="text-xs text-[#12212C]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>SNOMED CT {e.snomed}</span>
             </div>
@@ -19235,6 +19311,518 @@ function RecordsTab({ patient, hasOwnLab, labOrders, setLabOrders, draftHpi: ext
         </div>
       )}
     </div>
+  );
+}
+
+// --- Encounters — Admission lifecycle (Encounter/Review model) -------------
+// Generic collapsible section — used throughout the Review composer so all
+// 8 sections read consistently and only the one being filled needs to stay
+// open.
+function Accordion({ title, icon: Icon, defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border border-[#D7E0E7] rounded-md overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-[#F1F6F9] text-left"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          {Icon && <Icon size={15} className="text-[#045C8B]" />} {title}
+        </span>
+        {open ? <ChevronDown size={16} className="text-[#55666F]" /> : <ChevronRight size={16} className="text-[#55666F]" />}
+      </button>
+      {open && <div className="p-4 bg-white">{children}</div>}
+    </div>
+  );
+}
+
+// Generic checkbox-list group — checkbox list, not free text, per the spec's
+// CVS/Respiratory and Procedures sections. Nothing is pre-checked; only
+// explicitly-checked items are ever passed along (same discipline as
+// ExamPopup's buildNote()).
+function ChecklistGroup({ items, checked, onToggle }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      {items.map((item) => (
+        <label key={item} className="flex items-center gap-2 text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <input type="checkbox" checked={!!checked[item]} onChange={() => onToggle(item)} className="accent-[#045C8B]" />
+          {item}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function LabeledInput({ label, value, onChange, placeholder, className = "" }) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="block text-xs text-[#55666F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{label}</span>
+      <input
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full text-sm border border-[#D7E0E7] rounded-sm px-2.5 py-1.5 outline-none focus:outline-none"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+      />
+    </label>
+  );
+}
+
+// Numbered-list-only rich text, deliberately NOT built on document.execCommand
+// (deprecated) or a full rich-text library — a plain textarea plus a small
+// toggle that prefixes the current line "1. ", "2. " etc. as literal text,
+// and Enter continues the sequence on the next line. No bullet-list option
+// exists, by design, to keep one consistent list style.
+function NumberedListField({ value, onChange, placeholder }) {
+  const ref = useRef(null);
+
+  const toggleNumbering = () => {
+    const el = ref.current;
+    if (!el) return;
+    const pos = el.selectionStart ?? value.length;
+    const lines = value.split("\n");
+    let offset = 0, lineIdx = lines.length - 1;
+    for (let i = 0; i < lines.length; i++) {
+      if (offset + lines[i].length >= pos) { lineIdx = i; break; }
+      offset += lines[i].length + 1;
+    }
+    if (/^\d+\.\s/.test(lines[lineIdx])) {
+      lines[lineIdx] = lines[lineIdx].replace(/^\d+\.\s/, "");
+    } else {
+      let n = 1;
+      for (let i = lineIdx - 1; i >= 0; i--) {
+        const m = lines[i].match(/^(\d+)\.\s/);
+        if (m) { n = parseInt(m[1], 10) + 1; break; }
+        if (lines[i].trim() !== "") break;
+      }
+      lines[lineIdx] = `${n}. ${lines[lineIdx]}`;
+    }
+    onChange(lines.join("\n"));
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key !== "Enter") return;
+    const el = e.target;
+    const pos = el.selectionStart;
+    const before = value.slice(0, pos);
+    const currentLine = before.slice(before.lastIndexOf("\n") + 1);
+    const match = currentLine.match(/^(\d+)\.\s/);
+    if (!match) return;
+    e.preventDefault();
+    const insert = `\n${parseInt(match[1], 10) + 1}. `;
+    onChange(value.slice(0, pos) + insert + value.slice(pos));
+    requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = pos + insert.length; });
+  };
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={toggleNumbering}
+        className="mb-1.5 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-[#D7E0E7] text-[#12212C] hover:bg-[#F1F6F9]"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+      >
+        <ListOrdered size={12} /> Numbered list
+      </button>
+      <textarea
+        ref={ref}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        rows={6}
+        className="w-full text-sm border border-[#D7E0E7] rounded-md p-2.5 outline-none focus:outline-none resize-none"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif", lineHeight: 1.6 }}
+      />
+    </div>
+  );
+}
+
+// The Review composer — all 8 sections from the spec, each an Accordion,
+// collapsed by default except Vitals. Every section is optional; nothing is
+// required to save. Saving stamps the review with the current time so the
+// Encounters timeline can always show newest-first with a date/time badge.
+function ReviewComposer({ onSave, onCancel }) {
+  const [vitals, setVitals] = useState({ bp: "", hr: "", temp: "", spo2: "" });
+  const [neuro, setNeuro] = useState({ gcsE: "", gcsV: "", gcsM: "", pupilNote: "" });
+  const [examChecked, setExamChecked] = useState({});
+  const [vent, setVent] = useState({ mode: "", fio2: "", peep: "", tv: "", rr: "" });
+  const [proceduresChecked, setProceduresChecked] = useState({});
+  const [customPatterns, setCustomPatterns] = useState([]); // [{ id, system, findings }]
+  const [newPatternSystem, setNewPatternSystem] = useState("");
+  const [patternError, setPatternError] = useState("");
+  const [notes, setNotes] = useState("");
+  const [investigations, setInvestigations] = useState([]); // [{ id, name, loinc, status }]
+  const [newTestName, setNewTestName] = useState("");
+
+  const addExamPattern = () => {
+    if (!newPatternSystem) { setPatternError("Select a body system before adding."); return; }
+    setPatternError("");
+    setCustomPatterns((prev) => [...prev, { id: `PAT-${Date.now()}`, system: newPatternSystem, findings: "" }]);
+    setNewPatternSystem("");
+  };
+  const removeExamPattern = (id) => setCustomPatterns((prev) => prev.filter((p) => p.id !== id));
+
+  const addInvestigation = () => {
+    if (!newTestName) return;
+    const ref = LOINC_COMMON_TESTS.find((t) => t.name === newTestName);
+    setInvestigations((prev) => [...prev, { id: `INV-${Date.now()}`, name: newTestName, loinc: ref?.loinc || "", status: "pending" }]);
+    setNewTestName("");
+  };
+  const removeInvestigation = (id) => setInvestigations((prev) => prev.filter((i) => i.id !== id));
+  const toggleInvestigationStatus = (id) =>
+    setInvestigations((prev) => prev.map((i) => (i.id === id ? { ...i, status: i.status === "pending" ? "result_ready" : "pending" } : i)));
+
+  const handleSave = () => {
+    onSave({
+      id: `REV-${Date.now()}`,
+      timestamp: Date.now(),
+      vitals,
+      neuro,
+      examFindings: { cvsRespiratory: Object.keys(examChecked).filter((k) => examChecked[k]) },
+      ventilatorSettings: vent,
+      proceduresDone: Object.keys(proceduresChecked).filter((k) => proceduresChecked[k]),
+      customExamPatterns: customPatterns,
+      notes,
+      investigations,
+    });
+  };
+
+  const selectClass = "text-sm border border-[#D7E0E7] rounded-sm px-2.5 py-1.5 outline-none focus:outline-none";
+
+  return (
+    <div className="space-y-3">
+      <Accordion title="Vitals" icon={HeartPulse} defaultOpen>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <LabeledInput label="BP" value={vitals.bp} onChange={(e) => setVitals((v) => ({ ...v, bp: e.target.value }))} placeholder="120/80" />
+          <LabeledInput label="HR" value={vitals.hr} onChange={(e) => setVitals((v) => ({ ...v, hr: e.target.value }))} placeholder="bpm" />
+          <LabeledInput label="Temp" value={vitals.temp} onChange={(e) => setVitals((v) => ({ ...v, temp: e.target.value }))} placeholder="°F" />
+          <LabeledInput label="SpO2" value={vitals.spo2} onChange={(e) => setVitals((v) => ({ ...v, spo2: e.target.value }))} placeholder="%" />
+        </div>
+      </Accordion>
+
+      <Accordion title="GCS and pupils" icon={Brain}>
+        <div className="grid grid-cols-3 gap-3 mb-3">
+          <LabeledInput label="E" value={neuro.gcsE} onChange={(e) => setNeuro((n) => ({ ...n, gcsE: e.target.value }))} placeholder="1–4" />
+          <LabeledInput label="V" value={neuro.gcsV} onChange={(e) => setNeuro((n) => ({ ...n, gcsV: e.target.value }))} placeholder="1–5" />
+          <LabeledInput label="M" value={neuro.gcsM} onChange={(e) => setNeuro((n) => ({ ...n, gcsM: e.target.value }))} placeholder="1–6" />
+        </div>
+        <label className="block">
+          <span className="block text-xs text-[#55666F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Pupil reactivity</span>
+          <select value={neuro.pupilNote} onChange={(e) => setNeuro((n) => ({ ...n, pupilNote: e.target.value }))} className={selectClass}>
+            <option value="">Not assessed</option>
+            {PUPIL_REACTIVITY.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </label>
+      </Accordion>
+
+      <Accordion title="CVS and respiratory" icon={HeartPulse}>
+        <ChecklistGroup items={CVS_RESP_EXAM_FINDINGS} checked={examChecked} onToggle={(item) => setExamChecked((p) => ({ ...p, [item]: !p[item] }))} />
+      </Accordion>
+
+      <Accordion title="Ventilator settings" icon={Wind}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <label className="block">
+            <span className="block text-xs text-[#55666F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Mode</span>
+            <select value={vent.mode} onChange={(e) => setVent((v) => ({ ...v, mode: e.target.value }))} className={`${selectClass} w-full`}>
+              <option value="">Not on ventilator</option>
+              {VENTILATOR_MODES.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </label>
+          <LabeledInput label="FiO2 (%)" value={vent.fio2} onChange={(e) => setVent((v) => ({ ...v, fio2: e.target.value }))} placeholder="21–100" />
+          <LabeledInput label="PEEP" value={vent.peep} onChange={(e) => setVent((v) => ({ ...v, peep: e.target.value }))} placeholder="cmH2O" />
+          <LabeledInput label="Tidal volume" value={vent.tv} onChange={(e) => setVent((v) => ({ ...v, tv: e.target.value }))} placeholder="mL" />
+          <LabeledInput label="Resp. rate" value={vent.rr} onChange={(e) => setVent((v) => ({ ...v, rr: e.target.value }))} placeholder="/min" />
+        </div>
+      </Accordion>
+
+      <Accordion title="Procedures done" icon={Syringe}>
+        <ChecklistGroup items={ICU_PROCEDURES_CHECKLIST} checked={proceduresChecked} onToggle={(item) => setProceduresChecked((p) => ({ ...p, [item]: !p[item] }))} />
+      </Accordion>
+
+      <Accordion title="Add exam pattern" icon={Plus}>
+        <div className="flex gap-2 mb-2">
+          <select value={newPatternSystem} onChange={(e) => setNewPatternSystem(e.target.value)} className={`${selectClass} flex-1`}>
+            <option value="">Select a body system…</option>
+            {EXAM_PATTERN_SYSTEMS.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button type="button" onClick={addExamPattern} className="text-xs px-3 py-1.5 rounded-sm text-white font-medium" style={{ backgroundColor: "#045C8B" }}>Add</button>
+        </div>
+        {patternError && <p className="text-xs text-[#B34A3C] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{patternError}</p>}
+        {customPatterns.map((p) => (
+          <div key={p.id} className="mb-2 border border-[#D7E0E7] rounded-md p-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-sm font-medium text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{p.system}</span>
+              <button type="button" onClick={() => removeExamPattern(p.id)} className="text-[#12212C] hover:text-[#B34A3C]"><Trash2 size={14} /></button>
+            </div>
+            <BareEditableTextarea
+              value={p.findings}
+              onChange={(e) => setCustomPatterns((prev) => prev.map((x) => (x.id === p.id ? { ...x, findings: e.target.value } : x)))}
+              rows={3}
+              placeholder="Findings…"
+            />
+          </div>
+        ))}
+      </Accordion>
+
+      <Accordion title="Additional notes" icon={FileText}>
+        <NumberedListField value={notes} onChange={setNotes} placeholder="Additional notes…" />
+      </Accordion>
+
+      <Accordion title="Investigations" icon={FlaskConical}>
+        <div className="flex gap-2 mb-3">
+          <select value={newTestName} onChange={(e) => setNewTestName(e.target.value)} className={`${selectClass} flex-1`}>
+            <option value="">Add a test…</option>
+            {LOINC_COMMON_TESTS.map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
+          </select>
+          <button type="button" onClick={addInvestigation} className="text-xs px-3 py-1.5 rounded-sm text-white font-medium" style={{ backgroundColor: "#045C8B" }}>Add</button>
+        </div>
+        {investigations.map((inv) => (
+          <div key={inv.id} className="flex items-center justify-between py-1.5 border-b border-[#E7EDF1] text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            <span>{inv.name} — <span className="text-xs text-[#55666F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>LOINC {inv.loinc}</span></span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => toggleInvestigationStatus(inv.id)}
+                className="text-xs px-2 py-0.5 rounded-sm"
+                style={inv.status === "pending" ? { backgroundColor: "#FBF6EC", color: "#7A5A19" } : { backgroundColor: "#E7EDF1", color: "#12212C" }}
+              >
+                {inv.status === "pending" ? "Pending" : "Result ready"}
+              </button>
+              <button type="button" onClick={() => removeInvestigation(inv.id)} className="text-[#12212C] hover:text-[#B34A3C]"><X size={14} /></button>
+            </div>
+          </div>
+        ))}
+      </Accordion>
+
+      <div className="flex gap-2 justify-end pt-1">
+        <button type="button" onClick={onCancel} className="text-sm px-3 py-2 rounded-sm border border-[#D7E0E7] text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
+        <button type="button" onClick={handleSave} className="text-sm px-4 py-2 rounded-sm text-white font-medium" style={{ backgroundColor: "#045C8B", fontFamily: "'IBM Plex Sans', sans-serif" }}>Save review</button>
+      </div>
+    </div>
+  );
+}
+
+// Read-only detail view of one saved Review — every section is optional, so
+// only sections with real content render (no "GCS: — — —" placeholder rows).
+function ReviewDetailView({ review }) {
+  const hasVitals = review.vitals && (review.vitals.bp || review.vitals.hr || review.vitals.temp || review.vitals.spo2);
+  const hasGcs = review.neuro && (review.neuro.gcsE || review.neuro.gcsV || review.neuro.gcsM || review.neuro.pupilNote);
+  const hasVent = review.ventilatorSettings && review.ventilatorSettings.mode;
+  return (
+    <div className="space-y-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "#12212C" }}>
+      <p className="text-xs text-[#55666F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{new Date(review.timestamp).toLocaleString()}</p>
+      {hasVitals && <p><strong>Vitals —</strong> BP {review.vitals.bp || "—"} · HR {review.vitals.hr || "—"} · Temp {review.vitals.temp || "—"} · SpO2 {review.vitals.spo2 || "—"}</p>}
+      {hasGcs && <p><strong>GCS —</strong> E{review.neuro.gcsE || "—"} V{review.neuro.gcsV || "—"} M{review.neuro.gcsM || "—"}{review.neuro.pupilNote ? ` · Pupils: ${review.neuro.pupilNote}` : ""}</p>}
+      {review.examFindings?.cvsRespiratory?.length > 0 && <p><strong>CVS/Respiratory —</strong> {review.examFindings.cvsRespiratory.join(", ")}</p>}
+      {hasVent && <p><strong>Ventilator —</strong> {review.ventilatorSettings.mode} · FiO2 {review.ventilatorSettings.fio2 || "—"} · PEEP {review.ventilatorSettings.peep || "—"} · TV {review.ventilatorSettings.tv || "—"} · RR {review.ventilatorSettings.rr || "—"}</p>}
+      {review.proceduresDone?.length > 0 && <p><strong>Procedures —</strong> {review.proceduresDone.join(", ")}</p>}
+      {review.customExamPatterns?.filter((p) => p.findings?.trim()).map((p) => (
+        <p key={p.id}><strong>{p.system} —</strong> {p.findings}</p>
+      ))}
+      {review.notes?.trim() && <div><strong>Notes —</strong><p className="whitespace-pre-wrap mt-1">{review.notes}</p></div>}
+      {review.investigations?.length > 0 && (
+        <div>
+          <strong>Investigations —</strong>
+          <ul className="mt-1 space-y-1 list-none">
+            {review.investigations.map((inv) => (
+              <li key={inv.id}>{inv.name} <span className="text-xs text-[#55666F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>(LOINC {inv.loinc})</span> — {inv.status === "pending" ? "Pending" : "Result ready"}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {!hasVitals && !hasGcs && !hasVent && !review.examFindings?.cvsRespiratory?.length && !review.proceduresDone?.length &&
+        !review.customExamPatterns?.some((p) => p.findings?.trim()) && !review.notes?.trim() && !review.investigations?.length && (
+        <p className="text-[#55666F]">No sections filled for this review.</p>
+      )}
+    </div>
+  );
+}
+
+// One admission — the "Admission · Day N" type-badged block in the unified
+// Encounters timeline. Each day lists its Reviews most-recent-first
+// (tappable, read-only detail) with a "Start new review" action; a
+// discharged admission shows its compiled summary instead and can't take
+// new days or reviews.
+function AdmissionCard({ admission, onAddDay, onStartReview, onOpenReview }) {
+  const discharged = !!admission.dischargedAt;
+  return (
+    <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2 text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <BedDouble size={14} />
+          <span className="px-1.5 py-0.5 bg-[#E7EDF1] rounded-sm">Admission · Bed {admission.bedNumber}</span>
+          {discharged && <span className="px-1.5 py-0.5 bg-[#E7EDF1] rounded-sm">Discharged</span>}
+        </div>
+        <span className="text-xs text-[#55666F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+          {new Date(admission.startedAt).toLocaleDateString()}{discharged ? ` – ${new Date(admission.dischargedAt).toLocaleDateString()}` : ""}
+        </span>
+      </div>
+
+      {admission.days.map((day) => (
+        <div key={day.id} className="mb-3 last:mb-0 border-t border-[#E7EDF1] pt-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Day {day.dayNumber} · {day.date}</span>
+            {!discharged && (
+              <button type="button" onClick={() => onStartReview(day.id)} className="text-xs px-2.5 py-1 rounded-full border border-[#D7E0E7] text-[#12212C] hover:bg-[#F1F6F9] font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                + Start new review
+              </button>
+            )}
+          </div>
+          {day.reviews.length === 0 ? (
+            <p className="text-xs text-[#55666F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No reviews recorded yet.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {day.reviews.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => onOpenReview(r)}
+                  className="w-full text-left text-xs px-3 py-2 rounded-sm bg-[#F1F6F9] hover:bg-[#E7EDF1] flex items-center justify-between"
+                  style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+                >
+                  <span className="text-[#55666F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{new Date(r.timestamp).toLocaleTimeString()}</span>
+                  <span className="text-[#12212C] truncate ml-2">{r.notes?.trim() ? r.notes.trim().slice(0, 60) : "Review recorded"}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {!discharged && (
+        <button type="button" onClick={onAddDay} className="mt-3 text-xs px-2.5 py-1 rounded-full border border-[#D7E0E7] text-[#12212C] hover:bg-[#F1F6F9] font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          + Add Day {admission.days.length + 1}
+        </button>
+      )}
+
+      {discharged && admission.dischargeSummary && (
+        <div className="mt-3 pt-3 border-t border-[#E7EDF1]">
+          <p className="text-xs uppercase tracking-wide text-[#55666F] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Discharge summary</p>
+          <p className="text-sm whitespace-pre-wrap" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: "#12212C" }}>{admission.dischargeSummary}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AssignBedModal({ onClose, onConfirm }) {
+  const [bedNumber, setBedNumber] = useState("");
+  return (
+    <SpecialSituationModal title="Admit patient" icon={BedDouble} accentColor="#045C8B" onClose={onClose}>
+      <div className="space-y-3">
+        <LabeledInput label="Bed number" value={bedNumber} onChange={(e) => setBedNumber(e.target.value)} placeholder="e.g. ICU-4" />
+        <p className="text-xs text-[#55666F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          This creates the admission and its first day (Day 1) — reviews can be added to it right away.
+        </p>
+        <div className="flex justify-end gap-2 pt-1">
+          <button type="button" onClick={onClose} className="text-sm px-3 py-2 rounded-sm border border-[#D7E0E7] text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
+          <button
+            type="button"
+            disabled={!bedNumber.trim()}
+            onClick={() => onConfirm(bedNumber.trim())}
+            className="text-sm px-4 py-2 rounded-sm text-white font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ backgroundColor: "#045C8B", fontFamily: "'IBM Plex Sans', sans-serif" }}
+          >
+            Admit
+          </button>
+        </div>
+      </div>
+    </SpecialSituationModal>
+  );
+}
+
+// Auto-compiles the master (discharge) summary from every Review recorded
+// across the admission — real captured data, not a blank page the doctor
+// has to write from scratch. Doctor can still edit the result before
+// finalising discharge.
+function compileDischargeSummary(patient, admission) {
+  const allReviews = admission.days.flatMap((d) => d.reviews.map((r) => ({ ...r, dayNumber: d.dayNumber })));
+  const sorted = [...allReviews].sort((a, b) => a.timestamp - b.timestamp);
+  const admissionDx = patient.encounters[0];
+
+  const vitalsTrend = sorted
+    .filter((r) => r.vitals && (r.vitals.bp || r.vitals.hr || r.vitals.temp || r.vitals.spo2))
+    .map((r) => `Day ${r.dayNumber} (${new Date(r.timestamp).toLocaleString()}): BP ${r.vitals.bp || "—"}, HR ${r.vitals.hr || "—"}, Temp ${r.vitals.temp || "—"}, SpO2 ${r.vitals.spo2 || "—"}`);
+  const allProcedures = [...new Set(sorted.flatMap((r) => r.proceduresDone || []))];
+  const allInvestigations = sorted.flatMap((r) => r.investigations || []);
+  const treatmentNotes = sorted.filter((r) => r.notes?.trim()).map((r) => `Day ${r.dayNumber}: ${r.notes.trim()}`);
+
+  const lines = [];
+  lines.push(`DISCHARGE SUMMARY — ${patient.name || "(name not recorded)"}`);
+  lines.push(`Bed ${admission.bedNumber} · ${new Date(admission.startedAt).toLocaleDateString()} – ${new Date().toLocaleDateString()}`);
+  lines.push("");
+  lines.push(`Admission diagnosis: ${admissionDx?.diagnosis || "(not recorded)"}`);
+  lines.push(`Problem status: ${admissionDx?.diagnosis ? `${admissionDx.diagnosis} — resolved/stable at discharge (confirm before finalising)` : "(not recorded)"}`);
+  lines.push("");
+  lines.push("VITALS TREND");
+  lines.push(vitalsTrend.length ? vitalsTrend.join("\n") : "(no vitals recorded)");
+  lines.push("");
+  lines.push("PROCEDURES PERFORMED");
+  lines.push(allProcedures.length ? allProcedures.join(", ") : "(none recorded)");
+  lines.push("");
+  lines.push("INVESTIGATIONS AND RESULTS");
+  lines.push(allInvestigations.length
+    ? allInvestigations.map((i) => `${i.name} (LOINC ${i.loinc}) — ${i.status === "pending" ? "Pending" : "Result ready"}`).join("\n")
+    : "(none recorded)");
+  lines.push("");
+  lines.push("TREATMENT GIVEN");
+  lines.push(treatmentNotes.length ? treatmentNotes.join("\n\n") : "(none recorded)");
+  return lines.join("\n");
+}
+
+// Shared complications checklist — same "only explicitly-checked items get
+// written out" legal-safety pattern as ExamPopup. Reused prospectively in
+// Consent (per consent-template category) and retrospectively at Discharge
+// (flattened across all categories, since discharge isn't tied to one
+// specific consent template).
+function ComplicationsChecklist({ items, checked, onToggle }) {
+  return <ChecklistGroup items={items} checked={checked} onToggle={onToggle} />;
+}
+function buildComplicationsText(items, checked, { prospective }) {
+  const selected = items.filter((item) => checked[item]);
+  if (selected.length === 0) return "";
+  return prospective
+    ? `The following risks were discussed with the patient: ${selected.join(", ")}.`
+    : `Complications during stay: ${selected.join(", ")}.`;
+}
+
+function DischargeModal({ patient, admission, onClose, onDischarge }) {
+  const [summary, setSummary] = useState(() => compileDischargeSummary(patient, admission));
+  const allComplications = [...new Set(Object.values(COMPLICATIONS_TAXONOMY).flat())];
+  const [complicationsChecked, setComplicationsChecked] = useState({});
+  const complicationsText = buildComplicationsText(allComplications, complicationsChecked, { prospective: false });
+
+  return (
+    <SpecialSituationModal title="Discharge patient" icon={DoorOpen} accentColor="#045C8B" onClose={onClose}>
+      <div className="space-y-4">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-[#55666F] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Complications during stay</p>
+          <ComplicationsChecklist items={allComplications} checked={complicationsChecked} onToggle={(item) => setComplicationsChecked((p) => ({ ...p, [item]: !p[item] }))} />
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-[#55666F] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Master summary — auto-compiled, editable before finalising</p>
+          <BareEditableTextarea
+            value={complicationsText ? `${summary}\n\nCOMPLICATIONS DURING STAY\n${complicationsText}` : summary}
+            onChange={(e) => setSummary(e.target.value)}
+            rows={16}
+            scrollable
+          />
+        </div>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="text-sm px-3 py-2 rounded-sm border border-[#D7E0E7] text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
+          <button
+            type="button"
+            onClick={() => onDischarge(complicationsText ? `${summary}\n\nCOMPLICATIONS DURING STAY\n${complicationsText}` : summary)}
+            className="text-sm px-4 py-2 rounded-sm text-white font-medium"
+            style={{ backgroundColor: "#045C8B", fontFamily: "'IBM Plex Sans', sans-serif" }}
+          >
+            Confirm discharge
+          </button>
+        </div>
+      </div>
+    </SpecialSituationModal>
   );
 }
 
@@ -23721,6 +24309,12 @@ function ConsentTab({ patient }) {
   const [risksExplained, setRisksExplained] = useState(false);
   const [signerName, setSignerName] = useState("");
   const [signed, setSigned] = useState(false);
+  // Complications checklist — same taxonomy shared with Discharge, used
+  // prospectively here: only explicitly-checked risks get written into the
+  // generated consent language (same discipline as ExamPopup).
+  const [complicationsChecked, setComplicationsChecked] = useState({});
+  const complicationsForTemplate = COMPLICATIONS_TAXONOMY[template] || [];
+  const complicationsText = buildComplicationsText(complicationsForTemplate, complicationsChecked, { prospective: true });
 
   if (signed) {
     return (
@@ -23732,6 +24326,9 @@ function ConsentTab({ patient }) {
         <p className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           {template} · Signed by {signerName} · {new Date().toLocaleString()}
         </p>
+        {complicationsText && (
+          <p className="text-sm text-[#12212C] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{complicationsText}</p>
+        )}
         <p className="text-xs text-[#12212C] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Like clinical records, this cannot be edited once signed — a correction would create a new, superseding entry.</p>
       </div>
     );
@@ -23743,7 +24340,7 @@ function ConsentTab({ patient }) {
     <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
       <SectionLabel><span className="inline-flex items-center gap-2"><FileSignature size={15} /> Informed consent — before starting treatment</span></SectionLabel>
       <label className="text-sm text-[#12212C]">Consent type</label>
-      <select value={template} onChange={(e) => setTemplate(e.target.value)} className="w-full mt-1 mb-4 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <select value={template} onChange={(e) => { setTemplate(e.target.value); setComplicationsChecked({}); }} className="w-full mt-1 mb-4 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
         {CONSENT_TEMPLATES.map((t) => <option key={t} value={t}>{t}</option>)}
       </select>
 
@@ -23757,6 +24354,14 @@ function ConsentTab({ patient }) {
           Risks, benefits, and alternatives have been discussed, and questions answered.
         </label>
       </div>
+
+      <p className="text-xs uppercase tracking-wide text-[#55666F] mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Complications discussed with the patient</p>
+      <div className="mb-4">
+        <ComplicationsChecklist items={complicationsForTemplate} checked={complicationsChecked} onToggle={(item) => setComplicationsChecked((p) => ({ ...p, [item]: !p[item] }))} />
+      </div>
+      {complicationsText && (
+        <p className="text-xs text-[#12212C] mb-4 italic" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{complicationsText}</p>
+      )}
 
       <label className="text-sm text-[#12212C]">Patient / guardian signature (typed name)</label>
       <input value={signerName} onChange={(e) => setSignerName(e.target.value)} placeholder="Full name" className="w-full mt-1 mb-4 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
@@ -29748,6 +30353,35 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [scoringSelections, setScoringSelections] = useState({});
   const [sidebarView, setSidebarView] = useState("patients"); // patients | hospitalAuth | accounting | feed
   const [labOrders, setLabOrders] = useState([]);
+  // Encounters — Admission lifecycle (Encounter/Review model). Local-first,
+  // best-effort, same as labOrders/followups elsewhere: not yet wired to a
+  // backend. One admission per bed-assignment action, each with its own
+  // day-by-day Review list; a patient's existing `patient.encounters` stay
+  // untouched (they're the outpatient-visit history) and get merged with
+  // this patient's admissions, type-badged, in the unified Encounters view.
+  const [admissions, setAdmissions] = useState([]);
+  // [{ id, patientId, bedNumber, startedAt, dischargedAt: null|ts, dischargeSummary: null|string,
+  //    days: [{ id, dayNumber, date, reviews: [] }] }]
+  const assignBedToPatient = (patientId, bedNumber) => {
+    const now = Date.now();
+    setAdmissions((prev) => [...prev, {
+      id: `ADM-${now}`, patientId, bedNumber, startedAt: now, dischargedAt: null, dischargeSummary: null,
+      days: [{ id: `DAY-${now}`, dayNumber: 1, date: new Date(now).toLocaleDateString(), reviews: [] }],
+    }]);
+  };
+  const addAdmissionDay = (admissionId) => {
+    setAdmissions((prev) => prev.map((a) => a.id !== admissionId ? a : {
+      ...a, days: [...a.days, { id: `DAY-${Date.now()}`, dayNumber: a.days.length + 1, date: new Date().toLocaleDateString(), reviews: [] }],
+    }));
+  };
+  const addReviewToDay = (admissionId, dayId, review) => {
+    setAdmissions((prev) => prev.map((a) => a.id !== admissionId ? a : {
+      ...a, days: a.days.map((d) => d.id !== dayId ? d : { ...d, reviews: [review, ...d.reviews] }),
+    }));
+  };
+  const dischargePatientAdmission = (admissionId, summaryText) => {
+    setAdmissions((prev) => prev.map((a) => a.id !== admissionId ? a : { ...a, dischargedAt: Date.now(), dischargeSummary: summaryText }));
+  };
   const [doctorSpecialty, setDoctorSpecialty] = useState(null);
   const [doctorPlan, setDoctorPlan] = useState("free");
 
@@ -30385,7 +31019,14 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                   <OverviewTab patient={patient} />
                 </div>
                 <div style={{ display: tab === "records" ? "block" : "none" }}>
-                  <RecordsTab patient={patient} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} />
+                  <RecordsTab
+                    patient={patient} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders}
+                    admissions={admissions}
+                    onAssignBed={(bedNumber) => assignBedToPatient(patient.id, bedNumber)}
+                    onAddDay={(admissionId) => addAdmissionDay(admissionId)}
+                    onAddReview={(admissionId, dayId, review) => addReviewToDay(admissionId, dayId, review)}
+                    onDischarge={(admissionId, summaryText) => dischargePatientAdmission(admissionId, summaryText)}
+                  />
                 </div>
                 <div style={{ display: tab === "examination" ? "block" : "none" }}>
                   <ExaminationTab />
