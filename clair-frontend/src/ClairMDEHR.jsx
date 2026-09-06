@@ -18207,78 +18207,6 @@ function TreatmentSummaryButtons({ patient }) {
   );
 }
 
-function MedicationSafetyPanel({ patient }) {
-  const rx = patient.prescriptions;
-  if (rx.length === 0) return null;
-
-  // Pairwise interaction check across the patient's own current prescriptions
-  const interactions = [];
-  for (let i = 0; i < rx.length; i++) {
-    for (let j = i + 1; j < rx.length; j++) {
-      const a = DRUG_SAFETY[rx[i].generic];
-      const b = DRUG_SAFETY[rx[j].generic];
-      if (a?.interactsWith?.[rx[j].generic]) interactions.push({ pair: `${rx[i].generic} + ${rx[j].generic}`, note: a.interactsWith[rx[j].generic] });
-      else if (b?.interactsWith?.[rx[i].generic]) interactions.push({ pair: `${rx[i].generic} + ${rx[j].generic}`, note: b.interactsWith[rx[i].generic] });
-    }
-  }
-
-  return (
-    <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
-      <div className="flex items-center gap-2 mb-1">
-        <AlertTriangle size={17} className="text-[#B34A3C]" />
-        <h3 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 600 }}>Medication safety check</h3>
-      </div>
-      <p className="text-sm text-[#12212C] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        Reference information only — always confirm against current prescribing information and the patient's full history before dispensing.
-      </p>
-
-      <div className="space-y-4">
-        {rx.map((r, i) => {
-          const info = DRUG_SAFETY[r.generic];
-          if (!info) return null;
-          const allergyHit = checkAllergyMatch(patient.allergies, info.allergyFlags);
-          return (
-            <div key={i} className="border border-[#E7EDF1] rounded-sm p-3">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{r.drug}</span>
-                {allergyHit && (
-                  <span className="text-xs px-1.5 py-0.5 bg-[#FBEFEC] text-[#B34A3C] rounded-sm font-medium">⚠ Matches recorded allergy</span>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                <div>
-                  <div className="text-[#12212C] uppercase text-xs mb-1">Contraindicated in</div>
-                  <ul className="space-y-0.5">{info.contraindications.map((c, ci) => <li key={ci}>• {c}</li>)}</ul>
-                </div>
-                <div>
-                  <div className="text-[#12212C] uppercase text-xs mb-1">Adverse events to expect</div>
-                  <ul className="space-y-0.5">{info.adverseEvents.map((c, ci) => <li key={ci}>• {c}</li>)}</ul>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-[#E7EDF1]">
-        <div className="text-sm uppercase tracking-wide text-[#12212C] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Drug–drug interactions to avoid / monitor</div>
-        {interactions.length === 0 ? (
-          <p className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No known interactions flagged among this patient's current prescriptions.</p>
-        ) : (
-          <div className="space-y-2">
-            {interactions.map((it, i) => (
-              <div key={i} className="bg-[#FBF6EC] border border-[#F0DDB0] rounded-sm p-2.5 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                <span className="font-medium">{it.pair}</span> — {it.note}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-
 // --- Patients ---------------------------------------------------------------
 
 // Blank template used when a doctor starts a "New patient" — every field
@@ -23440,6 +23368,12 @@ function buildClinicalQuickCheck({ patient, isDraftIcuWard, draftDiagnosisPlanEn
     .map((slug) => ({ slug, label: DIAGNOSIS_LABEL[slug], meta: DIAGNOSIS_META[slug] }))
     .filter((d) => d.meta);
 
+  // Formerly the standalone "Decision support" tab's scoring-system flag —
+  // same rule: flagged only, never calculated within the app.
+  const scoringSystems = diagnosisSlugs
+    .map((slug) => ({ slug, label: DIAGNOSIS_LABEL[slug], systems: SCORING_SYSTEMS[slug] || [] }))
+    .filter((d) => d.systems.length > 0);
+
   const drugs = isDraftIcuWard ? [] : matchDrugsFromPrescriptionText((patient?.prescriptions || []).map((rx) => rx.drug));
   const drugNames = drugs.map((d) => d.name);
   const drugAssessments = drugs.map((drug) => ({
@@ -23447,7 +23381,28 @@ function buildClinicalQuickCheck({ patient, isDraftIcuWard, draftDiagnosisPlanEn
     interactions: rxMatchInteractions(drug, drugNames.filter((n) => n !== drug.name)),
   }));
 
-  return { diagnoses, drugAssessments };
+  // Formerly the standalone "Decision support" tab's medication safety
+  // check — matched by free-text prescription name against DRUG_SAFETY,
+  // same fuzzy match matchDrugsFromPrescriptionText already uses above
+  // (the old panel keyed off a `generic` field prescriptions never
+  // actually carry, so it never matched anything — fixed here).
+  const safetyDrugNames = isDraftIcuWard ? [] : Object.keys(DRUG_SAFETY).filter((name) =>
+    (patient?.prescriptions || []).some((rx) => (rx.drug || "").toLowerCase().includes(name.toLowerCase())));
+  const medicationSafety = safetyDrugNames.map((name) => ({
+    name,
+    info: DRUG_SAFETY[name],
+    allergyHit: checkAllergyMatch(patient?.allergies || [], DRUG_SAFETY[name].allergyFlags || []),
+  }));
+  const medicationInteractions = [];
+  for (let i = 0; i < safetyDrugNames.length; i++) {
+    for (let j = i + 1; j < safetyDrugNames.length; j++) {
+      const a = DRUG_SAFETY[safetyDrugNames[i]], b = DRUG_SAFETY[safetyDrugNames[j]];
+      if (a.interactsWith?.[safetyDrugNames[j]]) medicationInteractions.push({ pair: `${safetyDrugNames[i]} + ${safetyDrugNames[j]}`, note: a.interactsWith[safetyDrugNames[j]] });
+      else if (b.interactsWith?.[safetyDrugNames[i]]) medicationInteractions.push({ pair: `${safetyDrugNames[i]} + ${safetyDrugNames[j]}`, note: b.interactsWith[safetyDrugNames[i]] });
+    }
+  }
+
+  return { diagnoses, drugAssessments, scoringSystems, medicationSafety, medicationInteractions };
 }
 
 function StethoscopeMascotIcon({ size = 34 }) {
@@ -23485,8 +23440,8 @@ function StethoscopeMascot({ onOpen }) {
 }
 
 function ClinicalQuickCheckPopup({ onClose, assessment }) {
-  const { diagnoses, drugAssessments } = assessment;
-  const hasNothing = diagnoses.length === 0 && drugAssessments.length === 0;
+  const { diagnoses, drugAssessments, scoringSystems, medicationSafety, medicationInteractions } = assessment;
+  const hasNothing = diagnoses.length === 0 && drugAssessments.length === 0 && scoringSystems.length === 0 && medicationSafety.length === 0;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(22,36,31,0.45)" }} onClick={onClose}>
       <div className="bg-white rounded-md shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -23531,6 +23486,23 @@ function ClinicalQuickCheckPopup({ onClose, assessment }) {
             </div>
           ))}
 
+          {scoringSystems.map((d) => (
+            <div key={d.slug} className="border border-[#D7E0E7] rounded-md p-3.5">
+              <h3 className="text-sm font-semibold mb-2 inline-flex items-center gap-1.5" style={{ color: "#12212C" }}><AlertTriangle size={14} className="text-[#C99A2E]" /> Scoring system(s) for {d.label}</h3>
+              <p className="text-xs text-[#12212C] mb-2.5">
+                Flagged as relevant — not collected or calculated within this app. That stays with the treating physician, outside ClairMD.
+              </p>
+              <div className="space-y-2">
+                {d.systems.map((s) => (
+                  <div key={s.id} className="p-3 border border-[#E7EDF1] rounded-sm bg-[#FBF3ED]">
+                    <div className="text-sm font-medium">{s.name}</div>
+                    <div className="text-sm text-[#12212C] mt-0.5">{s.description}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
           {drugAssessments.map(({ drug, interactions }) => (
             <div key={drug.name} className="border border-[#D7E0E7] rounded-md p-3.5">
               <h3 className="text-sm font-semibold mb-2" style={{ color: "#12212C" }}>{drug.name}</h3>
@@ -23562,6 +23534,41 @@ function ClinicalQuickCheckPopup({ onClose, assessment }) {
               </div>
             </div>
           ))}
+
+          {medicationSafety.length > 0 && (
+            <div className="border border-[#D7E0E7] rounded-md p-3.5">
+              <h3 className="text-sm font-semibold mb-2" style={{ color: "#12212C" }}>Medication safety check</h3>
+              <p className="text-xs text-[#12212C] mb-2.5">Reference information only — always confirm against current prescribing information and the patient's full history before dispensing.</p>
+              <div className="space-y-3">
+                {medicationSafety.map(({ name, info, allergyHit }) => (
+                  <div key={name} className="p-3 border border-[#E7EDF1] rounded-sm">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-sm font-medium">{name}</span>
+                      {allergyHit && <span className="text-xs px-1.5 py-0.5 bg-[#FBEFEC] text-[#B34A3C] rounded-sm font-medium">⚠ Matches recorded allergy</span>}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <div className="text-[#12212C] uppercase text-xs mb-1">Contraindicated in</div>
+                        <ul className="list-disc list-inside space-y-0.5">{info.contraindications.map((c, ci) => <li key={ci} className="text-sm">{c}</li>)}</ul>
+                      </div>
+                      <div>
+                        <div className="text-[#12212C] uppercase text-xs mb-1">Adverse events</div>
+                        <ul className="list-disc list-inside space-y-0.5">{info.adverseEvents.map((c, ci) => <li key={ci} className="text-sm">{c}</li>)}</ul>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {medicationInteractions.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-[#E7EDF1]">
+                  <div className="text-xs uppercase tracking-wide text-[#B34A3C] mb-1.5">Drug-drug interactions to avoid / monitor</div>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    {medicationInteractions.map((it, i) => <li key={i} className="text-sm text-[#7A2F25]"><span className="font-medium">{it.pair}</span> — {it.note}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -23572,8 +23579,8 @@ function ClinicalQuickCheckPopup({ onClose, assessment }) {
 // Calculators — pure arithmetic, reachable from the ribbon's Calculators
 // dropdown. No model call, nothing leaves the device, and no result is ever
 // auto-filled into a note or prescription — every number here is for the
-// doctor to read and act on themselves, same principle as the Decision
-// Support tab's scoring-system flags just being flagged, not calculated.
+// doctor to read and act on themselves, same principle as the Clinical
+// quick-check popup's scoring-system flags being flagged, not calculated.
 // Prefilled from whatever's already been entered on the current draft
 // (age/sex from Overview) where the app actually has that field — weight,
 // height, and serum creatinine aren't collected anywhere yet, so those
@@ -24045,45 +24052,6 @@ function PrescriptionAlertPicker({ patientConditions = [], patientAllergies = []
   );
 }
 
-function DecisionSupportTab({ patient, scoringSelections, setScoringSelections }) {
-  const diagnosisKey = patient.encounters[0]?.diagnosisKey;
-  const systems = SCORING_SYSTEMS[diagnosisKey] || [];
-
-  if (!diagnosisKey || systems.length === 0) {
-    return (
-      <div className="space-y-5">
-        <div className="bg-white border border-[#D7E0E7] rounded-md p-8 text-center text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          No reference scoring system flagged for this diagnosis yet.
-        </div>
-        <MedicationSafetyPanel patient={patient} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-5">
-      <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
-        <SectionLabel><span className="inline-flex items-center gap-2"><AlertTriangle size={15} className="text-[#C99A2E]" /> Applicable scoring system(s) for {DIAGNOSIS_LABEL[diagnosisKey]}</span></SectionLabel>
-        <p className="text-sm text-[#12212C] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          This app flags which severity/risk scoring tool is relevant to this diagnosis. It does not collect inputs, calculate the score, or generate a resulting risk band or recommendation — that calculation and the clinical decision it informs remain entirely with the treating physician, outside this app.
-        </p>
-        <div className="space-y-3">
-          {systems.map((s) => (
-            <div key={s.id} className="p-4 border border-[#E7EDF1] rounded-md bg-[#FBF3ED]">
-              <div className="font-medium text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.name}</div>
-              <div className="text-sm text-[#12212C] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{s.description}</div>
-              <div className="text-sm text-[#C99A2E] mt-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                Applies here — please calculate this using your own clinical judgement or an external reference tool. Not calculated within this app.
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <MedicationSafetyPanel patient={patient} />
-    </div>
-  );
-}
 
 // Debounced search-and-pick over the real /api/account-directory endpoint
 // — shared by the referral and care-team-instruction pickers below (only
@@ -30447,7 +30415,6 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [draftSaveMessage, setDraftSaveMessage] = useState(null);
   const [pageCaution, setPageCaution] = useState(null); // null | { message, fieldId }
   const [tab, setTab] = useState("overview");
-  const [scoringSelections, setScoringSelections] = useState({});
   const [sidebarView, setSidebarView] = useState("patients"); // patients | hospitalAuth | accounting | feed
   const [labOrders, setLabOrders] = useState([]);
   // Encounters — Admission lifecycle (Encounter/Review model). Local-first,
@@ -30539,7 +30506,6 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
     { key: "diagnosisplan", label: "Provisional Diagnosis & Treatment Plan", icon: ClipboardList },
     { key: "careteam", label: "Care team", icon: Users2 },
     { key: "consent", label: "Consent", icon: FileSignature },
-    { key: "support", label: "Decision support", icon: Stethoscope },
     ...(isComplexPatient ? [{ key: "advanced", label: "Advanced care", icon: Globe2 }] : []),
     { key: "assistance", label: "Cost & assistance", icon: HandHeart },
   ];
@@ -31069,9 +31035,6 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                     <div style={{ display: tab === "consent" ? "block" : "none" }}>
                       <ConsentTab patient={DRAFT_PATIENT} />
                     </div>
-                    <div style={{ display: tab === "support" ? "block" : "none" }}>
-                      <DecisionSupportTab patient={DRAFT_PATIENT} scoringSelections={scoringSelections} setScoringSelections={setScoringSelections} />
-                    </div>
                     <div style={{ display: tab === "assistance" ? "block" : "none" }}>
                       <AssistanceTab patient={DRAFT_PATIENT} />
                     </div>
@@ -31146,9 +31109,6 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                 </div>
                 <div style={{ display: tab === "consent" ? "block" : "none" }}>
                   <ConsentTab patient={patient} />
-                </div>
-                <div style={{ display: tab === "support" ? "block" : "none" }}>
-                  <DecisionSupportTab patient={patient} scoringSelections={scoringSelections} setScoringSelections={setScoringSelections} />
                 </div>
                 {isComplexPatient && (
                   <div style={{ display: tab === "advanced" ? "block" : "none" }}>
