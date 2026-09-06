@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 
 // --- ClairMD brand tokens (see ClairMDEHR.jsx's own design-tokens comment)
-const BLUE = "#045C8B";
+const BLUE = "#1877F2";
 const BLUE_SOFT = "#E7F1F5";
 const MARIGOLD = "#E8A33D";
 const INK = "#12212C";
@@ -261,7 +261,7 @@ function InRibbonGallery({ gallery, onRun }) {
           key={item.id}
           type="button"
           onClick={() => onRun?.({ ...item, galleryId: gallery.id })}
-          className="flex flex-col items-center justify-center w-16 h-12 rounded-sm border hover:border-[#045C8B]"
+          className="flex flex-col items-center justify-center w-16 h-12 rounded-sm border hover:border-[#1877F2]"
           style={{ borderColor: HAIRLINE, background: "#FFFFFF" }}
         >
           <span
@@ -277,7 +277,7 @@ function InRibbonGallery({ gallery, onRun }) {
         type="button"
         title="More styles"
         onClick={() => onRun?.({ id: `${gallery.id}-more`, galleryMore: true })}
-        className="flex flex-col items-center justify-center w-5 rounded-sm border hover:border-[#045C8B]"
+        className="flex flex-col items-center justify-center w-5 rounded-sm border hover:border-[#1877F2]"
         style={{ borderColor: HAIRLINE, background: "#FFFFFF" }}
       >
         <ChevronDown size={12} style={{ color: "#64727A" }} />
