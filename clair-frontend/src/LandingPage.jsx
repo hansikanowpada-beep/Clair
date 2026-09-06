@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { backendLogin, backendSignup } from "./api.js";
 
-const BLUE = "#045C8B";
+const BLUE = "#1877F2";
 const MARIGOLD = "#E8A33D";
 const INK = "#12212C";
 const PAPER = "#ECF2F6";
