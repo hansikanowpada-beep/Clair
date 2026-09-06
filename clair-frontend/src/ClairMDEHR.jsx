@@ -18888,6 +18888,16 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
                 )}
               </div>
             </div>
+            {isDraft && (
+              <div className="flex items-start gap-1.5">
+                <BedDouble size={13} className="mt-0.5 text-[#12212C] shrink-0" />
+                <div className="flex-1">
+                  <div className="text-[#12212C] text-sm mb-1">Bed number</div>
+                  <input id="draft-bedNumber" value={details.bedNumber || ""} onChange={(e) => updateDetail("bedNumber", e.target.value)} placeholder="e.g. ICU-4" className="w-full px-2 py-1 border border-[#D7E0E7] rounded-sm text-sm focus:outline-none focus:border-[#1877F2]" />
+                  <p className="text-xs text-[#55666F] mt-1">Starting this note admits the patient — enter their bed here and Page 2 becomes Day 1 of the admission.</p>
+                </div>
+              </div>
+            )}
           </div>
           {patient.allergies.length > 0 && (
             <div className="mt-4 flex items-center gap-2 bg-[#FBEFEC] border border-[#EFC9C1] rounded-sm px-3 py-2">
@@ -19158,6 +19168,7 @@ function LabReportsTab({
 function RecordsTab({
   patient, hasOwnLab, labOrders, setLabOrders, draftHpi: externalDraftHpi, setDraftHpi: externalSetDraftHpi,
   admissions = [], onAssignBed, onAddDay, onAddReview, onDischarge,
+  draftBedNumber, draftReviews = [], setDraftReviews,
 }) {
   const [internalDraftHpi, setInternalDraftHpi] = useState("");
   const draftHpi = externalDraftHpi !== undefined ? externalDraftHpi : internalDraftHpi;
@@ -19214,7 +19225,11 @@ function RecordsTab({
         <SpecialSituationModal title="New review" icon={ClipboardList} accentColor="#1877F2" onClose={() => setOpenReviewComposer(null)}>
           <ReviewComposer
             onCancel={() => setOpenReviewComposer(null)}
-            onSave={(review) => { onAddReview?.(openReviewComposer.admissionId, openReviewComposer.dayId, review); setOpenReviewComposer(null); }}
+            onSave={(review) => {
+              if (openReviewComposer.draft) setDraftReviews?.((prev) => [review, ...prev]);
+              else onAddReview?.(openReviewComposer.admissionId, openReviewComposer.dayId, review);
+              setOpenReviewComposer(null);
+            }}
           />
         </SpecialSituationModal>
       )}
@@ -19233,6 +19248,49 @@ function RecordsTab({
           onOpenReview={(review) => setOpenReviewDetail(review)}
         />
       ))}
+
+      {/* Starting an ICU/Ward note IS admitting the patient — this is Day 1
+          of that admission, not a separate feature reachable only after
+          saving. Shows once a bed number is entered on Page 1 · Vitals. */}
+      {isDraft && (
+        <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+              <BedDouble size={14} />
+              {draftBedNumber?.trim() ? (
+                <span className="px-1.5 py-0.5 bg-[#E7EDF1] rounded-sm">Admission · Bed {draftBedNumber.trim()} · Day 1</span>
+              ) : (
+                <span className="text-[#55666F]">Enter a bed number on Page 1 · Vitals to start this admission's Day 1</span>
+              )}
+            </div>
+            {draftBedNumber?.trim() && (
+              <button type="button" onClick={() => setOpenReviewComposer({ draft: true })} className="text-xs px-2.5 py-1 rounded-full border border-[#D7E0E7] text-[#12212C] hover:bg-[#F1F6F9] font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                + Start new review
+              </button>
+            )}
+          </div>
+          {draftBedNumber?.trim() && (
+            draftReviews.length === 0 ? (
+              <p className="text-xs text-[#55666F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No reviews recorded yet.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {draftReviews.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setOpenReviewDetail(r)}
+                    className="w-full text-left text-xs px-3 py-2 rounded-sm bg-[#F1F6F9] hover:bg-[#E7EDF1] flex items-center justify-between"
+                    style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+                  >
+                    <span className="text-[#55666F]" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{new Date(r.timestamp).toLocaleTimeString()}</span>
+                    <span className="text-[#12212C] truncate ml-2">{r.notes?.trim() ? r.notes.trim().slice(0, 60) : "Review recorded"}</span>
+                  </button>
+                ))}
+              </div>
+            )
+          )}
+        </div>
+      )}
 
       {patient.encounters.map((e, i) => {
         return (
@@ -20345,7 +20403,32 @@ function formatInvestigationEntries(entries) {
     .join("\n");
 }
 
-function buildIcuWardSlipText({ details, vitals, hpi, examNotes, labEntries, radiologicalEntries, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, disasterValues, poisoningValues, ssValues, envValues }) {
+// Plain-text rendering of one Review for the saved slip — same fields as
+// ReviewDetailView, just as text lines instead of JSX, since the slip is
+// the permanent record and shouldn't drop what was captured in the
+// composer.
+function formatReviewForSlip(r) {
+  const lines = [`  [${new Date(r.timestamp).toLocaleString()}]`];
+  if (r.vitals && (r.vitals.bp || r.vitals.hr || r.vitals.temp || r.vitals.spo2)) {
+    lines.push(`    Vitals: BP ${r.vitals.bp || "—"}, HR ${r.vitals.hr || "—"}, Temp ${r.vitals.temp || "—"}, SpO2 ${r.vitals.spo2 || "—"}`);
+  }
+  if (r.neuro && (r.neuro.gcsE || r.neuro.gcsV || r.neuro.gcsM || r.neuro.pupilNote)) {
+    lines.push(`    GCS: E${r.neuro.gcsE || "—"} V${r.neuro.gcsV || "—"} M${r.neuro.gcsM || "—"}${r.neuro.pupilNote ? ` · Pupils: ${r.neuro.pupilNote}` : ""}`);
+  }
+  if (r.examFindings?.cvsRespiratory?.length) lines.push(`    CVS/Respiratory: ${r.examFindings.cvsRespiratory.join(", ")}`);
+  if (r.ventilatorSettings?.mode) {
+    lines.push(`    Ventilator: ${r.ventilatorSettings.mode} · FiO2 ${r.ventilatorSettings.fio2 || "—"} · PEEP ${r.ventilatorSettings.peep || "—"} · TV ${r.ventilatorSettings.tv || "—"} · RR ${r.ventilatorSettings.rr || "—"}`);
+  }
+  if (r.proceduresDone?.length) lines.push(`    Procedures: ${r.proceduresDone.join(", ")}`);
+  r.customExamPatterns?.filter((p) => p.findings?.trim()).forEach((p) => lines.push(`    ${p.system}: ${p.findings}`));
+  if (r.notes?.trim()) lines.push(`    Notes: ${r.notes.trim()}`);
+  if (r.investigations?.length) {
+    lines.push(`    Investigations: ${r.investigations.map((i) => `${i.name} (LOINC ${i.loinc}, ${i.status === "pending" ? "Pending" : "Result ready"})`).join("; ")}`);
+  }
+  return lines.join("\n");
+}
+
+function buildIcuWardSlipText({ details, vitals, hpi, examNotes, labEntries, radiologicalEntries, ddxSpace, ddxSpaceNotes, workupSpace, workupNotes, diagnosisPlanEntries, disasterValues, poisoningValues, ssValues, envValues, reviews }) {
   const identityLine = [
     details.name || "(name not entered)",
     details.age ? `${details.age} yrs` : null,
@@ -20354,6 +20437,14 @@ function buildIcuWardSlipText({ details, vitals, hpi, examNotes, labEntries, rad
     details.phone || null,
   ].filter(Boolean).join(" · ");
   const lines = [`ICU / WARD RECORD — ${identityLine}`, `Generated ${new Date().toLocaleString()}`, ""];
+
+  // Starting this note is admitting the patient — the bed number entered on
+  // Page 1 and any reviews recorded on Page 2 are this admission's Day 1.
+  if (details.bedNumber?.trim()) {
+    lines.push("ADMISSION", `Bed ${details.bedNumber.trim()} · Day 1`);
+    lines.push(reviews && reviews.length > 0 ? reviews.map(formatReviewForSlip).join("\n") : "  (no reviews recorded)");
+    lines.push("");
+  }
 
   lines.push(
     "VITALS",
@@ -30317,7 +30408,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   // near the end of this component's JSX, visible regardless of sub-view.
   const [globalSyncMessage, setGlobalSyncMessage] = useState(null);
   const [savedOpdSlips, setSavedOpdSlips] = useState([]); // [{ id, patientId, patientName, savedAt, text }]
-  const [draftDetails, setDraftDetails] = useState({ name: "", localId: "", age: "", gender: "", phone: "", address: "" });
+  const [draftDetails, setDraftDetails] = useState({ name: "", localId: "", age: "", gender: "", phone: "", address: "", bedNumber: "" });
   const [draftVitals, setDraftVitals] = useState({ hr: "", bp: "", t: "", spo2: "", spo2On: "", pain: "" });
   const [draftHpi, setDraftHpi] = useState("");
   const [draftExamNotes, setDraftExamNotes] = useState("");
@@ -30346,6 +30437,12 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [draftWorkupSpace, setDraftWorkupSpace] = useState([]);
   const [draftWorkupNotes, setDraftWorkupNotes] = useState("");
   const [draftDiagnosisPlanEntries, setDraftDiagnosisPlanEntries] = useState([{ diagnosis: "", treatment: "", snomed: null, icd10: null }]);
+  // Starting an ICU/Ward note IS admitting the patient — there's no separate
+  // "admit later" step for a brand-new draft the way there is for an
+  // already-saved patient (see AdmissionCard/AssignBedModal for that case).
+  // Once a bed number is entered on Page 1, Page 2 shows this as Day 1 of
+  // the admission directly, with the same Review composer.
+  const [draftReviews, setDraftReviews] = useState([]);
   const [savedIcuWardRecords, setSavedIcuWardRecords] = useState([]); // [{ id, patientDetails, savedAt, text }]
   const [draftSaveMessage, setDraftSaveMessage] = useState(null);
   const [pageCaution, setPageCaution] = useState(null); // null | { message, fieldId }
@@ -30551,6 +30648,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       ddxSpace: draftDdxSpace, ddxSpaceNotes: draftDdxSpaceNotes, workupSpace: draftWorkupSpace,
                       workupNotes: draftWorkupNotes, diagnosisPlanEntries: draftDiagnosisPlanEntries,
                       disasterValues: draftDisasterValues, poisoningValues: draftPoisoningValues, ssValues: draftSsValues, envValues: draftEnvValues,
+                      reviews: draftReviews,
                     });
                     setSavedIcuWardRecords((prev) => [...prev, {
                       id: Date.now() + Math.random(),
@@ -30943,7 +31041,10 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
                       />
                     </div>
                     <div style={{ display: tab === "records" ? "block" : "none" }}>
-                      <RecordsTab patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi} />
+                      <RecordsTab
+                        patient={DRAFT_PATIENT} hasOwnLab={hasOwnLab} labOrders={labOrders} setLabOrders={setLabOrders} draftHpi={draftHpi} setDraftHpi={setDraftHpi}
+                        draftBedNumber={draftDetails.bedNumber} draftReviews={draftReviews} setDraftReviews={setDraftReviews}
+                      />
                     </div>
                     <div style={{ display: tab === "examination" ? "block" : "none" }}>
                       <ExaminationTab examNotes={draftExamNotes} setExamNotes={setDraftExamNotes} />
