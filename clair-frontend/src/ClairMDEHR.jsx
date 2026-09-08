@@ -19119,7 +19119,7 @@ function RecordsTab({
   return (
     <div className="space-y-5">
       {!isDraft && (
-        <div className="bg-white border border-[#D7E0E7] rounded-md p-4 flex items-center justify-between gap-3">
+        <div className="bg-white border border-[#D7E0E7] rounded-md p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             <BedDouble size={16} className="text-[#1877F2]" />
             {activeAdmission
@@ -28337,6 +28337,256 @@ function ReportProblemPanel({ onBack }) {
   );
 }
 
+// No "Networks" page, per-colleague access toggle, or phone-number search
+// exists anywhere in the app today — CoAdminPanel/HospitalAffiliationPanel
+// each do a narrower, name-only, one-at-a-time search+request against the
+// real AccountPicker/backend directory. This is a fresh, honestly-unwired
+// mockup of what a fuller "search and connect with your care network" page
+// could look like, not a port of real functionality — same "kept locally
+// for this session only" labeling as Feedback/Report a problem above.
+// Fictional colleagues, same spirit as "Dr. Iyer" elsewhere in this app.
+const NETWORK_DIRECTORY = [
+  { id: "n1", name: "Dr. Ananya Rao", phone: "9820014471", role: "Cardiologist · Metro Care Hospital" },
+  { id: "n2", name: "Dr. Vikram Shah", phone: "9833307726", role: "Nephrologist · Riverside Medical Center" },
+  { id: "n3", name: "Dr. Priya Menon", phone: "9845592038", role: "Internal Medicine · Sunview Clinic" },
+  { id: "n4", name: "Dr. Arjun Nair", phone: "9856641907", role: "Pulmonologist · Green Valley Hospital" },
+  { id: "n5", name: "Dr. Sneha Kulkarni", phone: "9867725184", role: "Endocrinologist · Lakeside Medical College" },
+];
+
+function NetworksPanel({ onBack }) {
+  const [query, setQuery] = useState("");
+  const [connections, setConnections] = useState({}); // id -> "pending" | "connected"
+
+  const sendRequest = (id) => {
+    setConnections((prev) => ({ ...prev, [id]: "pending" }));
+    // Simulated acceptance — this single-persona prototype has no real
+    // second account on the other end to actually respond.
+    setTimeout(() => setConnections((prev) => (prev[id] === "pending" ? { ...prev, [id]: "connected" } : prev)), 2500);
+  };
+
+  const q = query.trim().toLowerCase();
+  const qDigits = q.replace(/\D/g, "");
+  const results = q
+    ? NETWORK_DIRECTORY.filter((p) => p.name.toLowerCase().includes(q) || (qDigits && p.phone.includes(qDigits)))
+    : NETWORK_DIRECTORY;
+
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-sm text-[#12212C] mb-4 hover:text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-1">
+        <Users2 size={18} className="text-[#1877F2]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Networks</h2>
+      </div>
+      <p className="text-sm text-[#12212C] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Search a colleague by name or phone number and send a request to connect. They'd see the request on their end and could grant you access.
+      </p>
+      <input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search by name or phone number…"
+        className="w-full px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm mb-4 focus:outline-none focus:border-[#1877F2]"
+        style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+      />
+      <div className="space-y-2">
+        {results.map((p) => {
+          const status = connections[p.id];
+          return (
+            <div key={p.id} className="bg-white border border-[#D7E0E7] rounded-md p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{p.name}</div>
+                <div className="text-xs text-[#55666F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{p.role} · {p.phone}</div>
+              </div>
+              {status === "connected" ? (
+                <span className="text-xs px-2.5 py-1 rounded-full bg-[#E7F5EC] text-[#1E7A3D] font-medium self-start sm:self-auto">Connected</span>
+              ) : status === "pending" ? (
+                <span className="text-xs px-2.5 py-1 rounded-full bg-[#F1F6F9] text-[#55666F] font-medium self-start sm:self-auto">Request sent…</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => sendRequest(p.id)}
+                  className="text-xs px-3 py-1.5 rounded-full text-white font-medium self-start sm:self-auto"
+                  style={{ backgroundColor: "#1877F2", fontFamily: "'IBM Plex Sans', sans-serif" }}
+                >
+                  Send request
+                </button>
+              )}
+            </div>
+          );
+        })}
+        {results.length === 0 && (
+          <p className="text-sm text-[#55666F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No one matches "{query}".</p>
+        )}
+      </div>
+      <p className="text-xs text-[#12212C] mt-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+    </div>
+  );
+}
+
+// No doctor-facing "liked/saved/shared posts" concept exists anywhere in
+// the app — DoctorFeedPanel's like/dislike is patient-facing, and
+// MyPostsPanel is a doctor's own authored posts, not things they engaged
+// with. This is a fresh, honestly-unwired mockup, same labeling as above.
+const ACTIVITY_MOCK_POSTS = [
+  { id: "a1", author: "Dr. Ananya Rao", text: "Quick pearl: always re-check K+ before starting an ACE inhibitor in a CKD patient, even if the last reading was weeks ago." },
+  { id: "a2", author: "Dr. Vikram Shah", text: "Shared a case: 34F with resistant hypertension turned out to be undiagnosed primary aldosteronism — worth screening earlier than most of us do." },
+  { id: "a3", author: "Dr. Priya Menon", text: "Reminder for OPD season: this year's dengue NS1 positivity is running higher locally than last year per the state bulletin." },
+];
+
+function ActivityPanel({ onBack }) {
+  const [reactions, setReactions] = useState({}); // id -> { liked, saved, shared }
+
+  const toggle = (id, key) => {
+    setReactions((prev) => ({ ...prev, [id]: { ...prev[id], [key]: !prev[id]?.[key] } }));
+  };
+
+  const section = (label, key) => {
+    const posts = ACTIVITY_MOCK_POSTS.filter((p) => reactions[p.id]?.[key]);
+    return (
+      <div className="mb-5">
+        <h3 className="text-xs uppercase tracking-wide text-[#55666F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{label}</h3>
+        {posts.length === 0 ? (
+          <p className="text-sm text-[#55666F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Nothing {label.toLowerCase()} yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {posts.map((p) => (
+              <div key={p.id} className="bg-[#F1F6F9] border border-[#D7E0E7] rounded-md p-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <span className="font-medium">{p.author}</span> — {p.text}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-sm text-[#12212C] mb-4 hover:text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-1">
+        <Activity size={18} className="text-[#1877F2]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Activity</h2>
+      </div>
+      <p className="text-sm text-[#12212C] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Posts you've liked, saved, or shared from your network.</p>
+
+      <div className="space-y-2 mb-6">
+        {ACTIVITY_MOCK_POSTS.map((p) => {
+          const r = reactions[p.id] || {};
+          return (
+            <div key={p.id} className="bg-white border border-[#D7E0E7] rounded-md p-3">
+              <p className="text-sm mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}><span className="font-medium">{p.author}</span> — {p.text}</p>
+              <div className="flex items-center gap-4 text-xs" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <button type="button" onClick={() => toggle(p.id, "liked")} className="font-medium" style={{ color: r.liked ? "#1877F2" : "#55666F" }}>{r.liked ? "♥ Liked" : "♡ Like"}</button>
+                <button type="button" onClick={() => toggle(p.id, "saved")} className="font-medium" style={{ color: r.saved ? "#1877F2" : "#55666F" }}>{r.saved ? "★ Saved" : "☆ Save"}</button>
+                <button type="button" onClick={() => toggle(p.id, "shared")} className="font-medium" style={{ color: r.shared ? "#1877F2" : "#55666F" }}>{r.shared ? "↗ Shared" : "↗ Share"}</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {section("Liked posts", "liked")}
+      {section("Saved posts", "saved")}
+      {section("Shared posts", "shared")}
+      <p className="text-xs text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+    </div>
+  );
+}
+
+// Deactivation is already real (DataRightsPanel's password-confirmed
+// deactivateMyAccountOnBackend, a genuine backend call) — this Settings
+// panel doesn't duplicate it, just links there. Privacy/discoverability
+// and blocking are net-new: no such concept exists anywhere in the app
+// (checked — no discoverab/privacy/block-related account state at all),
+// so both are honestly-unwired local toggles, same convention as above.
+function SettingsPanel({ onBack, onOpenDataRights }) {
+  const [discoverable, setDiscoverable] = useState(true);
+  const [blockQuery, setBlockQuery] = useState("");
+  const [blocked, setBlocked] = useState({});
+
+  const q = blockQuery.trim().toLowerCase();
+  const blockResults = q ? NETWORK_DIRECTORY.filter((p) => p.name.toLowerCase().includes(q)) : [];
+
+  return (
+    <div className="p-5">
+      <button onClick={onBack} className="text-sm text-[#12212C] mb-4 hover:text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
+      <div className="flex items-center gap-2 mb-4">
+        <ShieldOff size={18} className="text-[#1877F2]" />
+        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Settings</h2>
+      </div>
+
+      <div className="bg-white border border-[#D7E0E7] rounded-md p-4 mb-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Privacy</div>
+            <p className="text-xs text-[#55666F]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Let other users find you by searching your name or phone number.</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={discoverable}
+            onClick={() => setDiscoverable((v) => !v)}
+            className="shrink-0 w-11 h-6 rounded-full transition-colors relative"
+            style={{ backgroundColor: discoverable ? "#1877F2" : "#D7E0E7" }}
+          >
+            <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all" style={{ left: discoverable ? "22px" : "2px" }} />
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white border border-[#D7E0E7] rounded-md p-4 mb-3">
+        <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Block</div>
+        <p className="text-xs text-[#55666F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Blocked users can no longer reach you or find you in search.</p>
+        <input
+          value={blockQuery}
+          onChange={(e) => setBlockQuery(e.target.value)}
+          placeholder="Search a user to block…"
+          className="w-full px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm mb-2 focus:outline-none focus:border-[#1877F2]"
+          style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+        />
+        {blockResults.length > 0 && (
+          <div className="space-y-1.5 mb-2">
+            {blockResults.map((p) => (
+              <div key={p.id} className="flex items-center justify-between text-sm bg-[#F1F6F9] rounded-sm px-3 py-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                <span>{p.name}</span>
+                {blocked[p.id] ? (
+                  <button type="button" onClick={() => setBlocked((prev) => { const n = { ...prev }; delete n[p.id]; return n; })} className="text-xs text-[#1877F2] font-medium">Unblock</button>
+                ) : (
+                  <button type="button" onClick={() => setBlocked((prev) => ({ ...prev, [p.id]: true }))} className="text-xs text-[#B34A3C] font-medium">Block</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {Object.keys(blocked).length > 0 && (
+          <div className="mt-2">
+            <div className="text-xs uppercase tracking-wide text-[#55666F] mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Blocked</div>
+            {Object.keys(blocked).map((id) => {
+              const p = NETWORK_DIRECTORY.find((x) => x.id === id);
+              if (!p) return null;
+              return (
+                <div key={id} className="flex items-center justify-between text-sm px-3 py-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                  <span>{p.name}</span>
+                  <button type="button" onClick={() => setBlocked((prev) => { const n = { ...prev }; delete n[id]; return n; })} className="text-xs text-[#1877F2] font-medium">Unblock</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-[#D7E0E7] rounded-md p-4 mb-3">
+        <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Deactivate account</div>
+        <p className="text-xs text-[#55666F] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>This is a real, working action — handled in your data rights panel, not here, since it already needs your password to confirm.</p>
+        <button type="button" onClick={onOpenDataRights} className="text-xs px-3 py-1.5 rounded-full border border-[#D7E0E7] text-[#12212C] hover:bg-[#F1F6F9] font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          Open data rights & deactivation →
+        </button>
+      </div>
+
+      <p className="text-xs text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Privacy and Block are not yet wired to a backend in this prototype — kept locally for this session only. Deactivation above is real.</p>
+    </div>
+  );
+}
+
 function FeedbackPanel({ onBack }) {
   return (
     <div className="p-5">
@@ -28377,6 +28627,9 @@ const SIDEBAR_VIEW_META = {
   faqs: { label: "FAQs", icon: CircleHelp },
   report: { label: "Report a problem", icon: Bug },
   feedback: { label: "Feedback", icon: MessagesSquare },
+  networks: { label: "Networks", icon: Users2 },
+  activity: { label: "Activity", icon: Activity },
+  settings: { label: "Settings", icon: ShieldOff },
 };
 
 function SidebarViewModal({ viewKey, onClose, onMinimize, theme, children }) {
@@ -30919,6 +31172,12 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               <ReportProblemPanel onBack={() => setSidebarView("patients")} />
             ) : sidebarView === "feedback" ? (
               <FeedbackPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "networks" ? (
+              <NetworksPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "activity" ? (
+              <ActivityPanel onBack={() => setSidebarView("patients")} />
+            ) : sidebarView === "settings" ? (
+              <SettingsPanel onBack={() => setSidebarView("patients")} onOpenDataRights={() => setSidebarView("hospitalAuth")} />
             ) : null}
           </SidebarViewModal>
         )}

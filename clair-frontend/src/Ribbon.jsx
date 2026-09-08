@@ -357,6 +357,9 @@ const MODULE_SECTIONS = {
     // not here — moved to the left sidebar per explicit request, not
     // reachable from the ribbon anymore.
     { key: "statistics", label: "Statistics", icon: BarChart3 },
+    { key: "networks", label: "Networks", icon: Users2 },
+    { key: "activity", label: "Activity", icon: Activity },
+    { key: "settings", label: "Settings", icon: ShieldOff },
   ],
 };
 
