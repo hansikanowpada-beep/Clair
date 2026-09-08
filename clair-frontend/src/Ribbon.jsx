@@ -789,14 +789,16 @@ export default function Ribbon({
         </button>
       </div>
 
-      {/* Tab strip, with any active contextual tab set appended */}
-      <div className="flex items-end px-2" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
+      {/* Tab strip, with any active contextual tab set appended. 11 tabs
+          don't fit a phone-width viewport, so this scrolls horizontally
+          on mobile instead of clipping the later tabs unreachably. */}
+      <div className="flex items-end px-2 overflow-x-auto" style={{ borderBottom: `1px solid ${HAIRLINE}` }}>
         {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTabId(tab.id)}
-            className="px-3 py-1.5 text-sm -mb-px border-b-2"
+            className="px-3 py-1.5 text-sm -mb-px border-b-2 shrink-0 whitespace-nowrap"
             style={{
               color: activeTabId === tab.id ? BLUE : "#56636B",
               fontWeight: activeTabId === tab.id ? 600 : 400,

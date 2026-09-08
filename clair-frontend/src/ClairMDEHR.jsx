@@ -13,7 +13,7 @@ import {
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
   LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass, Calculator, Check, RotateCcw,
   Upload, Camera, Image as ImageIcon, Paperclip,
-  HeartPulse, Brain, Syringe, ListOrdered, Trash2, DoorOpen,
+  HeartPulse, Brain, Syringe, ListOrdered, Trash2, DoorOpen, Menu,
 } from "lucide-react";
 import {
   LOINC_COMMON_TESTS, CVS_RESP_EXAM_FINDINGS, ICU_PROCEDURES_CHECKLIST,
@@ -30479,6 +30479,10 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
   const [sidebarViewMinimized, setSidebarViewMinimized] = useState(false);
   useEffect(() => { setSidebarViewMinimized(false); }, [sidebarView]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Mobile-only drawer state — separate from sidebarCollapsed (that's the
+  // desktop collapse-to-icon-rail toggle). Below the md breakpoint the
+  // sidebar is an off-canvas overlay instead of always-visible.
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const filteredPatients = PATIENTS;
   const theme = doctorSpecialty && SPECIALTY_THEMES[doctorSpecialty] ? SPECIALTY_THEMES[doctorSpecialty] : SPECIALTY_THEMES["General Medicine"];
   const hasOwnLab = true; // toggle per hospital account in a real build
@@ -30712,9 +30716,38 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           <span className="text-sm text-[#22323C]">{SIDEBAR_VIEW_META[sidebarView].label}</span>
         </button>
       )}
-      <div className="flex h-screen overflow-hidden">
-        <aside className={`${sidebarCollapsed ? "w-12" : "w-72"} shrink-0 border-r border-[#D7E0E7] bg-white flex flex-col transition-all duration-200 overflow-hidden`}>
-          <div className="flex items-center justify-end px-2 py-2 border-b border-[#D7E0E7] shrink-0">
+      <div className="flex h-screen overflow-hidden relative">
+        {/* Mobile top bar — hamburger opens the sidebar as an off-canvas
+            drawer below the md breakpoint; the desktop inline sidebar
+            (and its own collapse-to-icon-rail toggle) is unchanged at
+            md and up, so this bar and the drawer only exist on mobile. */}
+        <div className="md:hidden fixed top-0 inset-x-0 z-30 h-14 bg-white border-b border-[#D7E0E7] flex items-center justify-between px-3">
+          <button
+            type="button"
+            onClick={() => setMobileSidebarOpen(true)}
+            aria-label="Open menu"
+            className="w-9 h-9 flex items-center justify-center rounded-sm text-[#12212C] hover:bg-[#F6FAFC]"
+          >
+            <Menu size={20} />
+          </button>
+          <span className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: theme.color }}>ClairMD</span>
+          <NotificationsBell />
+        </div>
+        {mobileSidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/40"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+        <aside
+          className={`
+            ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
+            fixed md:relative inset-y-0 left-0 z-50 md:z-auto
+            w-72 max-w-[85vw] ${sidebarCollapsed ? "md:w-12" : "md:w-72"}
+            shrink-0 border-r border-[#D7E0E7] bg-white flex flex-col transition-transform md:transition-all duration-200 overflow-hidden
+          `}
+        >
+          <div className="hidden md:flex items-center justify-end px-2 py-2 border-b border-[#D7E0E7] shrink-0">
             <button
               type="button"
               onClick={() => setSidebarCollapsed((v) => !v)}
@@ -30724,7 +30757,21 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
             </button>
           </div>
-          {!sidebarCollapsed && (
+          <div className="md:hidden flex items-center justify-end px-2 py-2 border-b border-[#D7E0E7] shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(false)}
+              aria-label="Close menu"
+              className="w-8 h-8 flex items-center justify-center rounded-sm text-[#12212C] hover:bg-[#F6FAFC]"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          {/* sidebarCollapsed (icon-rail mode) is a desktop-only concept —
+              on mobile the drawer is either off-canvas or fully open, so
+              mobileSidebarOpen always forces full content regardless of
+              whatever sidebarCollapsed happened to be left at on desktop. */}
+          {(!sidebarCollapsed || mobileSidebarOpen) && (
           <>
           <div className="px-5 py-5 border-b border-[#D7E0E7]">
             <div className="flex items-start justify-between">
@@ -30775,7 +30822,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           <div className="px-3 py-3 border-b border-[#D7E0E7]" style={{ backgroundColor: "#FBF6EC" }}>
             <button
               type="button"
-              onClick={() => setSidebarView("hospitalAuth")}
+              onClick={() => { setSidebarView("hospitalAuth"); setMobileSidebarOpen(false); }}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-sm text-sm text-left transition-colors border ${
                 sidebarView === "hospitalAuth" ? "font-medium" : "hover:bg-white"
               }`}
@@ -30811,7 +30858,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           >
             <button
               type="button"
-              onClick={() => { setSidebarView("patients"); setPatientsModalOpen(true); setPatientsModalMinimized(false); }}
+              onClick={() => { setSidebarView("patients"); setPatientsModalOpen(true); setPatientsModalMinimized(false); setMobileSidebarOpen(false); }}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-sm text-sm text-left transition-colors ${
                 sidebarView === "patients" ? "font-medium" : "text-[#12212C] hover:bg-[#F6FAFC]"
               }`}
@@ -30876,7 +30923,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
           </SidebarViewModal>
         )}
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pt-14 md:pt-0">
           {!patient ? (
             <>
               <Ribbon
@@ -30954,7 +31001,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
               />
               <NoteTypeToolbar activeType={newEntryMode} onSelect={setNewEntryMode} />
               {newEntryMode && (
-                <div className="border-b border-[#D7E0E7] bg-white px-8 pt-6">
+                <div className="border-b border-[#D7E0E7] bg-white px-4 md:px-8 pt-6">
                   <div className="flex gap-1 overflow-x-auto">
                     {newEntryMode === "opd" && <Tab active={true} icon={UserPlus}>OPD note</Tab>}
                     {newEntryMode === "icuward" && tabs.filter((t) => t.key !== "advanced").map((t, i) => (
@@ -31056,20 +31103,22 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
             </>
           ) : (
             <>
-              <div className="border-b border-[#D7E0E7] bg-white px-8 pt-6">
-                <div className="flex items-center justify-between mb-4">
+              <div className="border-b border-[#D7E0E7] bg-white px-4 md:px-8 pt-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-0 mb-4">
                   <div>
-                    <h1 className="text-3xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#12212C" }}>{patient.name}</h1>
+                    <h1 className="text-2xl md:text-3xl" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, color: "#12212C" }}>{patient.name}</h1>
                     <p className="text-sm text-[#12212C] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{patient.age} yrs · {patient.gender} · {patient.localId}</p>
                   </div>
-                  <Badge text={CATEGORY_STYLE[patient.category].label} bg={CATEGORY_STYLE[patient.category].bg} />
-                  <button
-                    onClick={() => setAppMode("patient")}
-                    className="ml-3 text-sm px-3 py-1.5 rounded-sm border font-medium hover:opacity-80"
-                    style={{ fontFamily: "'IBM Plex Sans', sans-serif", borderColor: theme.color, color: theme.color }}
-                  >
-                    View as patient →
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <Badge text={CATEGORY_STYLE[patient.category].label} bg={CATEGORY_STYLE[patient.category].bg} />
+                    <button
+                      onClick={() => setAppMode("patient")}
+                      className="text-sm px-3 py-1.5 rounded-sm border font-medium hover:opacity-80"
+                      style={{ fontFamily: "'IBM Plex Sans', sans-serif", borderColor: theme.color, color: theme.color }}
+                    >
+                      View as patient →
+                    </button>
+                  </div>
                 </div>
                 <div className="flex gap-1 overflow-x-auto">
                   {tabs.map((t) => (<Tab key={t.key} active={tab === t.key} onClick={() => setTab(t.key)} icon={t.icon}>{t.label}</Tab>))}
@@ -31078,7 +31127,7 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
 
               <FreeTierBanner />
 
-              <div className="p-8">
+              <div className="p-4 md:p-8">
                 <div style={{ display: tab === "overview" ? "block" : "none" }}>
                   <OverviewTab patient={patient} />
                 </div>
