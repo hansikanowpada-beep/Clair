@@ -74,6 +74,38 @@ const DOCTOR_TYPES = [
   { key: "hospital_doctor", label: "Doctor at a hospital" },
 ];
 
+// No password-reset route exists anywhere in clairmd-backend yet (checked —
+// grepping the whole backend for forgot/reset-password turns up nothing), so
+// this is a genuinely new, honestly-unwired piece rather than a port of real
+// backend behavior — same "local only for now" labeling as MedicalStudentForm
+// and OthersContact above, plus the standard non-account-enumerating copy so
+// this doesn't double as a way to probe which emails have accounts.
+function ForgotPasswordForm({ onBack }) {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  if (submitted) {
+    return (
+      <div className="space-y-3">
+        <div className="rounded-sm p-4 text-sm" style={{ background: "#F1F6F9", border: `1px solid ${HAIRLINE}`, color: INK }}>
+          If an account exists for that email, we've sent a reset link.
+        </div>
+        <button type="button" onClick={onBack} className="text-sm text-[#12212C] hover:text-[#12212C]">← Back to log in</button>
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); setSubmitted(true); }} className="space-y-3">
+      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your account email" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      <button type="submit" className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-sm text-sm font-medium text-white" style={{ background: BLUE }}>
+        <Mail size={15} /> Send reset link
+      </button>
+      <p className="text-xs text-[#12212C]">Not yet wired to a backend in this prototype — kept locally for this session only.</p>
+      <button type="button" onClick={onBack} className="text-sm text-[#12212C] hover:text-[#12212C]">← Back to log in</button>
+    </form>
+  );
+}
+
 function DoctorAuth({ onEnter }) {
   const [doctorType, setDoctorType] = useState("individual_doctor");
   const [mode, setMode] = useState("login"); // login | signup
@@ -83,6 +115,7 @@ function DoctorAuth({ onEnter }) {
   const [licenseNumber, setLicenseNumber] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -101,6 +134,10 @@ function DoctorAuth({ onEnter }) {
       setBusy(false);
     }
   };
+
+  if (forgotOpen) {
+    return <ForgotPasswordForm onBack={() => setForgotOpen(false)} />;
+  }
 
   return (
     <form onSubmit={submit} className="space-y-3">
@@ -132,6 +169,11 @@ function DoctorAuth({ onEnter }) {
       </div>
       <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
       <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
+      {mode === "login" && (
+        <button type="button" onClick={() => setForgotOpen(true)} className="text-sm text-[#12212C] hover:text-[#12212C] underline decoration-dotted">
+          Forgot password?
+        </button>
+      )}
       {mode === "signup" && (
         <>
           <input required value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Full name" className="w-full px-3 py-2 border rounded-sm text-sm" style={{ borderColor: HAIRLINE }} />
