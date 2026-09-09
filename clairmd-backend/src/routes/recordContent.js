@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 const pool = require("../db/pool");
 const { requireAuth } = require("../middleware/auth");
+const { roleHasClinicalWriteAccess } = require("../services/teamRoles");
 
 const router = express.Router();
 
@@ -28,18 +29,40 @@ const putSchema = z.object({
   encryptedBlob: z.string().min(1),
 });
 
-// Only the record's primary doctor can write its content — co-admins and
-// patients read via their key wrap, but writing stays with whoever is
-// actually seeing the patient and authoring the note.
+// The record's primary doctor can always write its content. So can a team
+// member with access_clinical_record granted AND a role that's allowed to
+// actually author clinical content (today: only 'duty_doctor' — see
+// services/teamRoles.js's roleHasClinicalWriteAccess). Co-admins and
+// patients only ever read via their key wrap; this is the one write path,
+// and it deliberately checks the LIVE membership row each time (not just
+// "does a key wrap exist," which is how GET below works) — access_clinical_
+// record or the role itself could have changed since the wrap was issued.
 router.put("/:recordId", requireAuth, async (req, res) => {
   const parsed = putSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "encryptedBlob is required." });
 
-  const owns = await pool.query(
-    `SELECT 1 FROM patient_record_index WHERE id = $1 AND primary_doctor_id = $2`,
-    [req.params.recordId, req.account.id]
+  const record = await pool.query(
+    `SELECT primary_doctor_id FROM patient_record_index WHERE id = $1`,
+    [req.params.recordId]
   );
-  if (owns.rows.length === 0) {
+  if (record.rows.length === 0) {
+    return res.status(404).json({ error: "Record not found." });
+  }
+  const primaryDoctorId = record.rows[0].primary_doctor_id;
+
+  let allowed = primaryDoctorId === req.account.id;
+  if (!allowed) {
+    const membership = await pool.query(
+      `SELECT role FROM team_memberships
+       WHERE doctor_account_id = $1 AND member_account_id = $2 AND revoked_at IS NULL AND access_clinical_record = true`,
+      [primaryDoctorId, req.account.id]
+    );
+    allowed = membership.rows.length > 0 && roleHasClinicalWriteAccess(membership.rows[0].role);
+  }
+  // 404 rather than 403 — same "don't confirm this record exists to
+  // someone with no legitimate reason to know" reasoning as everywhere
+  // else in this file.
+  if (!allowed) {
     return res.status(404).json({ error: "Record not found." });
   }
 
