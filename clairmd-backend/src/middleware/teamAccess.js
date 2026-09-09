@@ -5,7 +5,7 @@ const pool = require("../db/pool");
 // a column name), so this guards against ever doing that with anything
 // but one of these five literals, even if a future call site's argument
 // stops being a hardcoded string.
-const ACCESS_COLUMNS = new Set(["access_files", "access_history", "access_bed", "access_inventory", "access_lab_reports"]);
+const ACCESS_COLUMNS = new Set(["access_clinical_record", "access_inventory", "access_lab_reports"]);
 
 // Gates a route by team_memberships access, alongside (not instead of) the
 // resource's own doctor-ownership check: the resource's owning doctor

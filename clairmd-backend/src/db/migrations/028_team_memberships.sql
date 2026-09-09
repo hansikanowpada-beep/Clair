@@ -18,18 +18,23 @@ CREATE TABLE team_memberships (
     doctor_account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     member_account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     role                team_role NOT NULL,
-    -- Files and History cover actual clinical narrative — client-side
-    -- encrypted, so granting them additionally requires a real key wrap
-    -- (see 029_team_member_key_holder_role.sql + routes/teamMembers.js);
-    -- these two flags alone don't grant access, they just record intent
-    -- until the corresponding wrap exists.
-    access_files        BOOLEAN NOT NULL DEFAULT false,
-    access_history      BOOLEAN NOT NULL DEFAULT false,
-    -- Bed, inventory, and lab reports are deliberately plaintext tables
-    -- (see schema.sql's opening comment) — these three flags are the
-    -- entire access grant on their own, checked directly by
+    -- patient_record_content stores a doctor's entire note (history,
+    -- vitals, exam findings, diagnosis/plan, bed, everything) as ONE
+    -- encrypted blob per record — there is no per-section split at the
+    -- storage or key layer. So Files/Bed/History cannot be granted as
+    -- separately-encrypted domains today; access_clinical_record is a
+    -- single gate covering all of it, requiring one real key wrap (see
+    -- 029_team_member_key_holder_role.sql + routes/teamMembers.js) to
+    -- mean anything. A future split of patient_record_content into
+    -- independently-encrypted sections could make these separable for
+    -- real; until then, don't add access_files/access_bed/access_history
+    -- as if they were independent — that would promise a security
+    -- boundary this schema can't actually enforce.
+    access_clinical_record BOOLEAN NOT NULL DEFAULT false,
+    -- Inventory and lab reports are genuinely separate, plaintext tables
+    -- (see schema.sql's opening comment) — these two flags are the entire
+    -- access grant on their own, checked directly by
     -- middleware/teamAccess.js with no encryption involved.
-    access_bed          BOOLEAN NOT NULL DEFAULT false,
     access_inventory    BOOLEAN NOT NULL DEFAULT false,
     access_lab_reports  BOOLEAN NOT NULL DEFAULT false,
     invited_at          TIMESTAMPTZ NOT NULL DEFAULT now(),

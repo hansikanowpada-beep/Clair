@@ -9,10 +9,10 @@ const router = express.Router();
 // Practice team roster — a doctor's own nurses, duty doctors, lab
 // technicians, pharmacists, and specialists, each granted access to a
 // specific slice of the doctor's data. Same "route wrapped keys, never see
-// plaintext" boundary as coadmin.js for the two encrypted domains (Files,
-// History); the other three domains (Bed, Inventory, Lab Reports) are
-// plaintext tables, so granting them is a plain authorization flag with no
-// crypto involved — see 028_team_memberships.sql's column comments.
+// plaintext" boundary as coadmin.js for the encrypted clinical record
+// (access_clinical_record); inventory and lab reports are plaintext
+// tables, so granting them is a plain authorization flag with no crypto
+// involved — see 028_team_memberships.sql's column comments.
 
 const assignSchema = z.object({
   memberAccountId: z.string().uuid(),
@@ -29,12 +29,12 @@ router.post("/assign", requireAuth, requireAccountType("individual_doctor", "hos
   const access = ROLE_DEFAULT_ACCESS[parsed.data.role];
   const result = await pool.query(
     `INSERT INTO team_memberships
-       (doctor_account_id, member_account_id, role, access_files, access_history, access_bed, access_inventory, access_lab_reports)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (doctor_account_id, member_account_id, role, access_clinical_record, access_inventory, access_lab_reports)
+     VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (doctor_account_id, member_account_id) DO UPDATE
        SET role = EXCLUDED.role, revoked_at = NULL, invited_at = now()
      RETURNING id`,
-    [req.account.id, parsed.data.memberAccountId, parsed.data.role, access.access_files, access.access_history, access.access_bed, access.access_inventory, access.access_lab_reports]
+    [req.account.id, parsed.data.memberAccountId, parsed.data.role, access.access_clinical_record, access.access_inventory, access.access_lab_reports]
   );
 
   res.status(201).json({ id: result.rows[0].id, defaultAccess: access });
@@ -43,9 +43,7 @@ router.post("/assign", requireAuth, requireAccountType("individual_doctor", "hos
 const updateSchema = z.object({
   role: z.enum(TEAM_ROLES).optional(),
   access: z.object({
-    access_files: z.boolean().optional(),
-    access_history: z.boolean().optional(),
-    access_bed: z.boolean().optional(),
+    access_clinical_record: z.boolean().optional(),
     access_inventory: z.boolean().optional(),
     access_lab_reports: z.boolean().optional(),
   }).optional(),
@@ -119,7 +117,7 @@ router.post("/:id/revoke", requireAuth, requireAccountType("individual_doctor", 
 router.get("/my-team", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
   const result = await pool.query(
     `SELECT m.id, m.member_account_id, acc.display_name AS member_name, acc.account_type AS member_account_type,
-            m.role, m.access_files, m.access_history, m.access_bed, m.access_inventory, m.access_lab_reports, m.invited_at
+            m.role, m.access_clinical_record, m.access_inventory, m.access_lab_reports, m.invited_at
      FROM team_memberships m JOIN accounts acc ON acc.id = m.member_account_id
      WHERE m.doctor_account_id = $1 AND m.revoked_at IS NULL
      ORDER BY m.invited_at ASC`,
@@ -133,7 +131,7 @@ router.get("/my-team", requireAuth, requireAccountType("individual_doctor", "hos
 router.get("/my-memberships", requireAuth, async (req, res) => {
   const result = await pool.query(
     `SELECT m.id, m.doctor_account_id, acc.display_name AS doctor_name, m.role,
-            m.access_files, m.access_history, m.access_bed, m.access_inventory, m.access_lab_reports
+            m.access_clinical_record, m.access_inventory, m.access_lab_reports
      FROM team_memberships m JOIN accounts acc ON acc.id = m.doctor_account_id
      WHERE m.member_account_id = $1 AND m.revoked_at IS NULL
      ORDER BY m.invited_at DESC`,
@@ -142,7 +140,7 @@ router.get("/my-memberships", requireAuth, async (req, res) => {
   res.json({ memberships: result.rows });
 });
 
-// Called once per (record, team member) when Files/History access is
+// Called once per (record, team member) when access_clinical_record is
 // granted: the client wraps that record's existing AES key for the
 // member's public key and submits the wrapped blob here — same one-time
 // event shape as coadmin's POST /key-wraps.
@@ -157,15 +155,15 @@ router.post("/key-wraps", requireAuth, requireAccountType("individual_doctor", "
   if (!parsed.success) return res.status(400).json({ error: "Invalid key wrap payload." });
 
   const membership = await pool.query(
-    `SELECT access_files, access_history FROM team_memberships
+    `SELECT access_clinical_record FROM team_memberships
      WHERE doctor_account_id = $1 AND member_account_id = $2 AND revoked_at IS NULL`,
     [req.account.id, parsed.data.memberAccountId]
   );
   if (membership.rows.length === 0) {
     return res.status(400).json({ error: "No active team membership for this account." });
   }
-  if (!membership.rows[0].access_files && !membership.rows[0].access_history) {
-    return res.status(400).json({ error: "This team member hasn't been granted Files or History access." });
+  if (!membership.rows[0].access_clinical_record) {
+    return res.status(400).json({ error: "This team member hasn't been granted clinical record access." });
   }
 
   await pool.query(
@@ -180,12 +178,12 @@ router.post("/key-wraps", requireAuth, requireAccountType("individual_doctor", "
 
 // Fetch the wrapped key this account is entitled to for a given record.
 // Unlike coadmin's consent gate (which is per-patient and patient-granted),
-// a team member's gate is the doctor's own access_files/access_history
-// flag — no separate patient consent step, per care_team_instructions'
-// existing precedent for staff acting under the doctor's direction.
+// a team member's gate is the doctor's own access_clinical_record flag —
+// no separate patient consent step, per care_team_instructions' existing
+// precedent for staff acting under the doctor's direction.
 router.get("/key-wraps/:patientRecordId", requireAuth, async (req, res) => {
   const result = await pool.query(
-    `SELECT k.wrapped_key, m.access_files, m.access_history
+    `SELECT k.wrapped_key, m.access_clinical_record
      FROM record_key_wraps k
      JOIN patient_record_index r ON r.id = k.patient_record_id
      JOIN team_memberships m ON m.doctor_account_id = r.primary_doctor_id AND m.member_account_id = k.holder_account_id
@@ -195,12 +193,10 @@ router.get("/key-wraps/:patientRecordId", requireAuth, async (req, res) => {
   if (result.rows.length === 0) return res.status(404).json({ error: "No key available for this account and record." });
 
   const row = result.rows[0];
-  if (!row.access_files && !row.access_history) {
+  if (!row.access_clinical_record) {
     return res.status(403).json({ error: "Team access to this record's content has been revoked." });
   }
   res.json({ wrappedKey: row.wrapped_key });
 });
 
 module.exports = router;
-module.exports.roleHasClinicalWriteAccess = roleHasClinicalWriteAccess;
-module.exports.TEAM_ROLES = TEAM_ROLES;
