@@ -117,6 +117,7 @@ router.post("/:id/revoke", requireAuth, requireAccountType("individual_doctor"),
 router.get("/my-team", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const result = await pool.query(
     `SELECT m.id, m.member_account_id, acc.display_name AS member_name, acc.account_type AS member_account_type,
+            acc.public_key AS member_public_key,
             m.role, m.access_clinical_record, m.access_inventory, m.access_lab_reports, m.invited_at
      FROM team_memberships m JOIN accounts acc ON acc.id = m.member_account_id
      WHERE m.doctor_account_id = $1 AND m.revoked_at IS NULL

@@ -17712,17 +17712,19 @@ async function loadMyCoAdminWraps() {
   return data.wraps;
 }
 
-// Revokes the current co-admin assignment. Rotates the AES key for every
-// record this browser holds a real key for BEFORE calling the backend —
+// Rotates the AES key for every record this browser holds a real key for —
 // generates a fresh key, re-encrypts the current content with it, and
-// re-syncs — so even if the former co-admin still has an OLD cached key
-// from before revocation, it no longer decrypts the CURRENT content.
-// This can't erase a copy they already fetched and decrypted before now
-// (no E2EE system can reach into someone else's device), but it does
-// stop them reading anything from this point forward — the backend call
-// (POST /coadmin/revoke) additionally deletes their key-wrap rows, so a
-// fresh fetch attempt gets a plain 404 rather than even trying.
-async function revokeCoAdminAccess() {
+// re-syncs — so even if a former holder still has an OLD cached key from
+// before their access was removed, it no longer decrypts the CURRENT
+// content. Doesn't re-wrap the fresh key for any OTHER remaining
+// legitimate holder (another co-admin, a consented patient, a different
+// team member) — a real deployment would need that too; this only ever
+// had "drop the old key," not "re-share the new one," even before this
+// function was extracted for reuse. Used by both co-admin revoke and team
+// member access changes below — this can't erase a copy someone already
+// fetched and decrypted before now (no E2EE system can reach into
+// someone else's device), but it does stop them reading anything new.
+async function rotateAllMyRecordKeys() {
   const { records } = await apiRequest("/records");
   const rotated = [];
   const skipped = [];
@@ -17740,8 +17742,17 @@ async function revokeCoAdminAccess() {
       skipped.push({ recordId: record.id, reason: err.message });
     }
   }
-  await apiRequest("/coadmin/revoke", { method: "POST" });
   return { rotatedCount: rotated.length, skipped };
+}
+
+// Revokes the current co-admin assignment. Rotates keys first (see
+// rotateAllMyRecordKeys) — the backend call (POST /coadmin/revoke)
+// additionally deletes their key-wrap rows, so a fresh fetch attempt gets
+// a plain 404 rather than even trying.
+async function revokeCoAdminAccess() {
+  const rotation = await rotateAllMyRecordKeys();
+  await apiRequest("/coadmin/revoke", { method: "POST" });
+  return rotation;
 }
 
 // --- Co-admin private-key backup/recovery (password-protected export) ---
@@ -17820,6 +17831,88 @@ async function importPrivateKeyBackup(backupJsonText, password) {
   await crypto.subtle.importKey("pkcs8", rawPrivateKeyBytes, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["unwrapKey"]);
 
   localStorage.setItem("clair_private_key", bytesToBase64(rawPrivateKeyBytes));
+}
+
+// --- Practice team roster (clairmd-backend's routes/teamMembers.js) -----
+// A doctor's own nurses, duty doctors, lab technicians, pharmacists, and
+// specialists — each granted access to a specific slice of the doctor's
+// data, no patient consent step (staff acting under the doctor's own
+// direction, same as care-team instructions). Files/Bed/History collapse
+// into one access_clinical_record gate since patient_record_content is a
+// single encrypted blob with no per-section split — see
+// 028_team_memberships.sql's own comment.
+async function loadMyTeam() {
+  const data = await apiRequest("/team/my-team");
+  return data.team;
+}
+async function loadMyTeamMemberships() {
+  const data = await apiRequest("/team/my-memberships");
+  return data.memberships;
+}
+
+// Wraps every existing record (this browser holds a local key for) for a
+// team member and submits each wrap — same one-time-per-grant shape as
+// assignCoAdminOnBackend's wrap loop above. Reused both at initial
+// assignment (when the role's defaults already include clinical record
+// access — today: Admin, Duty Doctor) and later, whenever a doctor
+// explicitly turns access_clinical_record on for an existing member.
+async function grantTeamClinicalRecordAccess(memberAccountId, memberPublicKeyB64) {
+  const { records } = await apiRequest("/records");
+  const results = [];
+  for (const record of records) {
+    if (!hasLocalRecordKey(record.id)) {
+      results.push({ recordId: record.id, ok: false, reason: "No local key for this record in this browser — skipped rather than wrapping a key that wouldn't match the synced content." });
+      continue;
+    }
+    try {
+      const wrappedKey = await wrapRecordKeyForRecipient(record.id, memberPublicKeyB64);
+      await apiRequest("/team/key-wraps", { method: "POST", body: { patientRecordId: record.id, memberAccountId, wrappedKey } });
+      results.push({ recordId: record.id, ok: true });
+    } catch (err) {
+      results.push({ recordId: record.id, ok: false, reason: err.message });
+    }
+  }
+  return results;
+}
+
+// One-time setup: registers the membership with its role's default access,
+// then — only if that role starts with clinical record access on — wraps
+// every existing record for them too (skipped entirely for roles that
+// start with everything off, which is every role except Admin/Duty
+// Doctor; the doctor grants it explicitly later if needed).
+async function assignTeamMemberOnBackend(memberAccountId, role, memberPublicKeyB64) {
+  const data = await apiRequest("/team/assign", { method: "POST", body: { memberAccountId, role } });
+  let wrapResults = [];
+  if (data.defaultAccess.access_clinical_record && memberPublicKeyB64) {
+    wrapResults = await grantTeamClinicalRecordAccess(memberAccountId, memberPublicKeyB64);
+  }
+  return { id: data.id, defaultAccess: data.defaultAccess, wrapResults };
+}
+
+// Updates a team member's role/access. Turning access_clinical_record ON
+// wraps every existing record for them (same as initial assignment);
+// turning it OFF rotates every record's key the same way revoking a
+// co-admin does (see rotateAllMyRecordKeys) — a cached old key elsewhere
+// must no longer decrypt CURRENT content.
+async function updateTeamMemberOnBackend(membershipId, memberAccountId, updates, memberPublicKeyB64) {
+  await apiRequest(`/team/${membershipId}`, { method: "PATCH", body: updates });
+  if (updates.access && "access_clinical_record" in updates.access) {
+    if (updates.access.access_clinical_record) {
+      if (!memberPublicKeyB64) return { wrapResults: [{ ok: false, reason: "This team member hasn't set up encryption yet (no public key on file)." }] };
+      return { wrapResults: await grantTeamClinicalRecordAccess(memberAccountId, memberPublicKeyB64) };
+    }
+    return { rotation: await rotateAllMyRecordKeys() };
+  }
+  return {};
+}
+
+// Revokes a team membership entirely — rotates keys first (same reasoning
+// as revokeCoAdminAccess), then tells the backend to delete their wraps
+// and mark the membership revoked.
+async function revokeTeamMemberOnBackend(membershipId) {
+  const rotation = await rotateAllMyRecordKeys();
+  const result = await apiRequest(`/team/${membershipId}/revoke`, { method: "POST" });
+  return { ...result, rotation };
 }
 
 // --- Doctor's own ClairMD subscription (distinct from DoctorProfilePanel's
@@ -27981,6 +28074,7 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
       <DriveConnectionPanel theme={theme} />
       <DataRightsPanel theme={theme} />
       <CoAdminPanel theme={theme} />
+      <TeamPanel theme={theme} />
     </div>
   );
 }
@@ -28363,6 +28457,212 @@ function CoAdminPanel({ theme }) {
                 {restoreSuccess && <p className="text-xs text-[#1877F2] mt-1">Restored — this browser can now unwrap records shared with the account that made this backup.</p>}
               </div>
             </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+const TEAM_ROLE_OPTIONS = [
+  { value: "admin", label: "Admin" },
+  { value: "duty_doctor", label: "Duty Doctor" },
+  { value: "nurse", label: "Nurse" },
+  { value: "lab_technician", label: "Lab Technician" },
+  { value: "pharmacist", label: "Pharmacist" },
+  { value: "specialist", label: "Specialist" },
+];
+const TEAM_ACCESS_DOMAINS = [
+  { key: "access_clinical_record", label: "Clinical record" },
+  { key: "access_inventory", label: "Inventory" },
+  { key: "access_lab_reports", label: "Lab reports" },
+];
+
+// Practice team roster — real backend (clairmd-backend's routes/
+// teamMembers.js): add nurses, duty doctors, lab technicians,
+// pharmacists, and specialists, and grant each one a specific slice of
+// this doctor's data. No patient consent step (unlike co-admin above) —
+// staff acting under the doctor's own direction, same rationale as
+// care-team instructions elsewhere in this app.
+function TeamPanel({ theme }) {
+  const [team, setTeam] = useState([]);
+  const [memberships, setMemberships] = useState([]);
+  const [picked, setPicked] = useState(null);
+  const [role, setRole] = useState("nurse");
+  const [assigning, setAssigning] = useState(false);
+  const [assignError, setAssignError] = useState(null);
+  const [assignResult, setAssignResult] = useState(null);
+  const [busyId, setBusyId] = useState(null); // membership id currently being updated/revoked
+  const [rowError, setRowError] = useState({}); // membership id -> error message
+  const [revokeResult, setRevokeResult] = useState(null);
+
+  const refresh = () => {
+    if (!getAuthToken()) return;
+    loadMyTeam().then(setTeam).catch(() => {});
+    loadMyTeamMemberships().then(setMemberships).catch(() => {});
+  };
+  useEffect(refresh, []);
+
+  const doAssign = async () => {
+    if (!picked) return;
+    setAssigning(true);
+    setAssignError(null);
+    setAssignResult(null);
+    try {
+      const result = await assignTeamMemberOnBackend(picked.id, role, picked.public_key);
+      setAssignResult(result);
+      setPicked(null);
+      refresh();
+    } catch (err) {
+      setAssignError(err.message);
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const toggleAccess = async (member, domainKey) => {
+    setBusyId(member.id);
+    setRowError((prev) => ({ ...prev, [member.id]: null }));
+    try {
+      await updateTeamMemberOnBackend(member.id, member.member_account_id, { access: { [domainKey]: !member[domainKey] } }, member.member_public_key);
+      refresh();
+    } catch (err) {
+      setRowError((prev) => ({ ...prev, [member.id]: err.message }));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const doRevoke = async (member) => {
+    setBusyId(member.id);
+    setRowError((prev) => ({ ...prev, [member.id]: null }));
+    try {
+      const result = await revokeTeamMemberOnBackend(member.id);
+      setRevokeResult({ memberId: member.id, ...result });
+      refresh();
+    } catch (err) {
+      setRowError((prev) => ({ ...prev, [member.id]: err.message }));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div className="mt-5 pt-5 border-t border-[#D7E0E7]">
+      <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Practice team</div>
+      <p className="text-sm text-[#12212C] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        Add nurses, duty doctors, lab technicians, pharmacists, or specialists — each sees only the slice of your data you grant them. No patient consent needed, unlike co-admin above: this is staff acting under your own direction.
+      </p>
+      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — team access needs a real account" onConnected={refresh} />
+      {getAuthToken() && (
+        <>
+          <div className="mt-4">
+            <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+              <div className="flex-1 min-w-0 w-full">
+                <AccountPicker
+                  types={["individual_doctor", "care_team_member"]}
+                  placeholder="Search a person to add to your team…"
+                  selected={picked}
+                  onSelect={setPicked}
+                  onClear={() => { setPicked(null); setAssignError(null); setAssignResult(null); }}
+                />
+              </div>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="text-sm px-2.5 py-2 border border-[#D7E0E7] rounded-sm shrink-0"
+                style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
+              >
+                {TEAM_ROLE_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+            {picked && (
+              <button
+                type="button"
+                onClick={doAssign}
+                disabled={assigning}
+                className="mt-2 text-sm px-3 py-1.5 rounded-sm text-white font-medium"
+                style={{ backgroundColor: theme.color }}
+              >
+                {assigning ? "Adding…" : `Add ${picked.display_name} as ${TEAM_ROLE_OPTIONS.find((r) => r.value === role).label}`}
+              </button>
+            )}
+            {assignError && <p className="text-sm text-[#B34A3C] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{assignError}</p>}
+            {assignResult && (
+              <p className="text-xs text-[#12212C] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                Added
+                {assignResult.defaultAccess.access_clinical_record
+                  ? ` — ${assignResult.wrapResults.filter((r) => r.ok).length} of ${assignResult.wrapResults.length} existing record(s) wrapped for clinical record access.`
+                  : ", with no access granted yet — toggle what they can see below."}
+              </p>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <div className="text-sm font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Your team</div>
+            {team.length === 0 ? (
+              <p className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Nobody added yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {team.map((m) => (
+                  <div key={m.id} className="text-sm border border-[#D7E0E7] rounded-sm px-3 py-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span>
+                        <span className="font-medium">{m.member_name}</span>
+                        <span className="text-[#12212C]"> — {TEAM_ROLE_OPTIONS.find((r) => r.value === m.role)?.label || m.role}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => doRevoke(m)}
+                        disabled={busyId === m.id}
+                        className="text-[#B34A3C] underline decoration-dotted shrink-0"
+                      >
+                        {busyId === m.id ? "Working…" : "Revoke access"}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {TEAM_ACCESS_DOMAINS.map((d) => (
+                        <label key={d.key} className="flex items-center gap-1.5 text-xs text-[#12212C] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!m[d.key]}
+                            disabled={busyId === m.id}
+                            onChange={() => toggleAccess(m, d.key)}
+                            style={{ accentColor: theme.color }}
+                          />
+                          {d.label}
+                        </label>
+                      ))}
+                    </div>
+                    {rowError[m.id] && <p className="text-[#B34A3C] text-xs mt-1.5">{rowError[m.id]}</p>}
+                    {revokeResult && revokeResult.memberId === m.id && (
+                      <p className="text-[#12212C] text-xs mt-1.5">
+                        Revoked. {revokeResult.rotation.rotatedCount} record key(s) rotated so old access no longer decrypts current content.
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <div className="text-sm font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Teams you're a member of</div>
+            {memberships.length === 0 ? (
+              <p className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No doctor has added you to their team yet.</p>
+            ) : (
+              <div className="space-y-1">
+                {memberships.map((m) => (
+                  <div key={m.id} className="text-sm border border-[#D7E0E7] rounded-sm px-3 py-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    <span className="font-medium">{m.doctor_name}</span>
+                    <span className="text-[#12212C]"> — {TEAM_ROLE_OPTIONS.find((r) => r.value === m.role)?.label || m.role}</span>
+                    <span className="text-xs text-[#12212C] ml-2">
+                      ({TEAM_ACCESS_DOMAINS.filter((d) => m[d.key]).map((d) => d.label).join(", ") || "no access granted"})
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}
