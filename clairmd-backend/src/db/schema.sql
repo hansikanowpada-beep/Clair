@@ -5,7 +5,7 @@
 -- the database anymore. The real, versioned source of truth is the
 -- migrations/ directory (run via db/migrate.js). This file exists so
 -- there's one place to read the whole current schema at a glance without
--- reconstructing it from 11 separate migration files. If you change the
+-- reconstructing it from dozens of separate migration files. If you change the
 -- schema, add a new file in migrations/ AND update this file to match —
 -- letting this drift from migrations/ defeats the point of keeping it.
 -- =============================================================================
@@ -27,11 +27,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Accounts
 -- ---------------------------------------------------------------------------
 
-CREATE TYPE account_type AS ENUM ('hospital', 'individual_doctor', 'hospital_doctor', 'patient', 'care_team_member', 'admin');
+-- 'hospital' and 'hospital_doctor' were removed 2026-09-09
+-- (030_remove_hospital_accounts.sql) — one doctor account type now.
+CREATE TYPE account_type AS ENUM ('individual_doctor', 'patient', 'care_team_member', 'admin');
 CREATE TYPE plan_tier AS ENUM ('free', 'basic', 'elite');
--- Separate from plan_tier: hospital pricing scales by bed count, not note
--- volume, and 'elite_plus' only ever applies to hospital accounts.
-CREATE TYPE hospital_plan_tier AS ENUM ('free', 'basic', 'elite', 'elite_plus');
 
 CREATE TABLE accounts (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -44,8 +43,6 @@ CREATE TABLE accounts (
     license_number      TEXT,                    -- doctors only, verified at signup (see routes/auth.js)
     license_verified_at TIMESTAMPTZ,
     plan_tier           plan_tier NOT NULL DEFAULT 'free',
-    hospital_plan_tier  hospital_plan_tier,      -- only meaningful when account_type = 'hospital'; NULL otherwise
-    bed_count           INTEGER,                 -- only meaningful when account_type = 'hospital'; NULL otherwise
     feed_post_expiry_months INTEGER NOT NULL DEFAULT 6, -- doctor-only setting; how long their feed_posts stay visible
     two_factor_enabled  BOOLEAN NOT NULL DEFAULT false,
     public_key          TEXT,                    -- RSA-OAEP public key (SPKI, base64) for co-admin key-wrap crypto (024_account_public_keys.sql); NULL until the account generates one client-side; matching private key never leaves the browser
@@ -105,11 +102,6 @@ CREATE TABLE patient_record_index (
     primary_doctor_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
     patient_account_id  UUID REFERENCES accounts(id) ON DELETE SET NULL,
     drive_file_id        TEXT NOT NULL,          -- pointer into the doctor's encrypted Drive folder
-    -- Which billing context this note counts against: the doctor's own
-    -- account (personal practice) or a hospital account (if created under
-    -- an active hospital_affiliations link) — see that table's comment.
-    -- primary_doctor_id above is always the actual doctor regardless.
-    billing_context_id  UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -123,7 +115,7 @@ CREATE INDEX idx_patient_record_doctor ON patient_record_index (primary_doctor_i
 -- decrypt them — only the holder of the corresponding private key can.
 -- ---------------------------------------------------------------------------
 
-CREATE TYPE key_holder_role AS ENUM ('primary_doctor', 'co_admin_doctor', 'patient');
+CREATE TYPE key_holder_role AS ENUM ('primary_doctor', 'co_admin_doctor', 'patient', 'team_member');
 
 CREATE TABLE record_key_wraps (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -199,6 +191,36 @@ CREATE TABLE co_admin_assignments (
     revoked_at          TIMESTAMPTZ,
     UNIQUE (primary_doctor_id)
 );
+
+-- ---------------------------------------------------------------------------
+-- Practice team roster — a doctor's own nurses, duty doctors, lab
+-- technicians, pharmacists, and specialists, each granted access to a
+-- specific slice of the doctor's data. access_clinical_record is one
+-- combined gate for Files/Bed/History since patient_record_content is a
+-- single encrypted blob per record with no per-section split; inventory
+-- and lab reports are separate plaintext tables, so those two flags are
+-- plain authorization with no crypto involved. No patient consent step,
+-- same rationale as care_team_instructions above (staff acting under the
+-- doctor's own direction).
+-- ---------------------------------------------------------------------------
+
+CREATE TYPE team_role AS ENUM ('admin', 'duty_doctor', 'nurse', 'lab_technician', 'pharmacist', 'specialist');
+
+CREATE TABLE team_memberships (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    doctor_account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    member_account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    role                team_role NOT NULL,
+    access_clinical_record BOOLEAN NOT NULL DEFAULT false,
+    access_inventory    BOOLEAN NOT NULL DEFAULT false,
+    access_lab_reports  BOOLEAN NOT NULL DEFAULT false,
+    invited_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    revoked_at          TIMESTAMPTZ,
+    UNIQUE (doctor_account_id, member_account_id)
+);
+
+CREATE INDEX idx_team_memberships_doctor ON team_memberships (doctor_account_id) WHERE revoked_at IS NULL;
+CREATE INDEX idx_team_memberships_member ON team_memberships (member_account_id) WHERE revoked_at IS NULL;
 
 -- ---------------------------------------------------------------------------
 -- Care team instruction queue — task-scoped, NO chart/key access.
@@ -298,10 +320,12 @@ CREATE TABLE billing_events (
     occurred_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Tracked separately per note type since the free tier's limits differ:
--- 5 ICU/Ward notes/month, 10 OPD notes/month (see services/tierAccess.js).
--- Reading and editing already-existing records is never restricted by
--- this counter — it only gates creating NEW notes.
+-- Tracked separately per note type for reporting/breakdown purposes, but
+-- OPD and ICU/Ward now share ONE combined monthly quota per doctor (see
+-- services/tierAccess.js — checkNoteCreationAllowed sums both columns
+-- against a single per-tier limit). Reading and editing already-existing
+-- records is never restricted by this counter — it only gates creating
+-- NEW notes.
 CREATE TABLE monthly_usage_counters (
     account_id          UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     year_month          TEXT NOT NULL,            -- 'YYYY-MM'
@@ -388,69 +412,31 @@ CREATE INDEX idx_emergency_access_events_patient
     ON emergency_access_events (patient_account_id, accessed_at DESC);
 
 -- ---------------------------------------------------------------------------
--- Hospital affiliations + dual-practice support
--- ---------------------------------------------------------------------------
--- Reflects a real pattern: a doctor works hospital shifts AND runs their
--- own private clinic. One account, two billing contexts — see
--- patient_record_index.billing_context_id above for how a given note
--- picks which one it counts against.
-CREATE TABLE hospital_affiliations (
-    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    doctor_account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    hospital_account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    joined_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
-    revoked_at          TIMESTAMPTZ,
-    UNIQUE (doctor_account_id, hospital_account_id)
-);
-
-CREATE INDEX idx_hospital_affiliations_doctor ON hospital_affiliations (doctor_account_id) WHERE revoked_at IS NULL;
-CREATE INDEX idx_hospital_affiliations_hospital ON hospital_affiliations (hospital_account_id) WHERE revoked_at IS NULL;
-
--- Doctor-initiated affiliation requests (025_hospital_affiliation_
--- requests.sql) — the table above only ever supported the hospital
--- adding a doctor directly (trusted, no approval needed); a doctor
--- unilaterally inserting into hospital_affiliations would let them bill
--- against a hospital's plan without consent, so this is a real
--- pending/approved/declined request instead, only becoming a row in
--- hospital_affiliations above once the hospital approves it.
-CREATE TYPE affiliation_request_status AS ENUM ('pending', 'approved', 'declined');
-
-CREATE TABLE hospital_affiliation_requests (
-    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    doctor_account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    hospital_account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    status              affiliation_request_status NOT NULL DEFAULT 'pending',
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
-    responded_at        TIMESTAMPTZ,
-    UNIQUE (doctor_account_id, hospital_account_id)
-);
-
-CREATE INDEX idx_hospital_affiliation_requests_hospital_pending ON hospital_affiliation_requests (hospital_account_id) WHERE status = 'pending';
-CREATE INDEX idx_hospital_affiliation_requests_doctor ON hospital_affiliation_requests (doctor_account_id);
-
--- ---------------------------------------------------------------------------
--- Hospital bed availability — one row per hospital account, self-managed.
--- Pure operational status, no clinical content.
+-- Bed availability — one row per doctor account, self-managed. Not
+-- hospital-only (the 'hospital' account type was removed 2026-09-09,
+-- 030_remove_hospital_accounts.sql) — any individual_doctor can use this
+-- for their own practice. Pure operational status, no clinical content.
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE hospital_bed_status (
-    hospital_account_id UUID PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+CREATE TABLE bed_status (
+    doctor_account_id   UUID PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
     total_beds          INTEGER NOT NULL DEFAULT 0,
     available_beds      INTEGER NOT NULL DEFAULT 0,
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- ---------------------------------------------------------------------------
--- Hospital inventory — stock quantities, reorder thresholds, expiry dates.
--- Pure operational/logistics tracking: no clinical content, no dosing, no
--- prescribing decisions.
+-- Inventory — stock quantities, reorder thresholds, expiry dates. Not
+-- hospital-only either, same as bed_status above. Pure operational/
+-- logistics tracking: no clinical content, no dosing, no prescribing
+-- decisions.
 -- ---------------------------------------------------------------------------
 
 CREATE TYPE inventory_category AS ENUM ('medication', 'consumable', 'equipment', 'ppe', 'other');
 
 CREATE TABLE inventory_items (
     id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    hospital_account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    doctor_account_id   UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     name                TEXT NOT NULL,
     category            inventory_category NOT NULL DEFAULT 'other',
     quantity            INTEGER NOT NULL DEFAULT 0,
@@ -462,7 +448,7 @@ CREATE TABLE inventory_items (
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_inventory_items_hospital ON inventory_items (hospital_account_id);
+CREATE INDEX idx_inventory_items_doctor ON inventory_items (doctor_account_id);
 
 -- ---------------------------------------------------------------------------
 -- Doctor specialty-feed posts — short doctor-authored updates patients can

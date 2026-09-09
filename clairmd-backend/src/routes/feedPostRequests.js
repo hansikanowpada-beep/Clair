@@ -11,7 +11,7 @@ const router = express.Router();
 // and only gets claimed on response — same name-addressed pattern
 // patient_followups already uses, not a strict account link.
 
-const DOCTOR_TYPES = ["individual_doctor", "hospital_doctor"];
+const DOCTOR_TYPES = ["individual_doctor"];
 
 const createSchema = z.object({
   patientDisplayName: z.string().min(1),

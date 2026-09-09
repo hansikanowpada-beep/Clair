@@ -12,7 +12,7 @@ const router = express.Router();
 
 const assignSchema = z.object({ coAdminDoctorId: z.string().uuid() });
 
-router.post("/assign", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+router.post("/assign", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const parsed = assignSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "coAdminDoctorId is required." });
 
@@ -39,7 +39,7 @@ router.post("/assign", requireAuth, requireAccountType("individual_doctor", "hos
 // which rotates each record's actual AES key (re-encrypts with a fresh
 // key) before calling this — so even a still-cached OLD key from before
 // revocation no longer decrypts the current content.
-router.post("/revoke", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+router.post("/revoke", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -80,7 +80,7 @@ const submitKeyWrapSchema = z.object({
   wrappedKey: z.string().min(1),
 });
 
-router.post("/key-wraps", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+router.post("/key-wraps", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const parsed = submitKeyWrapSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid key wrap payload." });
 
@@ -142,7 +142,7 @@ router.post("/consent", requireAuth, requireAccountType("patient"), async (req, 
 // show "currently assigned: Dr. X" instead of being blind between visits.
 // Existed as a write-only upsert (/assign, above) with no matching read
 // until now.
-router.get("/my-assignment", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+router.get("/my-assignment", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const result = await pool.query(
     `SELECT a.co_admin_doctor_id, acc.display_name AS co_admin_doctor_name, a.assigned_at, a.revoked_at
      FROM co_admin_assignments a JOIN accounts acc ON acc.id = a.co_admin_doctor_id

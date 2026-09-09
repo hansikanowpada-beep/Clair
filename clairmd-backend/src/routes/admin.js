@@ -14,16 +14,15 @@ let icd10HarvestRunning = false;
 // route here is gated to account_type = 'admin', which (see db/schema.sql
 // and db/createAdminAccount.js) can never be created through the public
 // signup API — only via the standalone bootstrap script. This is
-// deliberately read-only: nothing here lets an admin modify a doctor's or
-// hospital's own data directly, only see aggregate platform state.
+// deliberately read-only: nothing here lets an admin modify a doctor's
+// own data directly, only see aggregate platform state.
 
 // High-level counts: accounts by type/tier, signups this month vs last,
 // and this month's revenue.
 router.get("/overview", requireAuth, requireAccountType("admin"), async (req, res) => {
-  const [byType, byDoctorTier, byHospitalTier, signupsThisMonth, signupsLastMonth, revenueThisMonth] = await Promise.all([
+  const [byType, byDoctorTier, signupsThisMonth, signupsLastMonth, revenueThisMonth] = await Promise.all([
     pool.query(`SELECT account_type, COUNT(*) AS count FROM accounts GROUP BY account_type`),
-    pool.query(`SELECT plan_tier, COUNT(*) AS count FROM accounts WHERE account_type IN ('individual_doctor', 'hospital_doctor') GROUP BY plan_tier`),
-    pool.query(`SELECT hospital_plan_tier, COUNT(*) AS count FROM accounts WHERE account_type = 'hospital' GROUP BY hospital_plan_tier`),
+    pool.query(`SELECT plan_tier, COUNT(*) AS count FROM accounts WHERE account_type = 'individual_doctor' GROUP BY plan_tier`),
     pool.query(`SELECT COUNT(*) AS count FROM accounts WHERE created_at >= date_trunc('month', now())`),
     pool.query(`SELECT COUNT(*) AS count FROM accounts WHERE created_at >= date_trunc('month', now() - interval '1 month') AND created_at < date_trunc('month', now())`),
     pool.query(`SELECT COALESCE(SUM(amount_paise), 0) AS total_paise FROM billing_events WHERE occurred_at >= date_trunc('month', now())`),
@@ -32,7 +31,6 @@ router.get("/overview", requireAuth, requireAccountType("admin"), async (req, re
   res.json({
     accountsByType: byType.rows,
     doctorPlanTiers: byDoctorTier.rows,
-    hospitalPlanTiers: byHospitalTier.rows,
     signupsThisMonth: Number(signupsThisMonth.rows[0].count),
     signupsLastMonth: Number(signupsLastMonth.rows[0].count),
     revenueThisMonthPaise: Number(revenueThisMonth.rows[0].total_paise),
@@ -75,12 +73,9 @@ router.get("/harvest-icd10/status", requireAuth, async (req, res) => {
 // Revenue for the current Indian financial year (1 April - 31 March),
 // broken down month by month — the shape an ITR filing actually needs,
 // unlike /overview's single "this calendar month" figure. Only covers
-// billing_events (doctor/hospital plan subscriptions); hospital overage
-// charges aren't included since overage_entries has no amount column yet
-// and services/hospitalBilling.js's Razorpay charge isn't wired up (see
-// its own header comment) — so there's no real collected overage revenue
-// to report yet. This is a raw record-keeping aid, not a filed return —
-// still needs a CA's review for GST treatment, deductions, etc.
+// billing_events (doctor plan subscriptions). This is a raw
+// record-keeping aid, not a filed return — still needs a CA's review for
+// GST treatment, deductions, etc.
 router.get("/accounting-summary", requireAuth, requireAccountType("admin"), async (req, res) => {
   const fyStartResult = await pool.query(`
     SELECT (CASE WHEN EXTRACT(MONTH FROM now()) >= 4
@@ -107,27 +102,6 @@ router.get("/accounting-summary", requireAuth, requireAccountType("admin"), asyn
     financialYearStart: fyStart,
     monthly: monthly.rows.map((r) => ({ yearMonth: r.year_month, totalPaise: Number(r.total_paise) })),
     totalPaise: Number(total.rows[0].total_paise),
-  });
-});
-
-// Hospitals currently restricted for unresolved overage billing, plus
-// how much overage revenue is sitting uncollected across the platform —
-// this is the "who needs a phone call" view.
-router.get("/hospitals-at-risk", requireAuth, requireAccountType("admin"), async (req, res) => {
-  const restricted = await pool.query(
-    `SELECT id, display_name, bed_count, hospital_plan_tier, admin_restricted_at
-     FROM accounts WHERE account_type = 'hospital' AND admin_restricted_at IS NOT NULL
-     ORDER BY admin_restricted_at ASC`
-  );
-  const pendingByHospital = await pool.query(
-    `SELECT hospital_account_id, charge_status, COUNT(*) AS count
-     FROM overage_entries
-     WHERE charge_status IN ('pending', 'failed', 'no_payment_method')
-     GROUP BY hospital_account_id, charge_status`
-  );
-  res.json({
-    restrictedHospitals: restricted.rows,
-    pendingOverageByHospital: pendingByHospital.rows,
   });
 });
 

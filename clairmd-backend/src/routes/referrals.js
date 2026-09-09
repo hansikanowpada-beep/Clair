@@ -12,7 +12,7 @@ const router = express.Router();
 // clinical rides in a referral row or, eventually, in any OS-level push
 // notification payload built from it.
 
-const DOCTOR_TYPES = ["individual_doctor", "hospital_doctor"];
+const DOCTOR_TYPES = ["individual_doctor"];
 
 const createSchema = z.object({
   toDoctorId: z.string().uuid(),
@@ -40,7 +40,7 @@ router.post("/", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, r
   }
 
   const recipientExists = await pool.query(
-    `SELECT 1 FROM accounts WHERE id = $1 AND account_type IN ('individual_doctor', 'hospital_doctor') AND deactivated_at IS NULL`,
+    `SELECT 1 FROM accounts WHERE id = $1 AND account_type = 'individual_doctor' AND deactivated_at IS NULL`,
     [toDoctorId]
   );
   if (recipientExists.rows.length === 0) {

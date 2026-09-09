@@ -35,7 +35,7 @@ const signupLimiter = rateLimit({
 });
 
 const signupSchema = z.object({
-  accountType: z.enum(["hospital", "individual_doctor", "hospital_doctor", "patient", "care_team_member"]),
+  accountType: z.enum(["individual_doctor", "patient", "care_team_member"]),
   email: z.string().email(),
   phone: z.string().optional(),
   password: z.string().min(10, "Password must be at least 10 characters."),
@@ -51,7 +51,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
   }
   const { accountType, email, phone, password, displayName, specialty, licenseNumber } = parsed.data;
 
-  const isDoctorType = accountType === "individual_doctor" || accountType === "hospital_doctor";
+  const isDoctorType = accountType === "individual_doctor";
   if (isDoctorType && !licenseNumber) {
     return res.status(400).json({ error: "License number is required for doctor accounts." });
   }

@@ -14,12 +14,10 @@ const router = express.Router();
 // itself not sensitive — it's meant to be public, that's the entire point
 // of a public key — and is null for any account that hasn't generated a
 // keypair yet (see routes/auth.js's PUT /public-key). Requires auth (any
-// account type) but is not
-// scoped to the caller's own hospital/affiliations — narrowing that is a
-// real feature (e.g. "only show doctors at hospitals I'm affiliated
-// with"), not built here; flagged rather than silently assumed.
+// account type), open across the whole directory — every doctor is
+// independent now (no hospital affiliations to scope by).
 
-const SEARCHABLE_TYPES = ["individual_doctor", "hospital_doctor", "care_team_member"];
+const SEARCHABLE_TYPES = ["individual_doctor", "care_team_member"];
 
 const querySchema = z.object({
   q: z.string().max(200).optional(),
@@ -31,7 +29,7 @@ router.get("/", requireAuth, async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: "Invalid query." });
 
   const q = (parsed.data.q || "").trim();
-  const requestedTypes = parsed.data.types ? parsed.data.types.split(",") : ["individual_doctor", "hospital_doctor"];
+  const requestedTypes = parsed.data.types ? parsed.data.types.split(",") : ["individual_doctor"];
   const types = requestedTypes.filter((t) => SEARCHABLE_TYPES.includes(t));
   if (types.length === 0) {
     return res.status(400).json({ error: `types must include at least one of: ${SEARCHABLE_TYPES.join(", ")}` });

@@ -3,8 +3,6 @@ const { z } = require("zod");
 const pool = require("../db/pool");
 const { requireAuth, requireAccountType } = require("../middleware/auth");
 const { checkNoteCreationAllowed, incrementNoteUsage, getUsageStatus } = require("../services/tierAccess");
-const { hasActiveAffiliation } = require("../services/hospitalAffiliations");
-const { recordOverageEntry, applyRestrictionIfNeeded } = require("../services/hospitalBilling");
 
 const router = express.Router();
 
@@ -18,36 +16,19 @@ const router = express.Router();
 // one, that's a sign it belongs in the client-side encrypted payload
 // instead, not here.
 
-const DOCTOR_TYPES = ["individual_doctor", "hospital_doctor"];
+const DOCTOR_TYPES = ["individual_doctor"];
 
-// Real enforcement (2026-08-18 product decision, revised same day) — see
-// services/tierAccess.js for the full breakdown:
-//   individual doctors: OPD only (10/month free, 100/month basic,
-//     unlimited elite) — ICU/Ward notes are NOT available on individual
-//     plans at all, blocked outright with a clear reason, not silently
-//     capped at zero.
-//   hospitals: OPD unlimited (open question, see tierAccess.js); ICU/
-//     Ward quota derived from bed count x 3/bed/day x included days for
-//     their tier. Past that quota, the note is still created (patient
-//     care is never blocked) but recorded as a billable overage entry —
-//     see services/hospitalBilling.js for the nightly billing that
-//     actually charges for it.
-// Reading and editing already-existing records is NEVER affected by any
-// of this — GET and PATCH below have no tier/billing check at all, on
-// purpose, always.
-//
-// Dual-practice support (2026-08-18): hospitalContextId is optional. If
-// omitted, the note bills against the doctor's own personal plan — the
-// original, still-default behavior. If provided, it must be a hospital
-// the doctor has an ACTIVE affiliation with (verified below, never just
-// trusted from the request body) — the note then bills against that
-// hospital's plan instead. primary_doctor_id is always the actual doctor
-// either way; only billing_context_id changes.
+// Real enforcement — see services/tierAccess.js: OPD and ICU/Ward notes
+// share one combined monthly quota per doctor (10/month free, 100/month
+// basic, unlimited elite). Every note always bills against the doctor who
+// created it — there's no more separate "hospital billing context" to
+// opt into (hospital accounts don't exist). Reading and editing
+// already-existing records is NEVER affected by any of this — GET and
+// PATCH below have no tier/usage check at all, on purpose, always.
 const createSchema = z.object({
   driveFileId: z.string().min(1),
   patientAccountId: z.string().uuid().optional(),
   noteType: z.enum(["icu_ward", "opd"]),
-  hospitalContextId: z.string().uuid().optional(),
 });
 
 router.post("/", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, res) => {
@@ -55,45 +36,24 @@ router.post("/", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, r
   if (!parsed.success) {
     return res.status(400).json({ error: "Invalid record payload.", details: parsed.error.flatten() });
   }
-  const { driveFileId, patientAccountId, noteType, hospitalContextId } = parsed.data;
+  const { driveFileId, patientAccountId, noteType } = parsed.data;
 
-  let billingContextId = req.account.id; // default: bills against the doctor's own personal plan
-  if (hospitalContextId) {
-    const affiliated = await hasActiveAffiliation(req.account.id, hospitalContextId);
-    if (!affiliated) {
-      return res.status(403).json({ error: "You don't have an active affiliation with that hospital." });
-    }
-    billingContextId = hospitalContextId;
-  }
-
-  const check = await checkNoteCreationAllowed(billingContextId, noteType);
+  const check = await checkNoteCreationAllowed(req.account.id, noteType);
   if (!check.allowed) {
-    const tierLabel = { free: "Free", basic: "Basic", elite: "Elite", elite_plus: "Elite Plus" }[check.planTier] || check.planTier;
-    const message = check.reason === "icu_ward_not_available_for_individual"
-      ? "ICU/Ward notes aren't available on individual-doctor plans — only under a hospital's billing context."
-      : `${tierLabel} plan limit reached: ${check.limit} OPD notes this month.`;
-    return res.status(403).json({ error: message, usage: check });
+    const tierLabel = { free: "Free", basic: "Basic", elite: "Elite" }[check.planTier] || check.planTier;
+    return res.status(403).json({ error: `${tierLabel} plan limit reached: ${check.limit} notes this month.`, usage: check });
   }
 
   const result = await pool.query(
-    `INSERT INTO patient_record_index (primary_doctor_id, patient_account_id, drive_file_id, billing_context_id)
-     VALUES ($1, $2, $3, $4)
-     RETURNING id, primary_doctor_id, patient_account_id, drive_file_id, billing_context_id, created_at, updated_at`,
-    [req.account.id, patientAccountId || null, driveFileId, billingContextId]
+    `INSERT INTO patient_record_index (primary_doctor_id, patient_account_id, drive_file_id)
+     VALUES ($1, $2, $3)
+     RETURNING id, primary_doctor_id, patient_account_id, drive_file_id, created_at, updated_at`,
+    [req.account.id, patientAccountId || null, driveFileId]
   );
 
-  await incrementNoteUsage(billingContextId, noteType);
+  await incrementNoteUsage(req.account.id, noteType);
 
-  // Hospital ICU/Ward note past the included quota — never blocked (see
-  // above), but recorded so the nightly job can bill for it. Doesn't
-  // apply to individual doctors (they can't create ICU/Ward notes at
-  // all) or to hospital OPD notes (currently uncapped, see tierAccess.js).
-  if (check.billingContext === "hospital" && noteType === "icu_ward" && check.overage) {
-    await recordOverageEntry(billingContextId, result.rows[0].id);
-    await applyRestrictionIfNeeded(billingContextId);
-  }
-
-  res.status(201).json({ record: result.rows[0], overage: check.billingContext === "hospital" ? check.overage : undefined });
+  res.status(201).json({ record: result.rows[0] });
 });
 
 // List this doctor's own record pointers.
@@ -161,25 +121,11 @@ router.delete("/:id", requireAuth, requireAccountType(...DOCTOR_TYPES), async (r
   res.json({ deleted: true });
 });
 
-// This doctor's current usage against both counters, standalone — powers
-// a status banner (e.g. "3/5 ICU notes, 8/10 OPD notes used this month")
-// before they even start a new encounter. Pass ?hospitalContextId=... to
-// check a hospital's usage instead of the doctor's own — same active-
-// affiliation check as note creation, never just trusted from the query.
+// This doctor's current usage against their combined monthly quota,
+// standalone — powers a status banner (e.g. "8/10 notes used this month")
+// before they even start a new encounter.
 router.get("/usage/status", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, res) => {
-  const queryParsed = z.string().uuid().optional().safeParse(req.query.hospitalContextId);
-  if (!queryParsed.success) return res.status(400).json({ error: "hospitalContextId must be a valid UUID." });
-  const hospitalContextId = queryParsed.data;
-
-  let billingContextId = req.account.id;
-  if (hospitalContextId) {
-    const affiliated = await hasActiveAffiliation(req.account.id, hospitalContextId);
-    if (!affiliated) {
-      return res.status(403).json({ error: "You don't have an active affiliation with that hospital." });
-    }
-    billingContextId = hospitalContextId;
-  }
-  const usage = await getUsageStatus(billingContextId);
+  const usage = await getUsageStatus(req.account.id);
   res.json(usage);
 });
 

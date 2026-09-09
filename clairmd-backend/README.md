@@ -13,6 +13,25 @@ text anywhere in this codebase, stop and re-read that comment.
 
 ## What's actually built and working (pending real-environment testing — see below)
 
+- **The 'hospital' account type has been removed entirely (2026-09-09),
+  along with its bed-count-scaled Razorpay overage billing, hospital-
+  doctor affiliations, and the hospital admin-dashboard sections.**
+  `hospital_doctor` folded into `individual_doctor` — one doctor account
+  type going forward. Every entry below this one that references
+  `hospital`, `hospital_doctor`, `hospitalAffiliations`, `hospitalBilling`,
+  `admin_restricted_at`, `billing_context_id`/`hospitalContextId`, or the
+  bed-count ICU/Ward overage formula describes work that has since been
+  removed — left in place as history of what was built and why, not as a
+  description of the current system. What replaced it: Bed availability
+  and Inventory management are no longer hospital-only — any
+  `individual_doctor` account can use them for their own practice (see
+  `030_remove_hospital_accounts.sql`, `routes/bedAvailability.js`,
+  `routes/inventory.js`). ICU/Ward note-taking is no longer
+  hospital-exclusive either — any doctor can create one, billed against
+  the same combined monthly note quota as OPD (see `services/
+  tierAccess.js` — the separate bed-count-scaled hospital quota and its
+  Razorpay overage-charging job are gone, not just relabeled).
+
 - **License verification gate removed from signup — a real bug this
   caught** (2026-08-22 product decision, "deal with it later"). Since
   real verification isn't buildable yet (see the entry below this one),

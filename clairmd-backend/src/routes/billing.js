@@ -16,7 +16,7 @@ const router = express.Router();
 // way (see schema.sql's billing_events comment) — Razorpay holds that,
 // this only ever sees plan/amount/reference metadata.
 
-const DOCTOR_TYPES = ["individual_doctor", "hospital_doctor"];
+const DOCTOR_TYPES = ["individual_doctor"];
 const PLAN_TIERS = ["free", "basic", "elite"];
 
 router.get("/history", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, res) => {

@@ -12,7 +12,7 @@ const router = express.Router();
 // no follow-relationship exists in this backend yet; see the same note in
 // schema.sql for why that's flagged rather than silently assumed built.
 
-const DOCTOR_TYPES = ["individual_doctor", "hospital_doctor"];
+const DOCTOR_TYPES = ["individual_doctor"];
 const KINDS = ["update", "achievement", "video"];
 
 const createSchema = z.object({

@@ -11,7 +11,7 @@ const router = express.Router();
 // technical spec §3.4). This is deliberately task-scoped and does NOT
 // require patient consent, unlike co-admin access.
 
-const DOCTOR_TYPES = ["individual_doctor", "hospital_doctor"];
+const DOCTOR_TYPES = ["individual_doctor"];
 
 const createSchema = z.object({
   toCareTeamId: z.string().uuid(),

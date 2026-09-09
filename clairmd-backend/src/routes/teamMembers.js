@@ -19,7 +19,7 @@ const assignSchema = z.object({
   role: z.enum(TEAM_ROLES),
 });
 
-router.post("/assign", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+router.post("/assign", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const parsed = assignSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "memberAccountId and a valid role are required." });
   if (parsed.data.memberAccountId === req.account.id) {
@@ -49,7 +49,7 @@ const updateSchema = z.object({
   }).optional(),
 });
 
-router.patch("/:id", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+router.patch("/:id", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid update payload." });
 
@@ -82,7 +82,7 @@ router.patch("/:id", requireAuth, requireAccountType("individual_doctor", "hospi
 // device — same inherent E2EE limitation noted there. The frontend's
 // equivalent of revokeCoAdminAccess (rotating each affected record's real
 // AES key) is what actually stops them reading anything NEW after this.
-router.post("/:id/revoke", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+router.post("/:id/revoke", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -114,7 +114,7 @@ router.post("/:id/revoke", requireAuth, requireAccountType("individual_doctor", 
   }
 });
 
-router.get("/my-team", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+router.get("/my-team", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const result = await pool.query(
     `SELECT m.id, m.member_account_id, acc.display_name AS member_name, acc.account_type AS member_account_type,
             m.role, m.access_clinical_record, m.access_inventory, m.access_lab_reports, m.invited_at
@@ -150,7 +150,7 @@ const submitKeyWrapSchema = z.object({
   wrappedKey: z.string().min(1),
 });
 
-router.post("/key-wraps", requireAuth, requireAccountType("individual_doctor", "hospital_doctor"), async (req, res) => {
+router.post("/key-wraps", requireAuth, requireAccountType("individual_doctor"), async (req, res) => {
   const parsed = submitKeyWrapSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid key wrap payload." });
 

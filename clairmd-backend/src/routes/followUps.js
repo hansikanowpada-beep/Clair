@@ -11,7 +11,7 @@ const router = express.Router();
 // care_team_instructions' plaintext diagnosis_summary. Kept short and
 // plan-level; not a substitute for the doctor's own clinical record.
 
-const DOCTOR_TYPES = ["individual_doctor", "hospital_doctor"];
+const DOCTOR_TYPES = ["individual_doctor"];
 
 async function loadFollowupForAccount(followupId, accountId) {
   const result = await pool.query(

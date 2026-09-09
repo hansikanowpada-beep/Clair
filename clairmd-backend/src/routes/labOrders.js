@@ -13,7 +13,7 @@ const router = express.Router();
 // OPD/ICU-Ward note-creation quota system (routes/records.js), it's a
 // separate, unlimited clinical action.
 
-const DOCTOR_TYPES = ["individual_doctor", "hospital_doctor"];
+const DOCTOR_TYPES = ["individual_doctor"];
 const CATEGORIES = ["blood", "urine", "radiological", "microbiological", "immunological"];
 
 async function assertOwnsRecord(patientRecordId, doctorId) {
