@@ -18766,7 +18766,7 @@ function OverviewTab({ patient, details = {}, setDetails = () => {}, vitals = {}
     <div className="max-w-2xl">
       <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
         <SectionLabel>Patient details</SectionLabel>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             <div className="col-span-2">
               <div className="text-[#12212C] text-sm mb-1">Name</div>
               {isDraft ? (
@@ -19489,7 +19489,7 @@ function ReviewComposer({ onSave, onCancel }) {
       </Accordion>
 
       <Accordion title="GCS and pupils" icon={Brain}>
-        <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
           <LabeledInput label="E" value={neuro.gcsE} onChange={(e) => setNeuro((n) => ({ ...n, gcsE: e.target.value }))} placeholder="1–4" />
           <LabeledInput label="V" value={neuro.gcsV} onChange={(e) => setNeuro((n) => ({ ...n, gcsV: e.target.value }))} placeholder="1–5" />
           <LabeledInput label="M" value={neuro.gcsM} onChange={(e) => setNeuro((n) => ({ ...n, gcsM: e.target.value }))} placeholder="1–6" />
@@ -19635,8 +19635,8 @@ function AdmissionCard({ admission, onAddDay, onStartReview, onOpenReview }) {
   const discharged = !!admission.dischargedAt;
   return (
     <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
           <BedDouble size={14} />
           <span className="px-1.5 py-0.5 bg-[#E7EDF1] rounded-sm">Admission · Bed {admission.bedNumber}</span>
           {discharged && <span className="px-1.5 py-0.5 bg-[#E7EDF1] rounded-sm">Discharged</span>}
@@ -19648,7 +19648,7 @@ function AdmissionCard({ admission, onAddDay, onStartReview, onOpenReview }) {
 
       {admission.days.map((day) => (
         <div key={day.id} className="mb-3 last:mb-0 border-t border-[#E7EDF1] pt-3">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <span className="text-sm font-medium text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Day {day.dayNumber} · {day.date}</span>
             {!discharged && (
               <button type="button" onClick={() => onStartReview(day.id)} className="text-xs px-2.5 py-1 rounded-full border border-[#D7E0E7] text-[#12212C] hover:bg-[#F1F6F9] font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
@@ -20114,8 +20114,8 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
                 </button>
               </div>
             )}
-            <div className="flex items-start gap-3 mb-2">
-              <span className="text-sm uppercase tracking-wide text-[#12212C] shrink-0 pt-2" style={{ width: "140px" }}>{i + 1}. Provisional diagnosis</span>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 mb-2">
+              <span className="text-sm uppercase tracking-wide text-[#12212C] shrink-0 sm:pt-2 w-full sm:w-[140px]">{i + 1}. Provisional diagnosis</span>
               <div className="flex-1 min-w-0">
                 <AutoExpandingTextarea
                   value={entry.diagnosis}
@@ -20124,8 +20124,8 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
                 />
               </div>
             </div>
-            <div className="flex items-start gap-3 mb-3">
-              <span className="shrink-0" style={{ width: "140px" }} />
+            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 mb-3">
+              <span className="hidden sm:block shrink-0" style={{ width: "140px" }} />
               <div className="flex-1 min-w-0 relative">
                 {entry.snomed ? (
                   <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm bg-[#F1F6F9] border border-[#D8C5E8] text-sm">
@@ -20152,8 +20152,8 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
                 )}
               </div>
             </div>
-            <div className="flex items-start gap-3 mb-3">
-              <span className="shrink-0" style={{ width: "140px" }} />
+            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 mb-3">
+              <span className="hidden sm:block shrink-0" style={{ width: "140px" }} />
               <div className="flex-1 min-w-0 relative">
                 {entry.icd10 ? (
                   <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-sm bg-[#F1F6F9] border border-[#B9CFE0] text-sm">
@@ -20180,8 +20180,8 @@ function ProvisionalDiagnosisTreatmentTab({ entries: externalEntries, setEntries
                 )}
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <span className="text-sm uppercase tracking-wide text-[#12212C] shrink-0 pt-2" style={{ width: "140px" }}>{i + 1}. Treatment plan</span>
+            <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3">
+              <span className="text-sm uppercase tracking-wide text-[#12212C] shrink-0 sm:pt-2 w-full sm:w-[140px]">{i + 1}. Treatment plan</span>
               <div className="flex-1 min-w-0">
                 <AutoExpandingTextarea
                   value={entry.treatment}
@@ -24269,9 +24269,9 @@ function CareTeamTab({ patient }) {
       </div>
 
       <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
           <SectionLabel><span className="inline-flex items-center gap-2"><UserPlus size={15} /> Cross-consultation referrals</span></SectionLabel>
-          <button onClick={() => setShowForm((s) => !s)} className="text-sm px-3 py-1.5 rounded-sm text-white" style={{ backgroundColor: "#1877F2", fontFamily: "'IBM Plex Sans', sans-serif" }}>
+          <button onClick={() => setShowForm((s) => !s)} className="self-start sm:self-auto text-sm px-3 py-1.5 rounded-sm text-white" style={{ backgroundColor: "#1877F2", fontFamily: "'IBM Plex Sans', sans-serif" }}>
             {showForm ? "Cancel" : "Refer for cross-consultation"}
           </button>
         </div>
@@ -24458,7 +24458,7 @@ function AdvancedCareTab({ patient }) {
         <div className="space-y-3">
           {(complexEncounter.globalOptions || []).map((o, i) => (
             <div key={i} className="bg-white border border-[#D7E0E7] rounded-md p-5">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="text-base font-semibold" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{o.therapy}</h4>
@@ -24468,7 +24468,7 @@ function AdvancedCareTab({ patient }) {
                   <p className="text-sm text-[#12212C] mt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{o.contactNote}</p>
                 </div>
                 {o.telemedicine && (
-                  <button className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-sm bg-[#1877F2] text-white shrink-0" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                  <button className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-sm bg-[#1877F2] text-white shrink-0 self-start" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     <Video size={13} /> Request telemedicine
                   </button>
                 )}
@@ -28704,12 +28704,12 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
           style={{ backgroundColor: `${theme.color}14`, borderBottom: `2px solid ${theme.color}`, cursor: chrome.headerCursor }}
           onMouseDown={chrome.onHeaderMouseDown}
         >
-          <div className="flex items-center gap-2 shrink-0" style={{ minWidth: 100 }}>
-            <Users size={18} style={{ color: theme.color }} />
-            <h2 className="text-lg whitespace-nowrap" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Patients</h2>
+          <div className="flex items-center gap-2 shrink-0 min-w-0">
+            <Users size={18} style={{ color: theme.color }} className="shrink-0" />
+            <h2 className="text-lg truncate" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Patients</h2>
           </div>
 
-          <div className="flex-1 flex justify-center">
+          <div className="flex-1 flex justify-center min-w-0">
             {!previewPatient && (
               <div className="relative w-full max-w-xs" onMouseDown={(e) => e.stopPropagation()}>
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A9B7C0] pointer-events-none" />
@@ -28725,9 +28725,15 @@ function PatientsModal({ patients, selectedId, onSelectPatient, onNewPatient, on
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
-            <ChromeButton onClick={chrome.toggleMaximize} title={chrome.maximized ? "Restore" : "Maximize"}>
-              {chrome.maximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-            </ChromeButton>
+            {/* Maximize/restore is a desktop window-chrome concept — a phone
+                screen is already effectively maximized, and it's the least
+                essential of the three, so it's dropped below sm rather than
+                fighting the title/search groups for space. */}
+            <div className="hidden sm:block">
+              <ChromeButton onClick={chrome.toggleMaximize} title={chrome.maximized ? "Restore" : "Maximize"}>
+                {chrome.maximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+              </ChromeButton>
+            </div>
             <ChromeButton onClick={onMinimize} title="Minimize"><Minus size={16} /></ChromeButton>
             <ChromeButton onClick={onClose} title="Cancel"><X size={16} /></ChromeButton>
           </div>
@@ -29333,7 +29339,7 @@ function CoAdminPanel({ theme }) {
             <p className="text-xs text-[#12212C] mb-2 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
               Your co-admin private key lives only in this browser — there's no copy anywhere else, including on ClairMD's own servers. Download a password-protected backup so a lost or cleared browser doesn't mean losing co-admin access permanently. The file is meaningless without your password; ClairMD never sees either one.
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="border border-[#D7E0E7] rounded-sm p-2.5">
                 <div className="text-xs font-medium mb-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Download backup</div>
                 <input
@@ -29424,7 +29430,7 @@ function MyPlanAndBilling({ theme }) {
           ) : (
             <div className="space-y-1.5">
               {history.map((e) => (
-                <div key={e.id} className="flex items-center justify-between text-sm px-3 py-2 border border-[#D7E0E7] rounded-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
+                <div key={e.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm px-3 py-2 border border-[#D7E0E7] rounded-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>
                   <span>{e.plan_tier}</span>
                   <span>{e.amount_paise != null ? `₹${(e.amount_paise / 100).toFixed(2)}` : "—"}</span>
                   <span className="text-[#12212C]">{new Date(e.occurred_at).toLocaleDateString()}</span>
