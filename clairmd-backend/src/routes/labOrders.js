@@ -2,6 +2,7 @@ const express = require("express");
 const { z } = require("zod");
 const pool = require("../db/pool");
 const { requireAuth, requireAccountType } = require("../middleware/auth");
+const { requireTeamAccess } = require("../middleware/teamAccess");
 
 const router = express.Router();
 
@@ -12,6 +13,12 @@ const router = express.Router();
 // No tier/usage gate here, on purpose — ordering a test isn't part of the
 // OPD/ICU-Ward note-creation quota system (routes/records.js), it's a
 // separate, unlimited clinical action.
+//
+// Deliberately split on delegability: ORDERING a test is the doctor's own
+// clinical decision, so POST / stays doctor-only. Reading orders and
+// entering results is literally a lab technician's job — GET / and
+// PATCH /:id are open to any team member with access_lab_reports granted
+// (requireTeamAccess — see middleware/teamAccess.js), not just the doctor.
 
 const DOCTOR_TYPES = ["individual_doctor"];
 const CATEGORIES = ["blood", "urine", "radiological", "microbiological", "immunological"];
@@ -48,12 +55,14 @@ router.post("/", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, r
 
 // Lists this doctor's own orders — across all their patients, matching
 // records.js's "GET /api/records" convention. Pass ?patientRecordId=...
-// to scope to one record instead (still only this doctor's own).
-router.get("/", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, res) => {
+// to scope to one record instead (still only this doctor's own), and
+// ?doctorAccountId=... for a team member reading a DIFFERENT doctor's
+// orders (requireTeamAccess checks that grant; omitted means "my own").
+router.get("/", requireAuth, requireTeamAccess("access_lab_reports"), async (req, res) => {
   const queryParsed = z.string().uuid().optional().safeParse(req.query.patientRecordId);
   if (!queryParsed.success) return res.status(400).json({ error: "patientRecordId must be a valid UUID." });
 
-  const params = [req.account.id];
+  const params = [req.teamAccess.doctorAccountId];
   let filter = "";
   if (queryParsed.data) {
     params.push(queryParsed.data);
@@ -72,13 +81,14 @@ router.get("/", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, re
 // status flips to 'completed' (and cleared if it's ever moved back off
 // completed), never trusted as a separate client-supplied field.
 const updateSchema = z.object({
+  doctorAccountId: z.string().uuid().optional(),
   status: z.enum(["pending", "completed", "cancelled"]).optional(),
   resultNote: z.string().optional(),
 }).refine((data) => data.status !== undefined || data.resultNote !== undefined, {
   message: "Provide at least one of status or resultNote.",
 });
 
-router.patch("/:id", requireAuth, requireAccountType(...DOCTOR_TYPES), async (req, res) => {
+router.patch("/:id", requireAuth, requireTeamAccess("access_lab_reports"), async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "Invalid update payload.", details: parsed.error.flatten() });
 
@@ -90,7 +100,7 @@ router.patch("/:id", requireAuth, requireAccountType(...DOCTOR_TYPES), async (re
          completed_at = CASE WHEN $1 = 'completed' THEN now() WHEN $1 IS NOT NULL THEN NULL ELSE completed_at END
      WHERE id = $3 AND ordering_doctor_id = $4
      RETURNING id, patient_record_id, category, test_name, status, result_note, ordered_at, completed_at`,
-    [status || null, resultNote ?? null, req.params.id, req.account.id]
+    [status || null, resultNote ?? null, req.params.id, req.teamAccess.doctorAccountId]
   );
   if (result.rows.length === 0) return res.status(404).json({ error: "Lab order not found." });
   res.json({ order: result.rows[0] });

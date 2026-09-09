@@ -15,19 +15,19 @@ const ACCESS_COLUMNS = new Set(["access_clinical_record", "access_inventory", "a
 // — callers pass a literal, never user input, so string-interpolating it
 // into the query is safe.
 //
-// Usage: attach req.teamAccess = { doctorAccountId } when access is
-// granted via membership (so the route knows whose data to operate on),
-// or let the request through unchanged when req.account.id already IS the
-// doctor being addressed.
+// Usage: attach req.teamAccess = { doctorAccountId } so the route knows
+// whose data to operate on. doctorAccountId is optional on the request —
+// omitting it means "acting for myself" (the common case: a doctor's own
+// existing calls don't need to change), so it defaults to req.account.id.
+// A team member acting on a DIFFERENT doctor's data must pass it
+// explicitly (params/body/query), which is then checked against a real
+// membership row below.
 function requireTeamAccess(domainColumn) {
   if (!ACCESS_COLUMNS.has(domainColumn)) {
     throw new Error(`requireTeamAccess: "${domainColumn}" is not a recognized access domain.`);
   }
   return async (req, res, next) => {
-    const doctorAccountId = req.params.doctorAccountId || req.body.doctorAccountId || req.query.doctorAccountId;
-    if (!doctorAccountId) {
-      return res.status(400).json({ error: "doctorAccountId is required to check team access." });
-    }
+    const doctorAccountId = req.params.doctorAccountId || req.body.doctorAccountId || req.query.doctorAccountId || req.account.id;
     if (req.account.id === doctorAccountId) {
       req.teamAccess = { doctorAccountId, role: null, viaMembership: false };
       return next();
