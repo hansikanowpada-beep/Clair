@@ -7,8 +7,6 @@ import "./index.css";
 
 const ACCOUNT_TYPE_TO_APP_MODE = {
   individual_doctor: "clinic",
-  hospital_doctor: "clinic",
-  hospital: "clinic",
   patient: "patient",
   care_team_member: "careTeam",
   admin: "admin",

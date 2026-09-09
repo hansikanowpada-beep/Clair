@@ -69,11 +69,6 @@ const OTHERS_ROLE = {
 
 const ROLES = [...MAIN_ROLES, OTHERS_ROLE];
 
-const DOCTOR_TYPES = [
-  { key: "individual_doctor", label: "Independent doctor" },
-  { key: "hospital_doctor", label: "Doctor at a hospital" },
-];
-
 // No password-reset route exists anywhere in clairmd-backend yet (checked —
 // grepping the whole backend for forgot/reset-password turns up nothing), so
 // this is a genuinely new, honestly-unwired piece rather than a port of real
@@ -107,7 +102,6 @@ function ForgotPasswordForm({ onBack }) {
 }
 
 function DoctorAuth({ onEnter }) {
-  const [doctorType, setDoctorType] = useState("individual_doctor");
   const [mode, setMode] = useState("login"); // login | signup
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -123,7 +117,7 @@ function DoctorAuth({ onEnter }) {
     setError(null);
     try {
       if (mode === "signup") {
-        await backendSignup({ accountType: doctorType, email, password, displayName, licenseNumber });
+        await backendSignup({ accountType: "individual_doctor", email, password, displayName, licenseNumber });
       } else {
         await backendLogin({ email, password });
       }
@@ -141,19 +135,6 @@ function DoctorAuth({ onEnter }) {
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      {mode === "signup" && (
-        <div>
-          <label className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>This account is for</label>
-          <select
-            value={doctorType}
-            onChange={(e) => setDoctorType(e.target.value)}
-            className="w-full mt-1 px-3 py-2 border rounded-sm text-sm"
-            style={{ borderColor: HAIRLINE, fontFamily: "'IBM Plex Sans', sans-serif" }}
-          >
-            {DOCTOR_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
-          </select>
-        </div>
-      )}
       <div className="flex gap-2">
         {["login", "signup"].map((m) => (
           <button
@@ -281,7 +262,7 @@ const FOOTER_PAGES = {
     body: [
       "ClairMD is an AI-assisted EHR built for small Indian clinics, hospitals, and the people who work in them — quick OPD notes, a full ICU/Ward workflow, and clinical reference tools in one place.",
       "Diagnoses are coded against a locally-harvested ICD-10 terminology database (WHO's classification, tens of thousands of codes), searchable by code or by name. A built-in library covers medical conditions, symptoms, aetiology, and drugs, alongside examination templates for eleven body systems and dedicated workflows for trauma, disaster management, poisoning, and environmental injuries.",
-      "Separate, scoped accounts exist for independent doctors, hospital doctors, hospital administrators, hospital staff (technicians, pharmacists, administrative assistants), patients, and care-team members — each sees only what their role needs, nothing more.",
+      "Separate, scoped accounts exist for doctors, hospital staff (technicians, pharmacists, administrative assistants), patients, and care-team members — each sees only what their role needs, nothing more.",
       "Patient record content is encrypted on your own device before it's ever sent anywhere; ClairMD's backend stores only encrypted data and has no way to read it, even from our own admin tools. Nightly backup runs to your own Google Drive, and every account can export or deactivate its data on request, per DPDP.",
       "Built by Ayodhya.",
     ],
@@ -296,7 +277,7 @@ const FOOTER_PAGES = {
   affiliations: {
     title: "Affiliations",
     body: [
-      "ClairMD is currently in early pilot conversations with hospitals interested in running the OPD/ICU-Ward workflow and hospital billing features on real wards.",
+      "ClairMD is currently in early pilot conversations with clinics and small hospitals interested in running the OPD/ICU-Ward workflow on real wards.",
       "Confirmed affiliation partnerships will be listed here once they're finalized — nothing is confirmed yet, and we'd rather say that plainly than claim a partnership before it's real.",
     ],
   },

@@ -8,7 +8,7 @@ import {
   Users2, FileSignature, Mic, GraduationCap, ShieldAlert,
   BookOpen, Bell, UserPlus, ArrowRightCircle, ExternalLink, Bone,
   ChevronUp, Flame, Wind, Droplets, Radio, Activity,
-  Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Hammer, Scale, Tent, Repeat, Timer,
+  Snowflake, Bug, Waves, Anchor, Mountain, Zap, Droplet, UserCheck, XCircle, Plus, Minus, ChevronLeft, Undo2, Package, Scale, Tent, Repeat, Timer,
   Bold, Italic, Underline, Strikethrough, RemoveFormatting, Scissors, Copy, ClipboardPaste,
   CreditCard, ShieldOff, LogIn, Maximize2, Minimize2, Loader2, Tag,
   LifeBuoy, Wrench, CircleHelp, HelpCircle, Compass, Calculator, Check, RotateCcw,
@@ -17366,105 +17366,6 @@ async function recordDriveBackupEvent(status, extra = {}) {
   return apiRequest("/drive/backup-events", { method: "POST", body: { status, ...extra } });
 }
 
-// --- Hospital Razorpay payment method — real Checkout.js integration ----
-// Loads Razorpay's real checkout script on demand (not bundled — most
-// accounts using this app are never hospitals hitting ICU/Ward overage).
-let razorpayScriptPromise = null;
-function loadRazorpayCheckoutScript() {
-  if (typeof window === "undefined") return Promise.reject(new Error("Not in a browser context."));
-  if (window.Razorpay) return Promise.resolve();
-  if (razorpayScriptPromise) return razorpayScriptPromise;
-  razorpayScriptPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve();
-    script.onerror = () => { razorpayScriptPromise = null; reject(new Error("Couldn't load Razorpay's checkout script — check your connection.")); };
-    document.body.appendChild(script);
-  });
-  return razorpayScriptPromise;
-}
-
-async function loadHospitalPaymentMethodStatus() {
-  const data = await apiRequest("/hospital-billing/payment-method/status");
-  return data.hasPaymentMethod;
-}
-async function loadHospitalOverageStatus() {
-  return apiRequest("/hospital-billing/overage-status");
-}
-
-// The full "add a payment method" flow: create a real order
-// (POST /hospital-billing/setup-order), open Razorpay's real Checkout
-// widget with recurring/tokenization requested, then hand the completed
-// checkout's reference to the backend for independent signature
-// verification — this never trusts the client-side success callback
-// alone (see routes/hospitalBilling.js's /setup-order/verify, which
-// re-derives the signature itself). Resolves once the backend has
-// actually saved a verified payment method, not just once Razorpay's
-// popup reports success.
-async function addHospitalPaymentMethod(hospitalEmail, hospitalDisplayName) {
-  await loadRazorpayCheckoutScript();
-  const { order, razorpayKeyId } = await apiRequest("/hospital-billing/setup-order", { method: "POST" });
-
-  const checkoutResult = await new Promise((resolve, reject) => {
-    const rzp = new window.Razorpay({
-      key: razorpayKeyId,
-      amount: order.amount,
-      currency: order.currency,
-      order_id: order.id,
-      name: "ClairMD Clinic",
-      description: "Link a payment method for hospital overage billing",
-      recurring: 1, // ask Razorpay to tokenize this method for future unattended charges
-      prefill: { email: hospitalEmail, name: hospitalDisplayName },
-      handler: (response) => resolve(response),
-      modal: { ondismiss: () => reject(new Error("Payment window closed before completing.")) },
-    });
-    rzp.on("payment.failed", (response) => reject(new Error(response.error?.description || "Payment failed.")));
-    rzp.open();
-  });
-
-  return apiRequest("/hospital-billing/setup-order/verify", {
-    method: "POST",
-    body: {
-      razorpayOrderId: checkoutResult.razorpay_order_id,
-      razorpayPaymentId: checkoutResult.razorpay_payment_id,
-      razorpaySignature: checkoutResult.razorpay_signature,
-    },
-  });
-}
-
-// --- Hospital affiliations — doctor-initiated request + hospital
-// approve/decline (clairmd-backend's routes/hospitalAffiliations.js). The
-// hospital's own direct-add flow already existed backend-side but was
-// never wired to any frontend UI at all — not even a read-only "your
-// affiliated doctors" list — so this covers both sides. -------------------
-async function requestHospitalAffiliation(hospitalAccountId) {
-  const data = await apiRequest("/hospital-affiliations/requests", { method: "POST", body: { hospitalAccountId } });
-  return data.request;
-}
-async function loadMyAffiliationRequests() {
-  const data = await apiRequest("/hospital-affiliations/requests/mine");
-  return data.requests;
-}
-async function loadMyHospitalAffiliations() {
-  const data = await apiRequest("/hospital-affiliations/mine");
-  return data.affiliations;
-}
-async function loadPendingAffiliationRequestsForHospital() {
-  const data = await apiRequest("/hospital-affiliations/requests/pending");
-  return data.requests;
-}
-async function approveAffiliationRequestOnBackend(id) {
-  const data = await apiRequest(`/hospital-affiliations/requests/${id}/approve`, { method: "POST" });
-  return data.affiliation;
-}
-async function declineAffiliationRequestOnBackend(id) {
-  await apiRequest(`/hospital-affiliations/requests/${id}/decline`, { method: "POST" });
-}
-async function loadHospitalAffiliatedDoctors() {
-  const data = await apiRequest("/hospital-affiliations");
-  return data.affiliations;
-}
-
 // Full round trip: create the pointer, encrypt the note, PUT it to the
 // backend's opaque-blob store, then GET + decrypt it straight back to
 // confirm the backend genuinely stored what was sent. Then, if this
@@ -17539,7 +17440,7 @@ async function syncLabOrderToBackend(patientId, category, testName) {
   return { orderId: data.order.id };
 }
 
-// --- Bed availability (hospital account only) --------------------------
+// --- Bed availability (any doctor account) ------------------------------
 async function syncBedStatusToBackend(totalBeds, availableBeds) {
   const data = await apiRequest("/bed-availability", { method: "PUT", body: { totalBeds, availableBeds } });
   return data.bedStatus;
@@ -17549,7 +17450,7 @@ async function loadBedStatusFromBackend() {
   return data.bedStatus;
 }
 
-// --- Inventory (hospital account only) ----------------------------------
+// --- Inventory (any doctor account) --------------------------------------
 // The frontend's INVENTORY_CATEGORIES are Title Case ("Medication", "PPE");
 // the backend's enum is lowercase — converted at this boundary only, so
 // neither side has to know about the other's casing convention. A plain
@@ -17949,9 +17850,6 @@ async function deactivateMyAccountOnBackend(password) {
 async function loadAdminOverview() {
   return apiRequest("/admin/overview");
 }
-async function loadAdminHospitalsAtRisk() {
-  return apiRequest("/admin/hospitals-at-risk");
-}
 async function loadAdminBackupHealth() {
   return apiRequest("/admin/backup-health");
 }
@@ -17976,7 +17874,7 @@ async function loadAdminAccountingSummary() {
 // wizard elsewhere in this file (that one simulates the full product UX;
 // this one just needs to get a real token from the real backend).
 function BackendSyncPanel({ accountType = "individual_doctor", notConnectedLabel = "Backend: not connected — notes save locally only", onConnected }) {
-  const isDoctorType = accountType === "individual_doctor" || accountType === "hospital_doctor";
+  const isDoctorType = accountType === "individual_doctor";
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("login"); // login | signup
   const [email, setEmail] = useState("");
@@ -24285,7 +24183,7 @@ function CareTeamTab({ patient }) {
               <label className="text-sm text-[#12212C]">Refer to</label>
               <div className="mt-1">
                 <AccountPicker
-                  types={["individual_doctor", "hospital_doctor"]}
+                  types={["individual_doctor"]}
                   placeholder="Search doctor by name or specialty..."
                   selected={referralRecipient}
                   onSelect={setReferralRecipient}
@@ -24686,9 +24584,7 @@ const SPECIALTY_THEMES = {
 };
 
 const ACCOUNT_TYPES = [
-  { key: "hospital", label: "Hospital / clinic", nameLabel: "Hospital / clinic name", namePlaceholder: "e.g. ClairMD Clinic" },
-  { key: "soloDoctor", label: "Individual doctor", nameLabel: "Full name", namePlaceholder: "Dr. Full Name" },
-  { key: "affiliatedDoctor", label: "Doctor working in a hospital", nameLabel: "Full name", namePlaceholder: "Dr. Full Name" },
+  { key: "soloDoctor", label: "Doctor", nameLabel: "Full name", namePlaceholder: "Dr. Full Name" },
 ];
 
 function ForgotCredentials() {
@@ -24726,24 +24622,26 @@ function ForgotCredentials() {
   );
 }
 
-// This prototype's account-type keys ("soloDoctor") aren't
-// clairmd-backend's actual accountType enum values
-// ("individual_doctor") — converted only at this one call site so the
-// rest of the component keeps using its own existing vocabulary.
-const ACCOUNT_TYPE_TO_BACKEND = { hospital: "hospital", soloDoctor: "individual_doctor", affiliatedDoctor: "hospital_doctor" };
+// This prototype's account-type key ("soloDoctor") isn't
+// clairmd-backend's actual accountType enum value ("individual_doctor")
+// — converted only at this one call site so the rest of the component
+// keeps using its own existing vocabulary. Only one type left since
+// 'hospital' and 'hospital_doctor' were removed (2026-09-09) — every
+// doctor account is the same type now.
+const ACCOUNT_TYPE_TO_BACKEND = { soloDoctor: "individual_doctor" };
 
-function HospitalAuthPanel({ onBack, onAccountVerified }) {
-  const [accountType, setAccountType] = useState("hospital");
+function DoctorAuthPanel({ onBack, onAccountVerified }) {
+  const accountType = "soloDoctor";
   const [mode, setMode] = useState("signup"); // signup | login
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ hospitalName: "", email: "", phone: "", aadhaar: "", affiliatedHospital: "", specialty: "", password: "", licenseNumber: "" });
+  const [form, setForm] = useState({ hospitalName: "", email: "", phone: "", aadhaar: "", specialty: "", password: "", licenseNumber: "" });
   const [verified, setVerified] = useState(false);
   const [planChosen, setPlanChosen] = useState(null);
   const [loginPassword, setLoginPassword] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [authStatus, setAuthStatus] = useState(null); // { type: "error"|"success", text }
   const typeMeta = ACCOUNT_TYPES.find((t) => t.key === accountType);
-  const isDoctorAccount = accountType === "soloDoctor" || accountType === "affiliatedDoctor";
+  const isDoctorAccount = true;
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -24804,18 +24702,8 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Profile</h2>
       </div>
       <p className="text-sm text-[#12212C] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        Each account is fully isolated — a hospital, a solo doctor, and a hospital-affiliated doctor never see one another's data unless explicitly linked.
+        Each doctor's account is fully isolated — nobody else sees your data unless you explicitly grant access (co-admin, patient consent, or a team member you add).
       </p>
-
-      <label className="text-sm text-[#12212C]">This account is for</label>
-      <select
-        value={accountType}
-        onChange={(e) => { setAccountType(e.target.value); setStep(1); }}
-        className="w-full mt-1 mb-4 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm"
-        style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
-      >
-        {ACCOUNT_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
-      </select>
 
       <div className="flex gap-1 mb-4 bg-[#ECF2F6] rounded-sm p-1">
         {["signup", "login"].map((m) => (
@@ -24836,18 +24724,6 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
             <label className="text-sm text-[#12212C]">{typeMeta.nameLabel}</label>
             <input value={form.hospitalName} onChange={update("hospitalName")} className="w-full mt-1 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder={typeMeta.namePlaceholder} />
           </div>
-          {accountType === "affiliatedDoctor" && (
-            <div>
-              <label className="text-sm text-[#12212C]">Hospital you're affiliated with</label>
-              <input value={form.affiliatedHospital} onChange={update("affiliatedHospital")} className="w-full mt-1 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="e.g. ClairMD Clinic" />
-              {/* Display-only — typing a name here doesn't create a real link (this
-                  step runs before signup even completes). The real, doctor-
-                  initiated request flow (clairmd-backend's POST /api/
-                  hospital-affiliations/requests) lives in HospitalAffiliationPanel,
-                  reachable from Doctor profile once signed up — see that panel. */}
-              <p className="text-xs text-[#12212C] mt-1">This doesn't create the link by itself — once you're signed up, request a real affiliation from Doctor profile → Hospital affiliations, and the hospital approves it from their own account.</p>
-            </div>
-          )}
           <div>
             <label className="text-sm text-[#12212C]">Registered email</label>
             <input value={form.email} onChange={update("email")} className="w-full mt-1 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="admin@yourclinic.in" />
@@ -24876,12 +24752,10 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
               <input value={form.licenseNumber} onChange={update("licenseNumber")} className="w-full mt-1 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="Required for doctor accounts" />
             </div>
           )}
-          {accountType !== "hospital" && (
-            <div>
-              <label className="text-sm text-[#12212C]">Aadhaar number (optional)</label>
-              <input value={form.aadhaar} onChange={update("aadhaar")} className="w-full mt-1 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="Not required — can be added later" />
-            </div>
-          )}
+          <div>
+            <label className="text-sm text-[#12212C]">Aadhaar number (optional)</label>
+            <input value={form.aadhaar} onChange={update("aadhaar")} className="w-full mt-1 px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} placeholder="Not required — can be added later" />
+          </div>
           <div className="bg-[#F1F6F9] border border-[#D7E0E7] rounded-sm p-3 text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             Plan: ₹— /month (billing mocked in this prototype)
           </div>
@@ -24951,7 +24825,7 @@ function HospitalAuthPanel({ onBack, onAccountVerified }) {
             </div>
           ) : (
             <div className="flex items-center gap-2 text-sm text-[#1877F2] bg-[#F1F6F9] border border-[#D7E0E7] rounded-sm p-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-              <CheckCircle2 size={16} /> Account created{isDoctorAccount && form.specialty ? ` — dashboard themed for ${form.specialty}` : " — hospital data isolated from all other accounts"}.
+              <CheckCircle2 size={16} /> Account created{form.specialty ? ` — dashboard themed for ${form.specialty}` : ""}.
             </div>
           )}
         </div>
@@ -26145,7 +26019,7 @@ function BedAvailabilityPanel({ onBack }) {
         <BedDouble size={18} className="text-[#1877F2]" />
         <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Bed availability</h2>
       </div>
-      <p className="text-sm text-[#12212C] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Keep this current — patients see this number before deciding where to go for urgent care.</p>
+      <p className="text-sm text-[#12212C] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Keep this current — anyone checking your practice's availability sees this number.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
         <div>
           <label className="text-sm text-[#12212C]">Total beds</label>
@@ -26164,7 +26038,7 @@ function BedAvailabilityPanel({ onBack }) {
           {syncMessage.text}
         </p>
       )}
-      <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — bed status saves locally only" />
+      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — bed status saves locally only" />
     </div>
   );
 }
@@ -26190,7 +26064,7 @@ function InventoryManagerPanel({ onBack, theme }) {
   const [adjustAmount, setAdjustAmount] = useState("");
   const [syncMessage, setSyncMessage] = useState(null);
 
-  // Replaces the demo rows above with the hospital's real saved inventory
+  // Replaces the demo rows above with the doctor's real saved inventory
   // on open, if connected — the 4 sample items are just a starting demo,
   // not something to preserve once a real account has its own data.
   useEffect(() => {
@@ -26271,7 +26145,7 @@ function InventoryManagerPanel({ onBack, theme }) {
         Track stock levels, reorder thresholds, and expiry dates for medications, consumables, and equipment.
       </p>
       <div className="mb-4">
-        <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — inventory saves locally only" />
+        <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — inventory saves locally only" />
         {syncMessage && (
           <p className={`text-xs mt-1.5 ${syncMessage.type === "error" ? "text-[#B34A3C]" : "text-[#1877F2]"}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
             {syncMessage.text}
@@ -26380,807 +26254,6 @@ function InventoryManagerPanel({ onBack, theme }) {
             </div>
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-// Real Razorpay Checkout integration for hospitals — the actual "add a
-// payment method" screen, not a stub. Two blocks: payment method status
-// (with the real Add button when none is on file) and overage billing
-// status (what's pending/charged/failed, and whether admin features are
-// currently restricted for unpaid overage).
-function HospitalBillingPanel({ onBack, theme }) {
-  const [account, setAccount] = useState(null); // { email, displayName } once connected
-  const [hasMethod, setHasMethod] = useState(null);
-  const [overage, setOverage] = useState(null);
-  const [addingMethod, setAddingMethod] = useState(false);
-  const [addMethodError, setAddMethodError] = useState(null);
-  const [addMethodSuccess, setAddMethodSuccess] = useState(false);
-
-  const refresh = () => {
-    if (!getAuthToken()) return;
-    loadHospitalPaymentMethodStatus().then(setHasMethod).catch(() => {});
-    loadHospitalOverageStatus().then(setOverage).catch(() => {});
-  };
-  useEffect(refresh, []);
-
-  const onBackendConnected = (acc) => {
-    setAccount({ email: acc.email, displayName: acc.display_name });
-    refresh();
-  };
-
-  const doAddMethod = async () => {
-    setAddingMethod(true);
-    setAddMethodError(null);
-    setAddMethodSuccess(false);
-    try {
-      await addHospitalPaymentMethod(account?.email || "", account?.displayName || "");
-      setAddMethodSuccess(true);
-      refresh();
-    } catch (err) {
-      setAddMethodError(err.message);
-    } finally {
-      setAddingMethod(false);
-    }
-  };
-
-  return (
-    <div className="p-5">
-      <button onClick={onBack} className="text-sm text-[#12212C] mb-4 hover:text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
-      <div className="flex items-center gap-2 mb-1">
-        <CreditCard size={18} style={{ color: theme.color }} />
-        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Billing & payment</h2>
-      </div>
-      <p className="text-sm text-[#12212C] mb-4 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        Real Razorpay integration (clairmd-backend's routes/hospitalBilling.js). ICU/Ward notes past your included quota are tracked as overage automatically — this is where you link a payment method so the nightly billing job can actually collect it, instead of just tracking what's owed.
-      </p>
-      <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — connect to manage real billing" onConnected={onBackendConnected} />
-
-      {getAuthToken() && (
-        <>
-          <div className="mt-4 bg-white border border-[#D7E0E7] rounded-md p-4">
-            <div className="text-sm font-medium mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Payment method</div>
-            {hasMethod === null ? (
-              <p className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
-            ) : hasMethod ? (
-              <p className="text-sm text-[#1877F2]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>A payment method is on file — overage entries will be charged automatically overnight.</p>
-            ) : (
-              <>
-                <p className="text-sm text-[#12212C] mb-2 max-w-md" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  No payment method on file yet. Adding one opens Razorpay's real checkout — a small ₹1 verification charge links your card/UPI for future automatic billing (that amount is a placeholder pending a real product decision, not something to assume is final).
-                </p>
-                <button
-                  type="button"
-                  onClick={doAddMethod}
-                  disabled={addingMethod}
-                  className="text-sm px-3 py-1.5 rounded-sm text-white font-medium"
-                  style={{ backgroundColor: theme.color }}
-                >
-                  {addingMethod ? "Opening Razorpay…" : "Add payment method"}
-                </button>
-                {addMethodError && <p className="text-sm text-[#B34A3C] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{addMethodError}</p>}
-                {addMethodSuccess && <p className="text-sm text-[#1877F2] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Payment method saved.</p>}
-              </>
-            )}
-          </div>
-
-          <div className="mt-4 bg-white border border-[#D7E0E7] rounded-md p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Overage billing status</div>
-              <button type="button" onClick={refresh} className="text-xs text-[#1877F2] underline decoration-dotted">Refresh</button>
-            </div>
-            {overage?.adminRestricted && (
-              <div className="bg-[#FBEFEC] border border-[#E3B3A8] rounded-sm p-2.5 text-sm text-[#7A2F25] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                Some administrative features are restricted — unpaid overage with no payment method on file. Add one above to clear this.
-              </div>
-            )}
-            {!overage ? (
-              <p className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Loading…</p>
-            ) : overage.byStatus.length === 0 ? (
-              <p className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No overage entries on record.</p>
-            ) : (
-              <div className="space-y-1">
-                {overage.byStatus.map((row) => (
-                  <div key={row.charge_status} className="flex justify-between text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                    <span className="text-[#12212C] capitalize">{row.charge_status.replace(/_/g, " ")}</span>
-                    <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// Hospital side of doctor-initiated affiliation requests
-// (clairmd-backend's routes/hospitalAffiliations.js) — was a genuine gap
-// before this: the hospital's own direct-add flow existed backend-side,
-// but nothing in the frontend ever showed a hospital ITS affiliated
-// doctors, let alone let one approve or decline an incoming request.
-function HospitalAffiliatedDoctorsPanel({ onBack, theme }) {
-  const [doctors, setDoctors] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [actioningId, setActioningId] = useState(null);
-  const [actionError, setActionError] = useState(null);
-
-  const refresh = () => {
-    if (!getAuthToken()) return;
-    loadHospitalAffiliatedDoctors().then(setDoctors).catch(() => {});
-    loadPendingAffiliationRequestsForHospital().then(setPendingRequests).catch(() => {});
-  };
-  useEffect(refresh, []);
-
-  const doApprove = async (id) => {
-    setActioningId(id);
-    setActionError(null);
-    try {
-      await approveAffiliationRequestOnBackend(id);
-      refresh();
-    } catch (err) {
-      setActionError(err.message);
-    } finally {
-      setActioningId(null);
-    }
-  };
-  const doDecline = async (id) => {
-    setActioningId(id);
-    setActionError(null);
-    try {
-      await declineAffiliationRequestOnBackend(id);
-      refresh();
-    } catch (err) {
-      setActionError(err.message);
-    } finally {
-      setActioningId(null);
-    }
-  };
-
-  return (
-    <div className="p-5">
-      <button onClick={onBack} className="text-sm text-[#12212C] mb-4 hover:text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
-      <div className="flex items-center gap-2 mb-1">
-        <Users2 size={18} style={{ color: theme.color }} />
-        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Affiliated doctors</h2>
-      </div>
-      <p className="text-sm text-[#12212C] mb-4 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        Real affiliation requests and links (clairmd-backend's routes/hospitalAffiliations.js). A doctor requests from their own account; approving here is what actually lets their ICU/Ward notes bill against your hospital's plan instead of the doctor's own.
-      </p>
-      <BackendSyncPanel accountType="hospital" notConnectedLabel="Backend: not connected — connect to manage affiliations" onConnected={refresh} />
-
-      {getAuthToken() && (
-        <>
-          <div className="mt-4 bg-white border border-[#D7E0E7] rounded-md p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Pending requests</div>
-              <button type="button" onClick={refresh} className="text-xs text-[#1877F2] underline decoration-dotted">Refresh</button>
-            </div>
-            {actionError && <p className="text-sm text-[#B34A3C] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{actionError}</p>}
-            {pendingRequests.length === 0 ? (
-              <p className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No pending requests.</p>
-            ) : (
-              <div className="space-y-1.5">
-                {pendingRequests.map((r) => (
-                  <div key={r.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm px-3 py-2 border border-[#D7E0E7] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                    <span className="min-w-0 truncate">{r.doctor_name}{r.doctor_specialty ? ` — ${r.doctor_specialty}` : ""}</span>
-                    <div className="flex gap-1.5 shrink-0 sm:ml-2">
-                      <button type="button" onClick={() => doApprove(r.id)} disabled={actioningId === r.id} className="text-sm px-2 py-1 rounded-sm text-white" style={{ backgroundColor: theme.color }}>Approve</button>
-                      <button type="button" onClick={() => doDecline(r.id)} disabled={actioningId === r.id} className="text-sm px-2 py-1 rounded-sm border border-[#D7E0E7] text-[#B34A3C]">Decline</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="mt-4 bg-white border border-[#D7E0E7] rounded-md p-4">
-            <div className="text-sm font-medium mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Currently affiliated</div>
-            {doctors.length === 0 ? (
-              <p className="text-sm text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No affiliated doctors yet.</p>
-            ) : (
-              <div className="space-y-1">
-                {doctors.map((d) => (
-                  <div key={d.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-2 text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                    <span className="min-w-0 truncate">{d.display_name}{d.specialty ? ` — ${d.specialty}` : ""}</span>
-                    <span className="text-[#12212C] shrink-0">since {new Date(d.joined_at).toLocaleDateString()}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Build Hospital — guided setup checklist. Content researched directly
-// (Clinical Establishments Act 2010 + state variation, Biomedical Waste
-// Management Rules 2016, CSSD/NABH guidelines, medico-legal case
-// handling) rather than assumed, given the real legal stakes of getting
-// this wrong. Deliberately educational/checklist-level, not a compliance
-// guarantee — regional law changes and genuine state-by-state variation
-// mean this can never fully substitute for a local healthcare regulatory
-// consultant or lawyer, and says so plainly rather than overclaiming.
-// ---------------------------------------------------------------------------
-
-// States/UTs that have adopted the central Clinical Establishments
-// (Registration and Regulation) Act, 2010, per Ministry of Health &
-// Family Welfare's own clinicalestablishments.gov.in listing as of this
-// research. Everywhere else runs its own separate state law instead —
-// two are named specifically because they're well-documented and
-// long-standing; the rest are flagged generically rather than guessed at.
-const CEA_2010_ADOPTED = [
-  "Arunachal Pradesh", "Assam", "Bihar", "Haryana", "Himachal Pradesh",
-  "Jharkhand", "Mizoram", "Rajasthan", "Sikkim", "Telangana",
-  "Uttar Pradesh", "Uttarakhand", "Andaman and Nicobar Islands",
-  "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu", "Lakshadweep", "Puducherry",
-];
-
-const KNOWN_STATE_SPECIFIC_LAWS = {
-  "Maharashtra": "the Bombay Nursing Homes Registration Act, 1949 (as amended)",
-  "Delhi": "the Delhi Nursing Homes Registration Act, 1953",
-};
-
-const ALL_INDIAN_STATES_UTS = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa",
-  "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala",
-  "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland",
-  "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
-  "Uttar Pradesh", "Uttarakhand", "West Bengal",
-  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
-];
-
-function getClinicalEstablishmentGuidance(state) {
-  if (!state) return null;
-  if (CEA_2010_ADOPTED.includes(state)) {
-    return `${state} has adopted the central Clinical Establishments (Registration and Regulation) Act, 2010 — registration goes through your District Registering Authority (typically chaired by the District Health Officer/Chief Medical Officer). Expect a two-stage process: provisional registration (valid up to 12 months, lets you start operating) followed by permanent registration once minimum standards are inspected and confirmed.`;
-  }
-  if (KNOWN_STATE_SPECIFIC_LAWS[state]) {
-    return `${state} has not adopted the central Act — clinical establishments here register under ${KNOWN_STATE_SPECIFIC_LAWS[state]} instead. Confirm the current process with your state health department, as state-specific rules are amended independently of the central Act.`;
-  }
-  return `${state} has not adopted the central Clinical Establishments Act, 2010 — it very likely has its own separate Nursing Home/Clinical Establishment registration law instead. This app doesn't have a verified, current citation for ${state}'s specific act, so confirm the exact law and registering authority with your state health department or a local healthcare regulatory consultant before proceeding — don't assume the central Act's process applies.`;
-}
-
-const HOSPITAL_SETUP_PHASES = [
-  {
-    phase: "Foundations & planning",
-    items: [
-      {
-        title: "Decide your legal structure",
-        description: "Sole proprietorship, partnership, LLP, private limited company, or a trust/Section 8 company if you want a charitable structure alongside the clinical one.",
-        why: "This affects liability, taxation, and who legally owns the establishment's assets and licenses — hardest thing to change after the fact.",
-      },
-      {
-        title: "Confirm land use / zoning",
-        description: "Verify with the local municipal or development authority that your chosen site is zoned for medical/commercial use, not purely residential.",
-        why: "Building on non-conforming land can block every later approval, no matter how good the facility itself is.",
-      },
-      {
-        title: "Prepare a feasibility & project report",
-        description: "Bed count, specialty mix, capital budget, and financing plan — most lenders and several later approvals will ask for this.",
-        why: "",
-      },
-      {
-        title: "Get building plan approval",
-        description: "From your local municipal/development authority, matching healthcare facility building byelaws — corridor widths, ramp access, fire escape routes, structural load for equipment.",
-        why: "Retrofitting a building that wasn't approved for medical use is far more expensive than designing for it up front.",
-      },
-    ],
-  },
-  {
-    phase: "Core regulatory registrations",
-    items: [
-      { key: "clinicalEstablishment", title: "Clinical Establishment / Nursing Home registration", description: null, why: "This is the base legal authorization to operate as a healthcare facility at all — everything else assumes this exists." },
-      {
-        title: "Fire Safety NOC",
-        description: "From your state Fire Department, especially for any bedded facility — this is checked as part of Clinical Establishment inspection in most states too.",
-        why: "",
-      },
-      {
-        title: "Pollution Control Board consents",
-        description: "Consent to Establish (apply before construction) and Consent to Operate (apply before starting operations) from your State Pollution Control Board, under the Water and Air (Prevention of Pollution) Acts.",
-        why: "",
-      },
-      {
-        title: "Biomedical Waste Management authorization",
-        description: "From your State Pollution Control Board under the Biomedical Waste Management Rules, 2016 (as amended). Requires 4-colour waste segregation (yellow/red/white-translucent/blue) and typically a tie-up with a Common Biomedical Waste Treatment Facility if one operates within ~75km of you.",
-        why: "Non-compliance carries real penalties under the Environment (Protection) Act, 1986 — and mixed/unsegregated waste is one of the most common inspection failures.",
-      },
-      {
-        title: "Structural & electrical safety certification",
-        description: "Structural stability certificate for the building, electrical safety clearance, lift/elevator license if multi-storey.",
-        why: "",
-      },
-      {
-        title: "Shops & Establishments Act registration",
-        description: "State-specific labour law registration — separate from your clinical registration.",
-        why: "",
-      },
-      {
-        title: "GST registration, trade license, professional tax",
-        description: "Standard business registrations from your local municipal body and tax authorities.",
-        why: "",
-      },
-    ],
-  },
-  {
-    phase: "Specialized infrastructure (including CSSD)",
-    items: [
-      {
-        title: "Set up your CSSD (Central Sterile Supply Department)",
-        description: "Design as 3 physically separated zones: Red (decontamination — negative air pressure, where soiled instruments arrive), Blue/Amber (clean preparation & packing), Green (sterile storage & dispatch). Rough space guide: a small hospital's minimum viable CSSD runs about 40–60 sq. metres with one autoclave (100–150L), an ultrasonic cleaner, a wash station, and sterile storage racks — space needs scale up with bed count and surgical volume from there.",
-        why: "CSSD failures are a direct route to hospital-acquired infections — this is one of the most heavily scrutinized areas in any NABH-style inspection, and the physical zone separation is treated as a hard requirement, not a suggestion.",
-      },
-      {
-        title: "Operation theatre setup (if offering surgery)",
-        description: "Positive-pressure ventilation, HEPA filtration where required, and a layout that connects cleanly to your CSSD's sterile-dispatch zone.",
-        why: "",
-      },
-      {
-        title: "AERB registration for imaging equipment",
-        description: "Any X-ray, CT, or other radiation-emitting equipment needs registration with the Atomic Energy Regulatory Board, plus room shielding certification and a designated Radiation Safety Officer.",
-        why: "This is a criminal-liability area, not just an administrative one — unregistered radiation equipment is treated seriously.",
-      },
-      {
-        title: "Pharmacy — Drug License",
-        description: "Retail and/or wholesale Drug License under the Drugs and Cosmetics Act. If you'll stock controlled substances (opioids, certain sedatives), you also need a license under the Narcotic Drugs and Psychotropic Substances Act.",
-        why: "",
-      },
-      {
-        title: "Blood storage/bank license (if applicable)",
-        description: "A separate license under the Drugs and Cosmetics Rules is required if you offer blood storage or transfusion services, even at small scale.",
-        why: "",
-      },
-      {
-        title: "PCPNDT Act registration (if you have ultrasound/prenatal diagnostic equipment)",
-        description: "Any facility with ultrasound machines used for obstetric/prenatal purposes must register under the Pre-Conception and Pre-Natal Diagnostic Techniques Act, with mandatory record-keeping (Form F) for every scan on a pregnant patient.",
-        why: "This Act carries serious criminal penalties, including imprisonment, for unregistered use or improper records — it's frequently under-recognized by new facilities that just \"have an ultrasound machine\" without realizing it triggers this specific registration.",
-      },
-    ],
-  },
-  {
-    phase: "Staffing & professional compliance",
-    items: [
-      { title: "Doctor registration", description: "Every treating doctor registered with their State Medical Council / the National Medical Commission, with registration numbers displayed as required.", why: "" },
-      { title: "Nursing staff registration", description: "Registered with the State Nursing Council / Indian Nursing Council.", why: "" },
-      { title: "Biomedical waste handler training", description: "Annual training for all staff who handle biomedical waste — mandatory under the BMW Rules, not optional or one-time.", why: "" },
-      { title: "Minimum staffing ratios", description: "Confirm the minimum doctor/nurse-to-bed ratios prescribed under your state's Clinical Establishment rules for your facility's category.", why: "" },
-    ],
-  },
-  {
-    phase: "Medico-legal preparedness",
-    items: [
-      {
-        title: "Write a Medico-Legal Case (MLC) SOP before you open, not after your first case",
-        description: "Categories that must be labeled MLC: assault, road/rail/factory accidents, burns (even accidental), poisoning (even accidental), hanging/drowning/other asphyxia, sexual offenses, attempted suicide/homicide, electrocution, animal/snake bites, unexplained unconscious patients, custody cases, domestic violence, and child abuse.",
-        why: "The attending doctor decides MLC status — it is not optional, and per the Supreme Court's ruling in Parmanand Katara v. Union of India (1989), emergency treatment is NEVER delayed for MLC formalities. Patient or family consent is NOT required to register a case as MLC or to inform the police, even if they object.",
-      },
-      {
-        title: "Maintain a proper MLC register and documentation standard",
-        description: "Entries in duplicate (some facilities use triplicate), no abbreviations, no unexplained overwriting — any correction initialed with date and time by the same doctor who made the original entry.",
-        why: "This documentation has direct evidentiary value in court — sloppy records are a doctor's and hospital's biggest legal exposure in these cases.",
-      },
-      {
-        title: "Set up a police intimation protocol",
-        description: "Written intimation to the nearest police station (not just verbal), with a signed acknowledgment receipt retained on file.",
-        why: "",
-      },
-      {
-        title: "Set up an evidence chain-of-custody protocol",
-        description: "Physical evidence (clothing, samples) sealed in labeled containers, handed only to the investigating officer, always against a written receipt.",
-        why: "Broken chain of custody is one of the most common ways evidence gets thrown out in court — and the hospital is the first link in that chain.",
-      },
-      {
-        title: "Have a written protocol for death in an MLC",
-        description: "No death certificate is issued in an MLC death. The body is not released directly to next-of-kin — it goes to the police pending medico-legal autopsy, who then hand it over to the family once formalities are complete.",
-        why: "",
-      },
-      {
-        title: "Set a records retention policy",
-        description: "Many hospitals retain MLC-related records for 10 years — confirm the exact figure with your legal counsel, as retention expectations can vary and this app doesn't treat any single number as guaranteed correct for every case type.",
-        why: "",
-      },
-      {
-        title: "Know that IPC/CrPC references have moved to BNS/BNSS",
-        description: "Since the criminal code changes, the older IPC/CrPC sections doctors were trained to cite (e.g. Section 39 CrPC for reporting) now sit under the corresponding Bharatiya Nyaya Sanhita / Bharatiya Nagarik Suraksha Sanhita sections. The underlying MLC principles are unchanged — only the section numbers and code names have shifted.",
-        why: "",
-      },
-    ],
-  },
-  {
-    phase: "Growth & optional accreditation",
-    items: [
-      { title: "NABH accreditation (voluntary)", description: "Evaluates CSSD, OT, and infection-control standards specifically — a meaningful quality signal to patients and insurers, but not legally mandatory.", why: "" },
-      { title: "ABDM/ABHA integration", description: "For interoperability with India's digital health mission — increasingly expected by patients and government schemes.", why: "" },
-      { title: "Insurance company empanelment", description: "For cashless-treatment tie-ups with health insurers and TPAs.", why: "" },
-    ],
-  },
-];
-
-// ---------------------------------------------------------------------------
-// Camp / Medical Aid Mode. Derived from generic health-services-management
-// concepts (functional-station patient flow, continuous triage, coded
-// disposal, a travelling record) — deliberately kept to that layer of
-// content only, nothing operational/tactical. Reuses the OPD single-page
-// pattern rather than the 4-page ICU/Ward wizard, matching how forward
-// documentation is meant to stay minimal under real patient volume.
-//
-// Pricing (2026-08-19 decision): ₹599 provisions one camp with up to 200
-// patient encounters included — a separate, per-camp allowance, not a
-// monthly quota, since camps are episodic rather than a continuous
-// practice pattern. The 200-encounter figure is a starting assumption,
-// not a researched number — adjust once real camp volumes are known.
-// Usage is only DISPLAYED here (frontend-only, session-local state); no
-// backend exists yet to actually meter or bill this — see the note at
-// the bottom of the panel.
-//
-// CDSCO Class A boundary, held the same way as everywhere else in this
-// app: triage priority is ALWAYS a doctor-selected field, never computed
-// or suggested. Time-since-triage is shown as elapsed time only — never
-// a countdown, alarm, or safety-window claim.
-
-const CAMP_STATIONS = ["Reception", "Resuscitation", "Treatment", "Disposal"];
-
-// TRIAGE_PRIORITIES, PROGRAMME_TAGS, and DISPOSAL_OPTIONS are the same
-// shared constants already defined above for the OPD builder's own
-// TriageProgrammeDisposalPicker tool — Camp Mode intentionally reuses
-// them rather than defining its own, so both stay a single source of
-// truth instead of two lists that can silently drift apart.
-
-const CAMP_ENCOUNTERS_INCLUDED = 200; // starting assumption — see header comment
-
-function CampModePanel({ onBack, theme }) {
-  const [camp, setCamp] = useState(null); // null until created
-  const [campForm, setCampForm] = useState({
-    name: "", startDate: "", endDate: "", location: "", organizingBody: "",
-    staffRoster: "", referralFacility: "", referralFacilityPhone: "", expectedTransferMinutes: "",
-    mergeResusAndTreatment: false,
-  });
-  const [patients, setPatients] = useState([]);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newPatient, setNewPatient] = useState({ name: "", age: "", gender: "Male", programmeTag: "General OPD/Camp", incidentId: "" });
-  const [triageEditingId, setTriageEditingId] = useState(null);
-  const [disposalEditingId, setDisposalEditingId] = useState(null);
-  const [disposalDraft, setDisposalDraft] = useState({ code: "", facility: "" });
-  const [showRegister, setShowRegister] = useState(false);
-
-  const activeStations = camp && camp.mergeResusAndTreatment
-    ? ["Reception", "Resuscitation / Treatment", "Disposal"]
-    : CAMP_STATIONS;
-
-  const createCamp = () => {
-    if (!campForm.name.trim()) return;
-    setCamp({ ...campForm, createdAt: new Date().toISOString() });
-  };
-
-  const addPatient = () => {
-    if (!newPatient.name.trim()) return;
-    setPatients((prev) => [...prev, {
-      id: Date.now(),
-      name: newPatient.name,
-      age: newPatient.age,
-      gender: newPatient.gender,
-      station: activeStations[0],
-      triagePriority: null,
-      triageHistory: [],
-      programmeTag: newPatient.programmeTag,
-      incidentId: newPatient.incidentId || null,
-      disposal: null,
-      disposalFacility: null,
-      arrivalTime: new Date().toISOString(),
-      disposalTime: null,
-    }]);
-    setNewPatient({ name: "", age: "", gender: "Male", programmeTag: "General OPD/Camp", incidentId: "" });
-    setShowAddForm(false);
-  };
-
-  const setStation = (id, station) => setPatients((prev) => prev.map((p) => p.id === id ? { ...p, station } : p));
-
-  // Triage is ALWAYS appended to history, never overwritten — this is the
-  // "continuous process" point from the source material, and it's also
-  // the medico-legally useful version (a full record of how the doctor's
-  // assessment changed over time, not just the latest snapshot).
-  const setTriage = (id, priorityKey) => {
-    setPatients((prev) => prev.map((p) => p.id === id
-      ? { ...p, triagePriority: priorityKey, triageHistory: [...p.triageHistory, { priority: priorityKey, at: new Date().toISOString() }] }
-      : p));
-    setTriageEditingId(null);
-  };
-
-  const applyDisposal = (id) => {
-    if (!disposalDraft.code) return;
-    setPatients((prev) => prev.map((p) => p.id === id
-      ? { ...p, disposal: disposalDraft.code, disposalFacility: disposalDraft.facility || null, disposalTime: new Date().toISOString(), station: "Disposal" }
-      : p));
-    setDisposalEditingId(null);
-    setDisposalDraft({ code: "", facility: "" });
-  };
-
-  const stationCounts = activeStations.reduce((acc, s) => {
-    acc[s] = patients.filter((p) => p.station === s && !p.disposal).length;
-    return acc;
-  }, {});
-
-  const priorityMeta = (key) => TRIAGE_PRIORITIES.find((t) => t.key === key);
-  const minutesSince = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-
-  // --- Camp not yet created: show setup form ---
-  if (!camp) {
-    return (
-      <div className="p-5">
-        <button onClick={onBack} className="text-sm text-[#12212C] mb-4 hover:text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
-        <div className="flex items-center gap-2 mb-1">
-          <Tent size={18} style={{ color: theme.color }} />
-          <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Camp / medical aid mode</h2>
-        </div>
-        <p className="text-sm text-[#12212C] mb-4" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          Set up a medical camp or aid event — a station-based patient flow (Reception → Treatment → Disposal) built for high volume, not the everyday ICU/Ward wizard.
-        </p>
-        <div className="bg-[#E7F1F5] border border-[#BFDAD5] rounded-sm p-3 mb-4 text-sm text-[#1877F2]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          <span className="font-semibold">₹599 per camp</span> — provisions this camp with up to {CAMP_ENCOUNTERS_INCLUDED} patient encounters. A per-camp allowance, not a monthly quota, since camps are one-off events rather than everyday practice. This count is a starting figure and can be adjusted.
-        </div>
-        <div className="bg-white border border-[#D7E0E7] rounded-md p-4 space-y-2">
-          <input value={campForm.name} onChange={(e) => setCampForm((v) => ({ ...v, name: e.target.value }))} placeholder="Camp name" className="w-full px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input type="date" value={campForm.startDate} onChange={(e) => setCampForm((v) => ({ ...v, startDate: e.target.value }))} className="px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-            <input type="date" value={campForm.endDate} onChange={(e) => setCampForm((v) => ({ ...v, endDate: e.target.value }))} className="px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-          </div>
-          <input value={campForm.location} onChange={(e) => setCampForm((v) => ({ ...v, location: e.target.value }))} placeholder="Location" className="w-full px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-          <input value={campForm.organizingBody} onChange={(e) => setCampForm((v) => ({ ...v, organizingBody: e.target.value }))} placeholder="Organizing body (NGO, trust, etc.)" className="w-full px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-          <textarea value={campForm.staffRoster} onChange={(e) => setCampForm((v) => ({ ...v, staffRoster: e.target.value }))} placeholder="Staff roster (names/roles, one per line)" rows={2} className="w-full px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-          <input value={campForm.referralFacility} onChange={(e) => setCampForm((v) => ({ ...v, referralFacility: e.target.value }))} placeholder="Nearest referral facility" className="w-full px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input value={campForm.referralFacilityPhone} onChange={(e) => setCampForm((v) => ({ ...v, referralFacilityPhone: e.target.value }))} placeholder="Referral facility phone" className="px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-            <input type="number" value={campForm.expectedTransferMinutes} onChange={(e) => setCampForm((v) => ({ ...v, expectedTransferMinutes: e.target.value }))} placeholder="Expected transfer time (min)" className="px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
-          </div>
-          <label className="flex items-center gap-2 text-sm pt-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-            <input type="checkbox" checked={campForm.mergeResusAndTreatment} onChange={(e) => setCampForm((v) => ({ ...v, mergeResusAndTreatment: e.target.checked }))} className="w-4 h-4 accent-[#1877F2]" />
-            Merge Resuscitation and Treatment into one station (small camp)
-          </label>
-          <button onClick={createCamp} className="w-full text-sm py-2.5 rounded-sm text-white font-medium mt-2" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>
-            Start camp
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // --- Camp created: station board + patient flow ---
-  return (
-    <div className="p-5">
-      <button onClick={onBack} className="text-sm text-[#12212C] mb-4 hover:text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-1">
-        <div className="flex items-center gap-2">
-          <Tent size={18} style={{ color: theme.color }} />
-          <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>{camp.name}</h2>
-        </div>
-        <button onClick={() => setShowRegister((v) => !v)} className="self-start sm:self-auto text-sm px-3 py-1.5 border border-[#D7E0E7] rounded-sm text-[#12212C] hover:bg-[#F6FAFC]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-          {showRegister ? "← Back to station board" : "View camp register"}
-        </button>
-      </div>
-      <p className="text-sm text-[#12212C] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        {camp.location || "No location set"} · {camp.startDate || "?"} to {camp.endDate || "?"} · Referral: {camp.referralFacility || "not set"}
-      </p>
-      <div className="flex items-center justify-between mb-4 bg-white border border-[#D7E0E7] rounded-md p-3">
-        <span className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Encounters used against this camp's ₹599 allowance</span>
-        <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: patients.length >= CAMP_ENCOUNTERS_INCLUDED ? "#B34A3C" : theme.color }}>
-          {patients.length} / {CAMP_ENCOUNTERS_INCLUDED}
-        </span>
-      </div>
-
-      {showRegister ? (
-        <div className="bg-white border border-[#D7E0E7] rounded-md overflow-x-auto">
-          <table className="w-full text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif", minWidth: "640px" }}>
-            <thead>
-              <tr className="bg-[#F6FAFC] text-[#12212C] text-left">
-                <th className="p-2">Name</th><th className="p-2">Age/Gender</th><th className="p-2">Programme</th>
-                <th className="p-2">Arrival</th><th className="p-2">Disposal</th><th className="p-2">Discharge</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patients.map((p) => (
-                <tr key={p.id} className="border-t border-[#E7EDF1]">
-                  <td className="p-2">{p.name}</td>
-                  <td className="p-2">{p.age || "—"}/{p.gender}</td>
-                  <td className="p-2">{p.programmeTag}</td>
-                  <td className="p-2">{new Date(p.arrivalTime).toLocaleString()}</td>
-                  <td className="p-2">{p.disposal || "(in progress)"}{p.disposalFacility ? ` — ${p.disposalFacility}` : ""}</td>
-                  <td className="p-2">{p.disposalTime ? new Date(p.disposalTime).toLocaleString() : "—"}</td>
-                </tr>
-              ))}
-              {patients.length === 0 && (
-                <tr><td colSpan={6} className="p-4 text-center text-[#12212C]">No encounters yet.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <>
-          <div className="grid gap-2 mb-4" style={{ gridTemplateColumns: `repeat(auto-fit, minmax(120px, 1fr))` }}>
-            {activeStations.map((s) => (
-              <div key={s} className="bg-white border border-[#D7E0E7] rounded-md p-3 text-center">
-                <div className="text-xs text-[#12212C] uppercase tracking-wide">{s}</div>
-                <div className="text-xl font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: theme.color }}>{stationCounts[s] || 0}</div>
-              </div>
-            ))}
-          </div>
-
-          <button onClick={() => setShowAddForm((v) => !v)} className="flex items-center gap-1.5 text-sm px-3 py-2 rounded-sm text-white font-medium mb-3" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>
-            <Plus size={14} /> New patient
-          </button>
-
-          {showAddForm && (
-            <div className="bg-white border border-[#D7E0E7] rounded-md p-4 mb-4 space-y-2">
-              <div className="grid grid-cols-3 gap-2">
-                <input value={newPatient.name} onChange={(e) => setNewPatient((v) => ({ ...v, name: e.target.value }))} placeholder="Name" className="px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm col-span-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-                <input value={newPatient.age} onChange={(e) => setNewPatient((v) => ({ ...v, age: e.target.value }))} placeholder="Age" className="px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Mono', monospace" }} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <select value={newPatient.gender} onChange={(e) => setNewPatient((v) => ({ ...v, gender: e.target.value }))} className="px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  <option>Male</option><option>Female</option><option>Other</option>
-                </select>
-                <select value={newPatient.programmeTag} onChange={(e) => setNewPatient((v) => ({ ...v, programmeTag: e.target.value }))} className="px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  {PROGRAMME_TAGS.map((t) => <option key={t}>{t}</option>)}
-                </select>
-              </div>
-              <input value={newPatient.incidentId} onChange={(e) => setNewPatient((v) => ({ ...v, incidentId: e.target.value }))} placeholder="Incident ID (optional — links related casualties)" className="w-full px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }} />
-              <div className="flex gap-2 justify-end pt-1">
-                <button onClick={() => setShowAddForm(false)} className="text-sm px-3 py-1.5 text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Cancel</button>
-                <button onClick={addPatient} className="text-sm px-3 py-1.5 rounded-sm text-white font-medium" style={{ backgroundColor: theme.color, fontFamily: "'IBM Plex Sans', sans-serif" }}>Add to Reception</button>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            {patients.filter((p) => !p.disposal).map((p) => {
-              const pm = priorityMeta(p.triagePriority);
-              return (
-                <div key={p.id} className="bg-white border border-[#D7E0E7] rounded-md p-3">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div>
-                      <span className="text-sm font-medium" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{p.name}</span>
-                      <span className="text-sm text-[#12212C] ml-2">{p.age || "—"}/{p.gender} · {p.programmeTag}{p.incidentId ? ` · Incident ${p.incidentId}` : ""}</span>
-                    </div>
-                    {pm && (
-                      <span className="text-xs px-2 py-0.5 rounded-sm font-medium text-white" style={{ backgroundColor: pm.color }}>
-                        {pm.label} · waiting {minutesSince(p.triageHistory[p.triageHistory.length - 1].at)}m
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <select value={p.station} onChange={(e) => setStation(p.id, e.target.value)} className="text-sm px-2 py-1 border border-[#D7E0E7] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                      {activeStations.map((s) => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                    {triageEditingId === p.id ? (
-                      <div className="flex gap-1 flex-wrap">
-                        {TRIAGE_PRIORITIES.map((t) => (
-                          <button key={t.key} onClick={() => setTriage(p.id, t.key)} className="text-xs px-2 py-1 rounded-sm text-white" style={{ backgroundColor: t.color }} title={t.targetNote}>
-                            {t.key}
-                          </button>
-                        ))}
-                        <button onClick={() => setTriageEditingId(null)} className="text-xs px-2 py-1 text-[#12212C]">Cancel</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setTriageEditingId(p.id)} className="flex items-center gap-1 text-sm px-2 py-1 border border-[#D7E0E7] rounded-sm text-[#12212C] hover:bg-[#F6FAFC]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                        <Repeat size={11} /> {p.triagePriority ? "Re-triage" : "Set triage"}
-                      </button>
-                    )}
-                    {disposalEditingId === p.id ? (
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <select value={disposalDraft.code} onChange={(e) => setDisposalDraft((v) => ({ ...v, code: e.target.value }))} className="text-sm px-2 py-1 border border-[#D7E0E7] rounded-sm">
-                          <option value="">Disposal...</option>
-                          {DISPOSAL_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                        {disposalDraft.code === "Referred to facility" && (
-                          <input value={disposalDraft.facility} onChange={(e) => setDisposalDraft((v) => ({ ...v, facility: e.target.value }))} placeholder="Facility name" className="text-sm px-2 py-1 border border-[#D7E0E7] rounded-sm" />
-                        )}
-                        <button onClick={() => applyDisposal(p.id)} className="text-xs px-2 py-1 rounded-sm text-white" style={{ backgroundColor: theme.color }}>Confirm</button>
-                        <button onClick={() => setDisposalEditingId(null)} className="text-xs px-2 py-1 text-[#12212C]">Cancel</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setDisposalEditingId(p.id)} className="text-sm px-2 py-1 border border-[#D7E0E7] rounded-sm text-[#12212C] hover:bg-[#F6FAFC]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                        Close / disposal
-                      </button>
-                    )}
-                  </div>
-                  {p.triageHistory.length > 1 && (
-                    <p className="text-xs text-[#12212C] mt-1.5">Re-triaged {p.triageHistory.length - 1}×; history retained for the record.</p>
-                  )}
-                </div>
-              );
-            })}
-            {patients.filter((p) => !p.disposal).length === 0 && (
-              <p className="text-sm text-[#12212C] text-center py-6" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No patients currently in flow.</p>
-            )}
-          </div>
-        </>
-      )}
-
-      <div className="bg-[#FBF6EC] border border-[#F0DDB0] rounded-sm p-3 mt-4 text-sm text-[#7A5A19]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        This camp's data lives in this session only for now — offline-capable sync to each patient's permanent record (reusing the same encrypted, offline-first pattern built for Emergency Access) is designed but not yet built, since it needs a real backend connection to verify.
-      </div>
-    </div>
-  );
-}
-
-function BuildHospitalPanel({ onBack, theme }) {
-  const [selectedState, setSelectedState] = useState("");
-  const [checked, setChecked] = useState({});
-
-  const toggleChecked = (key) => setChecked((prev) => ({ ...prev, [key]: !prev[key] }));
-
-  const totalItems = HOSPITAL_SETUP_PHASES.reduce((sum, p) => sum + p.items.length, 0);
-  const doneCount = Object.values(checked).filter(Boolean).length;
-
-  return (
-    <div className="p-5">
-      <button onClick={onBack} className="text-sm text-[#12212C] mb-4 hover:text-[#12212C]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>← Back to patient records</button>
-      <div className="flex items-center gap-2 mb-1">
-        <Hammer size={18} style={{ color: theme.color }} />
-        <h2 className="text-lg" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>Build a hospital</h2>
-      </div>
-      <p className="text-sm text-[#12212C] mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        A step-by-step guide from a bare plot of land to a fully compliant, operating facility — including CSSD setup and medico-legal preparedness.
-      </p>
-
-      <div className="bg-[#FBF6EC] border border-[#F0DDB0] rounded-sm p-3 mb-4 text-sm text-[#7A5A19]" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        <span className="font-semibold">Read this first:</span> this is an educational checklist, not legal or regulatory advice, and not a compliance guarantee. Healthcare regulation in India varies genuinely by state and changes over time — always confirm current requirements with your state health department and a local healthcare regulatory consultant or lawyer before relying on anything here for an actual filing.
-      </div>
-
-      <div className="mb-4">
-        <label className="text-sm text-[#12212C] flex items-center gap-1 mb-1"><MapPin size={12} /> Which state or UT are you setting up in?</label>
-        <select
-          value={selectedState}
-          onChange={(e) => setSelectedState(e.target.value)}
-          className="w-full px-3 py-2 border border-[#D7E0E7] rounded-sm text-sm"
-          style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}
-        >
-          <option value="">Select your state or UT...</option>
-          {ALL_INDIAN_STATES_UTS.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </div>
-
-      <div className="flex items-center justify-between mb-4 bg-white border border-[#D7E0E7] rounded-md p-3">
-        <span className="text-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Checklist progress</span>
-        <span className="text-sm font-semibold" style={{ fontFamily: "'IBM Plex Mono', monospace", color: theme.color }}>{doneCount} / {totalItems}</span>
-      </div>
-
-      <div className="space-y-4">
-        {HOSPITAL_SETUP_PHASES.map((phase, pi) => (
-          <div key={pi} className="bg-white border border-[#D7E0E7] rounded-md p-4">
-            <h3 className="text-sm font-semibold mb-3" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: theme.color }}>{phase.phase}</h3>
-            <div className="space-y-3">
-              {phase.items.map((item, ii) => {
-                const itemKey = `${pi}-${ii}`;
-                const description = item.key === "clinicalEstablishment"
-                  ? (getClinicalEstablishmentGuidance(selectedState) || "Select your state above to see region-specific guidance — requirements genuinely differ depending on whether your state has adopted the central Clinical Establishments Act, 2010.")
-                  : item.description;
-                return (
-                  <div key={itemKey} className="flex items-start gap-2.5">
-                    <button
-                      onClick={() => toggleChecked(itemKey)}
-                      className={`mt-0.5 w-4 h-4 rounded-sm border shrink-0 flex items-center justify-center ${checked[itemKey] ? "text-white" : "border-[#D7E0E7]"}`}
-                      style={checked[itemKey] ? { backgroundColor: theme.color, borderColor: theme.color } : {}}
-                    >
-                      {checked[itemKey] && <CheckCircle2 size={12} />}
-                    </button>
-                    <div className="min-w-0">
-                      <div className={`text-sm ${checked[itemKey] ? "line-through text-[#12212C]" : ""}`} style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{item.title}</div>
-                      {description && <p className="text-sm text-[#12212C] mt-0.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{description}</p>}
-                      {item.why && <p className="text-xs mt-1 px-2 py-1 bg-[#F1F6F9] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif", color: theme.color }}><span className="font-medium">Why this matters: </span>{item.why}</p>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -28610,14 +27683,11 @@ function FeedbackPanel({ onBack }) {
 // narrow sidebar column itself — that in-column layout was uncomfortable
 // to read and scroll (see commit history / user feedback).
 const SIDEBAR_VIEW_META = {
-  buildHospital: { label: "Build a hospital", icon: Hammer },
   campMode: { label: "Camp / medical aid mode", icon: Tent },
   hospitalAuth: { label: "Profile", icon: Building2 },
   statistics: { label: "Statistics", icon: BarChart3 },
   beds: { label: "Bed availability", icon: BedDouble },
   inventory: { label: "Inventory manager", icon: Package },
-  hospitalBilling: { label: "Billing & payment", icon: CreditCard },
-  affiliatedDoctors: { label: "Affiliated doctors", icon: Users2 },
   planner: { label: "Planner", icon: CalendarDays },
   followups: { label: "Follow-ups", icon: ClipboardList },
   virtualOpd: { label: "Virtual OPD", icon: GraduationCap },
@@ -28909,106 +27979,8 @@ function DoctorProfilePanel({ onBack, doctorSpecialty, theme }) {
 
       <MyPlanAndBilling theme={theme} />
       <DriveConnectionPanel theme={theme} />
-      <HospitalAffiliationPanel theme={theme} />
       <DataRightsPanel theme={theme} />
       <CoAdminPanel theme={theme} />
-    </div>
-  );
-}
-
-// Doctor side of hospital affiliation requests — the doctor-initiated
-// counterpart to the hospital's own direct-add flow. A doctor can't
-// unilaterally create a real affiliation (that would let them bill notes
-// against a hospital's plan without consent — see clairmd-backend's
-// 025_hospital_affiliation_requests.sql for the full reasoning); this
-// sends a request instead, which HospitalAffiliatedDoctorsPanel on the
-// hospital side approves or declines.
-function HospitalAffiliationPanel({ theme }) {
-  const [affiliations, setAffiliations] = useState([]);
-  const [requests, setRequests] = useState([]);
-  const [picked, setPicked] = useState(null);
-  const [requesting, setRequesting] = useState(false);
-  const [requestError, setRequestError] = useState(null);
-
-  const refresh = () => {
-    if (!getAuthToken()) return;
-    loadMyHospitalAffiliations().then(setAffiliations).catch(() => {});
-    loadMyAffiliationRequests().then(setRequests).catch(() => {});
-  };
-  useEffect(refresh, []);
-
-  const doRequest = async () => {
-    if (!picked) return;
-    setRequesting(true);
-    setRequestError(null);
-    try {
-      await requestHospitalAffiliation(picked.id);
-      setPicked(null);
-      refresh();
-    } catch (err) {
-      setRequestError(err.message);
-    } finally {
-      setRequesting(false);
-    }
-  };
-
-  return (
-    <div className="mt-5 pt-5 border-t border-[#D7E0E7]">
-      <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Hospital affiliations</div>
-      <p className="text-sm text-[#12212C] mb-3 max-w-lg" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-        Real, hospital-approved links (clairmd-backend's routes/hospitalAffiliations.js) — request one below; the hospital sees it in their own account and approves or declines it. Once approved, ICU/Ward notes can bill against that hospital's plan instead of your own.
-      </p>
-      <BackendSyncPanel accountType="individual_doctor" notConnectedLabel="Backend: not connected — connect to request a real affiliation" onConnected={refresh} />
-
-      {getAuthToken() && (
-        <>
-          {affiliations.length > 0 && (
-            <div className="mt-3 mb-3 space-y-1">
-              {affiliations.map((a) => (
-                <div key={a.id} className="text-sm px-3 py-2 border border-[#D7E0E7] rounded-sm flex items-center justify-between" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  <span className="font-medium">{a.hospital_name}</span>
-                  <span className="text-[#12212C]">since {new Date(a.joined_at).toLocaleDateString()}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="mt-3">
-            <AccountPicker
-              types={["hospital"]}
-              placeholder="Search a hospital to request affiliation with…"
-              selected={picked}
-              onSelect={setPicked}
-              onClear={() => { setPicked(null); setRequestError(null); }}
-            />
-            {picked && (
-              <button
-                type="button"
-                onClick={doRequest}
-                disabled={requesting}
-                className="mt-2 text-sm px-3 py-1.5 rounded-sm text-white font-medium"
-                style={{ backgroundColor: theme.color }}
-              >
-                {requesting ? "Sending…" : `Request affiliation with ${picked.display_name}`}
-              </button>
-            )}
-            {requestError && <p className="text-sm text-[#B34A3C] mt-1.5" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>{requestError}</p>}
-          </div>
-
-          {requests.length > 0 && (
-            <div className="mt-3">
-              <div className="text-sm font-medium mb-1" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>Sent requests</div>
-              <div className="space-y-1">
-                {requests.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between text-sm px-3 py-2 border border-[#D7E0E7] rounded-sm" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                    <span>{r.hospital_name}</span>
-                    <span className={r.status === "approved" ? "text-[#1877F2]" : r.status === "declined" ? "text-[#B34A3C]" : "text-[#12212C]"}>{r.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }
@@ -29275,7 +28247,7 @@ function CoAdminPanel({ theme }) {
               <p className="text-sm text-[#12212C] mb-2" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>No co-admin assigned yet.</p>
             )}
             <AccountPicker
-              types={["individual_doctor", "hospital_doctor"]}
+              types={["individual_doctor"]}
               placeholder="Search a doctor to assign as your co-admin…"
               selected={picked}
               onSelect={setPicked}
@@ -29958,8 +28930,8 @@ function AdminDashboardView({ onBack, backLabel = "Back to clinic view" }) {
   const loadDashboard = () => {
     setLoading(true);
     setLoadError(null);
-    Promise.all([loadAdminOverview(), loadAdminHospitalsAtRisk(), loadAdminBackupHealth(), loadAdminNotificationHealth(), loadAdminIcd10HarvestStatus(), loadAdminAccountingSummary()])
-      .then(([overview, risk, backup, notif, icd10, accounting]) => setData({ overview, risk, backup, notif, icd10, accounting }))
+    Promise.all([loadAdminOverview(), loadAdminBackupHealth(), loadAdminNotificationHealth(), loadAdminIcd10HarvestStatus(), loadAdminAccountingSummary()])
+      .then(([overview, backup, notif, icd10, accounting]) => setData({ overview, backup, notif, icd10, accounting }))
       .catch((err) => setLoadError(err.message))
       .finally(() => setLoading(false));
   };
@@ -30069,8 +29041,8 @@ function AdminLoginLanding({ onBack, backLabel, connectedAccount, loginForm, set
 
 // The "another landing page" shown post-login — a standard monitoring
 // dashboard built around the platform's actual features, not a generic
-// admin-panel template: account growth/revenue, hospital billing risk,
-// on-device-encrypted backup reliability, notification delivery, and the
+// admin-panel template: account growth/revenue, on-device-encrypted
+// backup reliability, notification delivery, and the
 // ICD-10 terminology harvest (the one background job this platform runs
 // that's worth a founder glancing at, alongside accounts/billing/backup).
 // Every number here comes from clairmd-backend's /api/admin routes —
@@ -30079,7 +29051,6 @@ function AdminLoginLanding({ onBack, backLabel, connectedAccount, loginForm, set
 const ADMIN_NAV_SECTIONS = [
   { id: "overview", label: "Overview", icon: BarChart3 },
   { id: "icd10", label: "ICD-10 Harvest", icon: BookOpen },
-  { id: "hospitals-risk", label: "Hospitals at Risk", icon: AlertTriangle },
   { id: "backup", label: "Backup Health", icon: ShieldCheck },
   { id: "notifications", label: "Notifications", icon: Bell },
 ];
@@ -30156,22 +29127,20 @@ function AdminDashboardScreen({ onBack, backLabel, connectedAccount, data, loadi
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                   <AdminStatTile label="Total accounts" value={totalAccounts} />
-                  <AdminStatTile label="Doctors" value={countFor(["individual_doctor", "hospital_doctor"])} />
-                  <AdminStatTile label="Hospitals" value={countFor(["hospital"])} />
+                  <AdminStatTile label="Doctors" value={countFor(["individual_doctor"])} />
                   <AdminStatTile label="Patients" value={countFor(["patient"])} />
                 </div>
                 <AdminOverviewCard overview={data.overview} />
               </>
             )}
             {activeSection === "icd10" && <AdminIcd10HarvestCard icd10={data.icd10} />}
-            {activeSection === "hospitals-risk" && <AdminHospitalsAtRiskCard risk={data.risk} />}
             {activeSection === "backup" && <AdminBackupHealthCard backup={data.backup} />}
             {activeSection === "notifications" && <AdminNotificationHealthCard notif={data.notif} />}
           </div>
         </div>
       </div>
 
-      {showRevenue && <RevenueDetailsPopup overview={data.overview} risk={data.risk} onClose={() => setShowRevenue(false)} />}
+      {showRevenue && <RevenueDetailsPopup overview={data.overview} onClose={() => setShowRevenue(false)} />}
       {showAccounting && <AccountingSummaryPopup accounting={data.accounting} onClose={() => setShowAccounting(false)} />}
     </div>
   );
@@ -30181,7 +29150,7 @@ function AdminDashboardScreen({ onBack, backLabel, connectedAccount, data, loadi
 // About/Contact/Donate pages) — back link + centered "C" badge header over
 // a white content card — reused here so this reads as one consistent
 // pop-up-page pattern across the app rather than a one-off modal.
-function RevenueDetailsPopup({ overview, risk, onClose }) {
+function RevenueDetailsPopup({ overview, onClose }) {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col items-center px-6 py-16" style={{ background: "#ECF2F6", fontFamily: "'IBM Plex Sans', sans-serif" }}>
       <div className="w-full max-w-2xl">
@@ -30230,42 +29199,6 @@ function RevenueDetailsPopup({ overview, risk, onClose }) {
               )}
             </div>
 
-            <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
-              <h2 className="text-sm font-medium mb-3">Hospital plan tiers</h2>
-              {overview.hospitalPlanTiers.length === 0 ? (
-                <p className="text-sm text-[#12212C]">No hospital accounts yet.</p>
-              ) : (
-                <div className="space-y-1">
-                  {overview.hospitalPlanTiers.map((row) => (
-                    <div key={row.hospital_plan_tier} className="flex justify-between text-sm">
-                      <span className="text-[#12212C] capitalize">{row.hospital_plan_tier || "unset"}</span>
-                      <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white border border-[#D7E0E7] rounded-md p-5">
-              <h2 className="text-sm font-medium mb-3">Uncollected hospital overage</h2>
-              {!risk ? (
-                <p className="text-sm text-[#12212C]">Loading…</p>
-              ) : risk.pendingOverageByHospital.length === 0 ? (
-                <p className="text-sm text-[#12212C]">Nothing outstanding right now.</p>
-              ) : (
-                <>
-                  <div className="space-y-1 mb-2">
-                    {risk.pendingOverageByHospital.map((row, i) => (
-                      <div key={i} className="flex justify-between text-sm">
-                        <span className="text-[#12212C] capitalize">{row.hospital_account_id} · {row.charge_status}</span>
-                        <span className="font-medium" style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{row.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-[#12212C]">{risk.restrictedHospitals.length} hospital(s) currently restricted for overage billing — see the Hospitals at Risk section for detail.</p>
-                </>
-              )}
-            </div>
           </div>
         )}
       </div>
@@ -30417,34 +29350,6 @@ function AdminOverviewCard({ overview }) {
             </div>
           </div>
         </>
-      )}
-    </div>
-  );
-}
-
-function AdminHospitalsAtRiskCard({ risk }) {
-  return (
-    <div className="bg-white border border-[#D7E0E7] rounded-md p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <AlertTriangle size={15} className="text-[#B34A3C]" />
-        <h2 className="text-sm font-medium">Hospitals at risk</h2>
-      </div>
-      {!risk ? (
-        <p className="text-sm text-[#12212C]">Loading…</p>
-      ) : risk.restrictedHospitals.length === 0 ? (
-        <p className="text-sm text-[#12212C]">No hospitals currently restricted for overage billing.</p>
-      ) : (
-        <div className="space-y-1.5">
-          {risk.restrictedHospitals.map((h) => (
-            <div key={h.id} className="text-sm border border-[#D7E0E7] rounded-sm px-2.5 py-1.5">
-              <div className="font-medium">{h.display_name}</div>
-              <div className="text-[#12212C]">{h.bed_count} beds · {h.hospital_plan_tier} · restricted {new Date(h.admin_restricted_at).toLocaleDateString()}</div>
-            </div>
-          ))}
-        </div>
-      )}
-      {risk && risk.pendingOverageByHospital.length > 0 && (
-        <p className="text-xs text-[#12212C] mt-2">{risk.pendingOverageByHospital.length} hospital/status combination(s) with uncollected overage entries.</p>
       )}
     </div>
   );
@@ -31142,22 +30047,16 @@ export default function ClairMDEHR({ initialAppMode = "clinic", onExitToLanding 
 
         {sidebarView !== "patients" && SIDEBAR_VIEW_META[sidebarView] && !sidebarViewMinimized && (
           <SidebarViewModal viewKey={sidebarView} theme={theme} onClose={() => setSidebarView("patients")} onMinimize={() => setSidebarViewMinimized(true)}>
-            {sidebarView === "buildHospital" ? (
-              <BuildHospitalPanel onBack={() => setSidebarView("patients")} theme={theme} />
-            ) : sidebarView === "campMode" ? (
+            {sidebarView === "campMode" ? (
               <CampModePanel onBack={() => setSidebarView("patients")} theme={theme} />
             ) : sidebarView === "hospitalAuth" ? (
-              <HospitalAuthPanel onBack={() => setSidebarView("patients")} onAccountVerified={(specialty, plan, displayName) => { if (specialty) setDoctorSpecialty(specialty); if (plan) setDoctorPlan(plan); if (displayName) setDoctorDisplayName(displayName); }} />
+              <DoctorAuthPanel onBack={() => setSidebarView("patients")} onAccountVerified={(specialty, plan, displayName) => { if (specialty) setDoctorSpecialty(specialty); if (plan) setDoctorPlan(plan); if (displayName) setDoctorDisplayName(displayName); }} />
             ) : sidebarView === "statistics" ? (
               <StatisticsPanel onBack={() => setSidebarView("patients")} />
             ) : sidebarView === "beds" ? (
               <BedAvailabilityPanel onBack={() => setSidebarView("patients")} />
             ) : sidebarView === "inventory" ? (
               <InventoryManagerPanel onBack={() => setSidebarView("patients")} theme={theme} />
-            ) : sidebarView === "hospitalBilling" ? (
-              <HospitalBillingPanel onBack={() => setSidebarView("patients")} theme={theme} />
-            ) : sidebarView === "affiliatedDoctors" ? (
-              <HospitalAffiliatedDoctorsPanel onBack={() => setSidebarView("patients")} theme={theme} />
             ) : sidebarView === "planner" ? (
               <PlannerPanel onBack={() => setSidebarView("patients")} />
             ) : sidebarView === "followups" ? (

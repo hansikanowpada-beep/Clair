@@ -25,7 +25,7 @@ import {
   Table, Image, Link2, Search, ClipboardPaste, Copy, Scissors,
   HelpCircle, Sparkles, Tag, ChevronRight, RemoveFormatting,
   Stethoscope, BookOpen, Activity, Pill,
-  Hammer, Tent, BarChart3, BedDouble, Package, CreditCard,
+  Tent, BarChart3, BedDouble, Package,
   Users2, CalendarDays, ClipboardList, GraduationCap, UserCircle2, Rss, ListChecks,
   UserPlus, ShieldAlert, AlertTriangle, Wind, Bone, ShieldOff, HandHeart, UserCheck,
   Mail, Wrench, CircleHelp, Bug, MessagesSquare, LifeBuoy, Compass,
@@ -344,13 +344,10 @@ const MODULE_SECTIONS = {
     // "feed" (Specialty feed) deliberately NOT here — it has its own
     // top-level ribbon tab below (kept-separate per explicit request).
   ],
-  hospitalOps: [
-    { key: "buildHospital", label: "Build a hospital", icon: Hammer },
+  practiceOps: [
     { key: "campMode", label: "Camp / medical aid mode", icon: Tent },
     { key: "beds", label: "Bed availability", icon: BedDouble },
     { key: "inventory", label: "Inventory manager", icon: Package },
-    { key: "hospitalBilling", label: "Billing & payment", icon: CreditCard },
-    { key: "affiliatedDoctors", label: "Affiliated doctors", icon: Users2 },
   ],
   account: [
     // "hospitalAuth" (Account access, now labeled "Profile") deliberately
@@ -558,9 +555,9 @@ const TAB_DEFINITIONS = [
         })),
       },
       {
-        id: "mod-hospital-ops",
-        label: "Hospital Operations",
-        commands: MODULE_SECTIONS.hospitalOps.map((m) => ({
+        id: "mod-practice-ops",
+        label: "Practice Operations",
+        commands: MODULE_SECTIONS.practiceOps.map((m) => ({
           id: `mod-${m.key}`,
           label: m.label,
           icon: m.icon,
